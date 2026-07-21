@@ -1,0 +1,1098 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  Hand,
+  Image as ImageIcon,
+  Lightbulb,
+  Loader2,
+  Minus,
+  Palette,
+  Plus,
+  QrCode,
+  Search,
+  Settings2,
+  Smartphone,
+  Sofa,
+  Sparkles,
+  Upload,
+  Users,
+  Wand2,
+  X,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import {
+  useCatalogFilters,
+  useProductSearch,
+  type CatalogProduct,
+} from "@/lib/catalog";
+import {
+  ASPECT_RATIO_OPTIONS,
+  DEFAULT_ASPECT_RATIO,
+  DEFAULT_IMAGE_SIZE,
+  DEFAULT_LIGHTING_MODE,
+  generateRoomDesign,
+  generateRoomReference,
+  IMAGE_SIZE_OPTIONS,
+  isGenerationSuccessful,
+  LIGHTING_OPTIONS,
+  PEOPLE_AGE_OPTIONS,
+  PEOPLE_GENDER_OPTIONS,
+  PERSONALIZE_OPTIONS,
+  peopleLabel,
+  pollGenerationUntilDone,
+  quoteAiCredits,
+  resolveGenerationImageUrl,
+  useAiStudioSession,
+  type AspectRatioKey,
+  type ImageSizeKey,
+  type LightingModeKey,
+  type PeopleAgeKey,
+  type PeopleGenderKey,
+  type PersonalizeOptionKey,
+  type ScenePerson,
+} from "@/lib/ai-studio";
+import { renderScenePreviewBlob } from "@/lib/ai-studio/scene-preview";
+import { uploadPortalFile } from "@/lib/files/upload";
+import { PortalCrmError } from "@/lib/portal-crm";
+
+type PlacedItem = {
+  uid: string;
+  product: CatalogProduct;
+  x: number;
+  y: number;
+  scale: number;
+};
+
+const FALLBACK_THUMB = "from-stone-200 to-stone-100";
+
+const chipBase =
+  "h-9 rounded-full border text-xs font-bold transition inline-flex items-center justify-center gap-1.5 px-3";
+const chipActive =
+  "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)]";
+const chipIdle =
+  "bg-white text-[color:var(--istikbal-blue)] border-black/10 hover:border-[color:var(--istikbal-blue)]/30";
+
+function AiStudioPage() {
+  const router = useRouter();
+  const { sessionId, ready: sessionReady } = useAiStudioSession();
+  const {
+    collections,
+    loading: filtersLoading,
+  } = useCatalogFilters();
+
+  const [mode, setMode] = useState<"auto" | "manual">("auto");
+  const [openSections, setOpenSections] = useState({
+    design: true,
+    products: true,
+    lighting: false,
+    people: false,
+    personalize: false,
+    resolution: false,
+  });
+  const [productTab, setProductTab] = useState<"all" | "collections" | "categories">("collections");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [roomPreviewUrl, setRoomPreviewUrl] = useState<string | null>(null);
+  const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<PlacedItem[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrSession] = useState(() => Math.random().toString(36).slice(2, 8).toUpperCase());
+  const [promptNotes, setPromptNotes] = useState("");
+  const [creditCost, setCreditCost] = useState<number | null>(null);
+  const [busy, setBusy] = useState<"idle" | "upload" | "reference" | "render">("idle");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [lightingMode, setLightingMode] = useState<LightingModeKey>(DEFAULT_LIGHTING_MODE);
+  const [peopleGender, setPeopleGender] = useState<PeopleGenderKey | null>("female");
+  const [peopleAgeGroup, setPeopleAgeGroup] = useState<PeopleAgeKey | null>("young-adult");
+  const [scenePeople, setScenePeople] = useState<ScenePerson[]>([]);
+  const [personalizeOptions, setPersonalizeOptions] = useState<PersonalizeOptionKey[]>([]);
+  const [imageSize, setImageSize] = useState<ImageSizeKey>(DEFAULT_IMAGE_SIZE);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatioKey>(DEFAULT_ASPECT_RATIO);
+
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const roomInputRef = useRef<HTMLInputElement>(null);
+  const qrUploadInputRef = useRef<HTMLInputElement>(null);
+
+  const mobileUploadUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/ai/upload?s=${qrSession}`
+      : `/ai/upload?s=${qrSession}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(
+    mobileUploadUrl,
+  )}`;
+
+  const collectionChips = useMemo(() => collections.slice(0, 4), [collections]);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const quote = await quoteAiCredits("AI_STUDIO_ROOM", {
+          imageSize,
+          aspectRatio,
+          router,
+        });
+        if (!cancelled) setCreditCost(quote.creditAmount ?? null);
+      } catch {
+        if (!cancelled) setCreditCost(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionReady, router, imageSize, aspectRatio]);
+
+  const addPersonToScene = () => {
+    if (!peopleGender || !peopleAgeGroup) return;
+    setScenePeople((prev) => {
+      const idx = prev.findIndex(
+        (p) => p.gender === peopleGender && p.ageGroup === peopleAgeGroup,
+      );
+      if (idx >= 0) {
+        return prev.map((p, i) => (i === idx ? { ...p, quantity: p.quantity + 1 } : p));
+      }
+      return [...prev, { gender: peopleGender, ageGroup: peopleAgeGroup, quantity: 1 }];
+    });
+  };
+
+  const updatePersonQuantity = (index: number, delta: number) => {
+    setScenePeople((prev) =>
+      prev
+        .map((p, i) => (i === index ? { ...p, quantity: p.quantity + delta } : p))
+        .filter((p) => p.quantity > 0),
+    );
+  };
+
+  const removePerson = (index: number) => {
+    setScenePeople((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const togglePersonalize = (key: PersonalizeOptionKey) => {
+    setPersonalizeOptions((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  };
+  const handleCanvasDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const productJson = e.dataTransfer.getData("application/x-product");
+    if (!productJson || !canvasRef.current) return;
+    const product = JSON.parse(productJson) as CatalogProduct;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setPlaced((prev) => [
+      ...prev,
+      { uid: `${product.id}-${Date.now()}`, product, x, y, scale: 1 },
+    ]);
+  }, []);
+
+  const movePlaced = (uid: string, e: React.DragEvent) => {
+    if (!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setPlaced((prev) => prev.map((p) => (p.uid === uid ? { ...p, x, y } : p)));
+  };
+
+  const onRoomUpload = async (file?: File) => {
+    if (!file) return;
+    setError(null);
+    setBusy("upload");
+    try {
+      const localUrl = URL.createObjectURL(file);
+      setRoomPreviewUrl(localUrl);
+      const uploaded = await uploadPortalFile(file, router);
+      setReferenceImageUrl(uploaded);
+      setStatusMessage("Oda görseli yüklendi.");
+    } catch (err) {
+      if (err instanceof PortalCrmError && err.status === 401) return;
+      setError(err instanceof Error ? err.message : "Oda görseli yüklenemedi.");
+      setRoomPreviewUrl(null);
+      setReferenceImageUrl(null);
+    } finally {
+      setBusy("idle");
+    }
+  };
+
+  const handleGenerateReference = async () => {
+    if (!sessionId) return;
+    setError(null);
+    setBusy("reference");
+    setStatusMessage("Referans oda üretiliyor…");
+    try {
+      const generation = await generateRoomReference(
+        sessionId,
+        {
+          roomType: "living-room",
+          styleId: "modern",
+          roomSize: "medium",
+          promptNotes: promptNotes || undefined,
+        },
+        router,
+      );
+      const done = isGenerationSuccessful(generation.status)
+        ? generation
+        : await pollGenerationUntilDone({
+            sessionId,
+            generationId: generation.id,
+            kind: "reference",
+            router,
+          });
+      if (!isGenerationSuccessful(done.status)) {
+        throw new Error("Referans oda üretimi başarısız oldu.");
+      }
+      const url = resolveGenerationImageUrl(done);
+      if (!url) throw new Error("Üretilen görsel bulunamadı.");
+      setRoomPreviewUrl(url);
+      setReferenceImageUrl(url);
+      setStatusMessage("Referans oda hazır.");
+    } catch (err) {
+      if (err instanceof PortalCrmError && err.status === 401) return;
+      setError(err instanceof Error ? err.message : "Oda üretilemedi.");
+    } finally {
+      setBusy("idle");
+    }
+  };
+
+  const handleRender = async () => {
+    if (!sessionId) return;
+    if (!referenceImageUrl) {
+      setError("Önce bir oda görseli yükleyin veya Oda Üret ile referans oluşturun.");
+      return;
+    }
+    setError(null);
+    setBusy("render");
+    setStatusMessage("Sahne render ediliyor…");
+    try {
+      const products = placed.map((p) => ({
+        productId: p.product.id,
+        name: p.product.name,
+        quantity: 1,
+        imageUrl: p.product.thumbnailUrl || undefined,
+      }));
+
+      let sceneLayout: string | undefined;
+      let scenePreviewImageUrl: string | undefined;
+
+      if (mode === "manual" && placed.length > 0 && canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const layout = {
+          version: 1,
+          stageWidth: Math.round(rect.width),
+          stageHeight: Math.round(rect.height),
+          backgroundImageUrl: referenceImageUrl,
+          objects: placed.map((p, index) => ({
+            id: p.uid,
+            src: p.product.thumbnailUrl || "",
+            x: (p.x / 100) * rect.width,
+            y: (p.y / 100) * rect.height,
+            width: 96,
+            height: 96,
+            scaleX: p.scale,
+            scaleY: p.scale,
+            rotation: 0,
+            zIndex: index,
+          })),
+        };
+        sceneLayout = JSON.stringify(layout);
+
+        const previewBlob = await renderScenePreviewBlob({
+          stageWidth: rect.width,
+          stageHeight: rect.height,
+          backgroundImageUrl: referenceImageUrl,
+          objects: placed.map((p) => ({
+            src: p.product.thumbnailUrl,
+            xPct: p.x,
+            yPct: p.y,
+            scale: p.scale,
+            name: p.product.name,
+          })),
+        });
+        if (!previewBlob) throw new Error("Sahne önizlemesi oluşturulamadı.");
+        const previewFile = new File([previewBlob], `scene-preview-${Date.now()}.png`, {
+          type: "image/png",
+        });
+        scenePreviewImageUrl = await uploadPortalFile(previewFile, router);
+      }
+
+      const generation = await generateRoomDesign(
+        sessionId,
+        {
+          designMode: mode,
+          promptNotes: promptNotes || undefined,
+          referenceImageUrl,
+          sceneLayout,
+          scenePreviewImageUrl,
+          products: products.length ? products : undefined,
+          styleId: "modern",
+          roomType: "living-room",
+          lightingMode,
+          lightingDetailed: true,
+          people: scenePeople.length ? scenePeople : undefined,
+          peopleActive: scenePeople.length > 0,
+          personalizeOptions: personalizeOptions.length ? personalizeOptions : undefined,
+          imageSize,
+          aspectRatio,
+        },
+        router,
+      );
+
+      const done = isGenerationSuccessful(generation.status)
+        ? generation
+        : await pollGenerationUntilDone({
+            sessionId,
+            generationId: generation.id,
+            kind: "room",
+            router,
+          });
+
+      if (!isGenerationSuccessful(done.status)) {
+        throw new Error("Render başarısız oldu.");
+      }
+      const url = resolveGenerationImageUrl(done);
+      if (!url) throw new Error("Render görseli bulunamadı.");
+      setRoomPreviewUrl(url);
+      setStatusMessage("Render tamamlandı.");
+    } catch (err) {
+      if (err instanceof PortalCrmError && err.status === 401) return;
+      setError(err instanceof Error ? err.message : "Render başlatılamadı.");
+    } finally {
+      setBusy("idle");
+    }
+  };
+
+  const toggle = (k: keyof typeof openSections) =>
+    setOpenSections((s) => ({ ...s, [k]: !s[k] }));
+
+  const estimatedCost = creditCost ?? Math.max(2, placed.length + 2);
+  const isBusy = busy !== "idle";
+
+  return (
+    <div className="min-h-screen bg-[color:var(--istikbal-bg)] flex flex-col">
+      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0">
+        <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
+          <ArrowLeft className="size-4" /> Geri
+        </Link>
+        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">AI STUDIO</div>
+        <div className="flex-1" />
+        <Link href="/" className="text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]">
+          <X className="size-5" />
+        </Link>
+      </header>
+
+      <div className="flex flex-1 min-h-0">
+      {(() => {
+        const sectionsContent = (
+          <div className="p-4 lg:p-5 space-y-4">
+            <Section title="Tasarım Modu" open={openSections.design} onToggle={() => toggle("design")}>
+              <div className="grid grid-cols-2 gap-3">
+                <ModeCard
+                  active={mode === "auto"}
+                  onClick={() => setMode("auto")}
+                  icon={<Wand2 className="size-5" />}
+                  title="OTOMATİK"
+                  subtitle="Nesneleri AI yerleştirir"
+                />
+                <ModeCard
+                  active={mode === "manual"}
+                  onClick={() => setMode("manual")}
+                  icon={<Hand className="size-5" />}
+                  title="MANUEL"
+                  subtitle="Sürükle bırak"
+                />
+              </div>
+            </Section>
+
+            <Section
+              title="Ürünler"
+              icon={<Sofa className="size-4" />}
+              open={openSections.products}
+              onToggle={() => toggle("products")}
+            >
+              <div className="grid grid-cols-3 gap-1 mb-3 bg-[color:var(--istikbal-blue-soft)] rounded-full p-1">
+                {([
+                  ["all", "Tümü"],
+                  ["collections", "Koleksiyon"],
+                  ["categories", "Kategori"],
+                ] as const).map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => setProductTab(k)}
+                    className={`h-8 min-w-0 rounded-full text-[10.5px] font-bold tracking-tight leading-none px-1 truncate transition ${
+                      productTab === k
+                        ? "bg-[color:var(--istikbal-blue)] text-white"
+                        : "text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+                    }`}
+                  >
+                    {label.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="w-full h-10 rounded-full border border-dashed border-black/15 text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:border-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)] flex items-center justify-center gap-2 transition"
+              >
+                <Upload className="size-4" /> Ürün Seç
+              </button>
+
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {filtersLoading && (
+                  <div className="col-span-2 text-xs text-[color:var(--istikbal-blue)]/50 py-2">Koleksiyonlar yükleniyor…</div>
+                )}
+                {collectionChips.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setPickerOpen(true)}
+                    className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--istikbal-blue)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)] transition truncate"
+                  >
+                    <span className="text-[color:var(--istikbal-blue)]/50">▦</span>
+                    <span className="truncate">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="w-full mt-3 h-9 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] transition"
+              >
+                Daha fazla yükle
+              </button>
+            </Section>
+
+            <Section title="Aydınlatma" icon={<Lightbulb className="size-4" />} open={openSections.lighting} onToggle={() => toggle("lighting")}>
+              <div className="space-y-3">
+                <div className="grid grid-cols-5 gap-1.5">
+                  {LIGHTING_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      title={opt.label}
+                      onClick={() => setLightingMode(opt.key)}
+                      className={`h-12 rounded-xl border text-[10px] font-bold leading-tight px-1 transition ${
+                        lightingMode === opt.key ? chipActive : chipIdle
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={LIGHTING_OPTIONS.length - 1}
+                  step={1}
+                  value={Math.max(
+                    LIGHTING_OPTIONS.findIndex((o) => o.key === lightingMode),
+                    0,
+                  )}
+                  onChange={(e) => {
+                    const next = LIGHTING_OPTIONS[Number(e.target.value)]?.key;
+                    if (next) setLightingMode(next);
+                  }}
+                  className="w-full accent-[color:var(--istikbal-blue)]"
+                />
+              </div>
+            </Section>
+
+            <Section title="İnsanlar" icon={<Users className="size-4" />} open={openSections.people} onToggle={() => toggle("people")}>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">Cinsiyet</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PEOPLE_GENDER_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setPeopleGender(opt.key)}
+                        className={`${chipBase} w-full ${peopleGender === opt.key ? chipActive : chipIdle}`}
+                      >
+                        <span>{opt.symbol}</span> {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">Yaş</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {PEOPLE_AGE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setPeopleAgeGroup(opt.key)}
+                        className={`${chipBase} w-full ${peopleAgeGroup === opt.key ? chipActive : chipIdle}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={addPersonToScene}
+                  disabled={!peopleGender || !peopleAgeGroup}
+                  className="w-full h-10 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="size-3.5" /> Sahneye ekle
+                </button>
+                {scenePeople.length > 0 && (
+                  <ul className="space-y-2">
+                    {scenePeople.map((person, index) => (
+                      <li
+                        key={`${person.gender}-${person.ageGroup}`}
+                        className="flex items-center gap-2 rounded-xl border border-black/5 bg-white px-2.5 py-2"
+                      >
+                        <span className="flex-1 text-xs font-semibold text-[color:var(--istikbal-blue)] truncate">
+                          {peopleLabel(person)}
+                        </span>
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => updatePersonQuantity(index, -1)}
+                            className="size-7 rounded-full border border-black/10 hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center"
+                          >
+                            <Minus className="size-3.5" />
+                          </button>
+                          <span className="w-5 text-center text-xs font-bold text-[color:var(--istikbal-blue)]">
+                            {person.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updatePersonQuantity(index, 1)}
+                            className="size-7 rounded-full border border-black/10 hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center"
+                          >
+                            <Plus className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removePerson(index)}
+                            className="size-7 rounded-full border border-black/10 hover:bg-rose-50 text-rose-600 inline-flex items-center justify-center"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </Section>
+
+            <Section title="Kişiselleştir" icon={<Palette className="size-4" />} open={openSections.personalize} onToggle={() => toggle("personalize")}>
+              <div className="grid grid-cols-1 gap-2">
+                {PERSONALIZE_OPTIONS.map((opt) => {
+                  const active = personalizeOptions.includes(opt.key);
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => togglePersonalize(opt.key)}
+                      className={`${chipBase} w-full justify-start ${active ? chipActive : chipIdle}`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+
+            <Section title="Çözünürlük ve Boyut" icon={<Settings2 className="size-4" />} open={openSections.resolution} onToggle={() => toggle("resolution")}>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">Çözünürlük</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {IMAGE_SIZE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setImageSize(opt.key)}
+                        className={`rounded-xl border px-2 py-3 text-center transition ${
+                          imageSize === opt.key ? chipActive : chipIdle
+                        }`}
+                      >
+                        <div className="text-sm font-extrabold">{opt.label}</div>
+                        <div className={`text-[10px] mt-0.5 ${imageSize === opt.key ? "text-white/80" : "text-[color:var(--istikbal-blue)]/50"}`}>
+                          {opt.multiplier}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">En-boy oranı</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {ASPECT_RATIO_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setAspectRatio(opt.key)}
+                        className={`${chipBase} w-full ${aspectRatio === opt.key ? chipActive : chipIdle}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Section>
+          </div>
+        );
+
+        const RAIL_ITEMS: { key: keyof typeof openSections; icon: typeof Wand2; label: string }[] = [
+          { key: "design", icon: Wand2, label: "Mod" },
+          { key: "products", icon: Sofa, label: "Ürünler" },
+          { key: "lighting", icon: Lightbulb, label: "Işık" },
+          { key: "people", icon: Users, label: "İnsan" },
+          { key: "personalize", icon: Palette, label: "Stil" },
+          { key: "resolution", icon: Settings2, label: "Boyut" },
+        ];
+
+        return (
+          <>
+            <aside className="hidden lg:block w-[360px] shrink-0 border-r border-black/5 bg-white overflow-y-auto">
+              {sectionsContent}
+            </aside>
+
+            <aside className="lg:hidden w-14 shrink-0 border-r border-black/5 bg-white flex flex-col items-center py-3 gap-1">
+              {RAIL_ITEMS.map(({ key, icon: Icon, label }) => (
+                <button
+                  key={key}
+                  onClick={() => { setOpenSections((s) => ({ ...s, [key]: true })); setMobileOpen(true); }}
+                  className="size-11 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--istikbal-blue)]/70 hover:bg-[color:var(--istikbal-blue-soft)] hover:text-[color:var(--istikbal-blue)] transition"
+                  title={label}
+                >
+                  <Icon className="size-4" />
+                  <span className="text-[8px] font-bold tracking-wider">{label.toUpperCase()}</span>
+                </button>
+              ))}
+            </aside>
+
+            {mobileOpen && (
+              <div className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
+                <aside
+                  className="absolute left-14 top-0 bottom-0 w-[320px] max-w-[80vw] bg-white overflow-y-auto shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="sticky top-0 z-10 px-4 h-12 bg-white border-b border-black/5 flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">AYARLAR</span>
+                    <button onClick={() => setMobileOpen(false)} className="text-[color:var(--istikbal-blue)]/50 hover:text-[color:var(--istikbal-blue)]">
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                  {sectionsContent}
+                </aside>
+              </div>
+            )}
+
+            <main className="flex-1 flex flex-col min-w-0">
+              <div className="px-3 sm:px-5 lg:px-8 pt-3 lg:pt-8 pb-2 lg:pb-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h1 className="text-lg sm:text-xl lg:text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight truncate">AI Sahne Oluşturucu</h1>
+                  <p className="hidden md:block mt-1.5 text-sm text-[color:var(--istikbal-blue)]/60">
+                    AI ile üretilen oda referansları ve katalog ürünleriyle oda sahneleri oluşturun.
+                  </p>
+                </div>
+              </div>
+
+              {(error || statusMessage) && (
+                <div className="px-3 sm:px-5 lg:px-8 pb-2">
+                  {error && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+                  )}
+                  {!error && statusMessage && (
+                    <div className="rounded-xl border border-[color:var(--istikbal-blue)]/15 bg-white px-3 py-2 text-sm text-[color:var(--istikbal-blue)]/70">
+                      {statusMessage}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex-1 px-3 sm:px-5 lg:px-8 pb-3 lg:pb-6 min-h-0">
+                <div
+                  ref={canvasRef}
+                  onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }}
+                  onDrop={handleCanvasDrop}
+                  onClick={(e) => { if (e.target === e.currentTarget) setSelectedUid(null); }}
+                  className="relative w-full h-full min-h-[360px] lg:min-h-[520px] rounded-2xl bg-white border border-black/5 shadow-sm overflow-hidden"
+                  style={roomPreviewUrl ? { backgroundImage: `url(${roomPreviewUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+                >
+                  {!roomPreviewUrl && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                      <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-[color:var(--istikbal-blue-soft)] flex items-center justify-center mb-4 lg:mb-6">
+                        <ImageIcon className="size-7 lg:size-10 text-[color:var(--istikbal-blue)]/30" strokeWidth={1.5} />
+                      </div>
+                      <h2 className="text-sm lg:text-lg font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]">
+                        ODA GÖRSELİ EKLEYİN
+                      </h2>
+                      <p className="hidden sm:block mt-3 max-w-xl text-sm text-[color:var(--istikbal-blue)]/60">
+                        Müşteri oda fotoğrafı yükleyin veya boş bir referans oda üretin.
+                      </p>
+                      <div className="mt-4 lg:mt-6 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                        <button
+                          disabled={isBusy}
+                          onClick={() => roomInputRef.current?.click()}
+                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs lg:text-sm font-bold inline-flex items-center gap-2 disabled:opacity-60"
+                        >
+                          {busy === "upload" ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                          Oda Yükle
+                        </button>
+                        <button
+                          disabled={isBusy}
+                          onClick={() => setQrOpen(true)}
+                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)] disabled:opacity-60"
+                        >
+                          <QrCode className="size-4" /> QR ile Yükle
+                        </button>
+                        <button
+                          disabled={isBusy || !sessionReady}
+                          onClick={() => void handleGenerateReference()}
+                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)] disabled:opacity-60"
+                        >
+                          {busy === "reference" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                          Oda Üret
+                        </button>
+                      </div>
+                      <input ref={roomInputRef} type="file" accept="image/*" hidden onChange={(e) => void onRoomUpload(e.target.files?.[0])} />
+                    </div>
+                  )}
+
+                  {placed.map((it) => (
+                    <div
+                      key={it.uid}
+                      draggable
+                      onDragStart={() => setDraggingId(it.uid)}
+                      onDragEnd={(e) => { movePlaced(it.uid, e); setDraggingId(null); }}
+                      onClick={(e) => { e.stopPropagation(); setSelectedUid(it.uid); }}
+                      className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none ${
+                        selectedUid === it.uid ? "ring-2 ring-[color:var(--istikbal-blue)] ring-offset-2" : ""
+                      } ${draggingId === it.uid ? "opacity-50" : ""} rounded-xl`}
+                      style={{ left: `${it.x}%`, top: `${it.y}%`, transform: `translate(-50%,-50%) scale(${it.scale})` }}
+                    >
+                      <ProductThumb product={it.product} size={96} />
+                      {selectedUid === it.uid && (
+                        <div className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-black/10 rounded-full shadow-md px-1 py-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPlaced((p) => p.map((x) => x.uid === it.uid ? { ...x, scale: Math.max(0.4, x.scale - 0.1) } : x)); }}
+                            className="size-7 rounded-full hover:bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] text-sm font-bold"
+                          >−</button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPlaced((p) => p.map((x) => x.uid === it.uid ? { ...x, scale: Math.min(2.5, x.scale + 0.1) } : x)); }}
+                            className="size-7 rounded-full hover:bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] text-sm font-bold"
+                          >+</button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPlaced((p) => p.filter((x) => x.uid !== it.uid)); setSelectedUid(null); }}
+                            className="size-7 rounded-full hover:bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] inline-flex items-center justify-center"
+                          ><Trash2 className="size-3.5" /></button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {roomPreviewUrl && (
+                    <button
+                      onClick={() => { setRoomPreviewUrl(null); setReferenceImageUrl(null); setPlaced([]); setSelectedUid(null); setStatusMessage(null); }}
+                      className="absolute top-3 right-3 h-9 px-3 rounded-full bg-white/90 backdrop-blur border border-black/10 text-xs font-bold text-[color:var(--istikbal-blue)] inline-flex items-center gap-1.5 hover:bg-white"
+                    >
+                      <RotateCcw className="size-3.5" /> Sıfırla
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="px-3 sm:px-5 lg:px-8 pb-3 lg:pb-6">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="flex-1 relative min-w-0">
+                    <Wand2 className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+                    <input
+                      value={promptNotes}
+                      onChange={(e) => setPromptNotes(e.target.value)}
+                      placeholder="Sahne için stil notları yazın…"
+                      className="w-full h-11 lg:h-12 pl-9 lg:pl-11 pr-3 lg:pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
+                    />
+                  </div>
+                  <div className="hidden md:inline-flex h-11 lg:h-12 px-3 lg:px-4 rounded-full bg-white border border-black/5 items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)]">
+                    <Sparkles className="size-4 text-[color:var(--istikbal-yellow)]" />
+                    <span className="text-[color:var(--istikbal-blue)]/50">MALİYET</span>
+                    <span className="text-base">{estimatedCost}</span>
+                  </div>
+                  <button
+                    disabled={isBusy || !sessionReady}
+                    onClick={() => void handleRender()}
+                    className="h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue)]/90 shrink-0 disabled:opacity-60"
+                  >
+                    {busy === "render" ? <Loader2 className="size-4 animate-spin" /> : null}
+                    <span className="hidden sm:inline">RENDER</span> <ArrowUp className="size-4" />
+                  </button>
+                </div>
+              </div>
+            </main>
+          </>
+        );
+      })()}
+      </div>
+
+      {pickerOpen && <ProductPicker onClose={() => setPickerOpen(false)} />}
+
+      {qrOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setQrOpen(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setQrOpen(false)}
+              className="absolute top-3 right-3 size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--istikbal-blue)]/60"
+            >
+              <X className="size-5" />
+            </button>
+            <div className="flex items-center gap-2 mb-1">
+              <Smartphone className="size-4 text-[color:var(--istikbal-blue)]" />
+              <h3 className="text-xs font-extrabold tracking-[0.18em] text-[color:var(--istikbal-blue)]">TELEFONDAN YÜKLE</h3>
+            </div>
+            <p className="text-xs text-[color:var(--istikbal-blue)]/60">
+              Müşteri telefonuyla QR kodu okutsun, görseli seçip göndersin.
+            </p>
+            <div className="mt-5 flex flex-col items-center">
+              <div className="p-3 bg-white border border-black/10 rounded-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrImageUrl} alt="QR kod" width={240} height={240} className="block" />
+              </div>
+              <div className="mt-3 text-[10px] font-mono text-[color:var(--istikbal-blue)]/50 break-all text-center px-2">
+                {mobileUploadUrl}
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-black/5">
+              <button
+                onClick={() => qrUploadInputRef.current?.click()}
+                className="w-full h-11 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs font-bold inline-flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)]"
+              >
+                <Upload className="size-4" /> Bu cihazdan manuel yükle
+              </button>
+              <input
+                ref={qrUploadInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  void onRoomUpload(e.target.files?.[0]);
+                  setQrOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Section({
+  title, icon, open, onToggle, children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  open: boolean;
+  onToggle: () => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-black/5 bg-white">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 h-12 flex items-center justify-between text-sm font-bold text-[color:var(--istikbal-blue)]"
+      >
+        <span className="inline-flex items-center gap-2">{icon}{title}</span>
+        {open ? <ChevronUp className="size-4 opacity-60" /> : <ChevronDown className="size-4 opacity-60" />}
+      </button>
+      {open && children && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
+
+function ModeCard({
+  active, onClick, icon, title, subtitle,
+}: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string; subtitle: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-xl px-3 py-4 text-center transition border ${
+        active
+          ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)] shadow-sm"
+          : "bg-white text-[color:var(--istikbal-blue)] border-black/5 hover:border-[color:var(--istikbal-blue)]/30"
+      }`}
+    >
+      <div className={`mx-auto mb-2 size-9 rounded-full flex items-center justify-center ${active ? "bg-white/20" : "bg-[color:var(--istikbal-blue-soft)]"}`}>
+        {icon}
+      </div>
+      <div className="text-[11px] font-extrabold tracking-[0.12em]">{title}</div>
+      <div className={`mt-1 text-[10px] ${active ? "text-white/80" : "text-[color:var(--istikbal-blue)]/55"}`}>{subtitle}</div>
+    </button>
+  );
+}
+
+function ProductThumb({ product, size = 80 }: { product: CatalogProduct; size?: number }) {
+  return (
+    <div
+      className={`rounded-xl bg-gradient-to-br ${FALLBACK_THUMB} border border-white shadow-md overflow-hidden relative`}
+      style={{ width: size, height: size }}
+    >
+      {product.thumbnailUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
+      ) : null}
+      <div className="absolute inset-x-1 bottom-1 rounded-md bg-white/70 px-1.5 py-0.5 text-[9px] font-bold text-[color:var(--istikbal-blue)] truncate text-center">
+        {product.name}
+      </div>
+    </div>
+  );
+}
+
+function ProductPicker({ onClose }: { onClose: () => void }) {
+  const [q, setQ] = useState("");
+  const [col, setCol] = useState<string | null>(null);
+  const [cat, setCat] = useState<string | null>(null);
+  const { collections, categories, loading: filtersLoading, error: filtersError } = useCatalogFilters();
+  const { products, loading, error } = useProductSearch({
+    query: q,
+    collectionId: col,
+    categoryId: cat,
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-6 overflow-y-auto" onClick={onClose}>
+      <div
+        className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden my-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-5 border-b border-black/5 flex items-start justify-between gap-4">
+          <p className="text-sm text-[color:var(--istikbal-blue)]/80 max-w-2xl">
+            Ürün adıyla arayın veya koleksiyon ve kategori ile filtreleyin.
+          </p>
+          <button onClick={onClose} className="size-9 rounded-full border border-black/10 text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="px-6 pt-5">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Ürün ara…"
+              className="w-full h-12 pl-11 pr-4 rounded-xl bg-[color:var(--istikbal-blue-soft)] border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/20 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
+            />
+          </div>
+        </div>
+
+        <div className="px-6 pt-5 space-y-3 text-sm">
+          <FilterRow
+            label="KOLEKSİYON"
+            items={collections.map((c) => ({ id: c.id, label: c.name }))}
+            active={col}
+            onSelect={setCol}
+          />
+          <FilterRow
+            label="KATEGORİ"
+            items={categories.map((c) => ({ id: c.id, label: c.name }))}
+            active={cat}
+            onSelect={setCat}
+          />
+        </div>
+
+        <div className="px-6 py-6 max-h-[60vh] overflow-y-auto">
+          {(filtersError || error) && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {filtersError || error}
+            </div>
+          )}
+          {loading || filtersLoading ? (
+            <div className="py-16 flex flex-col items-center gap-3 text-sm text-[color:var(--istikbal-blue)]/60">
+              <Loader2 className="size-6 animate-spin" />
+              Ürünler yükleniyor…
+            </div>
+          ) : products.length === 0 ? (
+            <div className="py-16 text-center text-sm text-[color:var(--istikbal-blue)]/60">
+              Eşleşen ürün bulunamadı.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {products.map((p) => (
+                <PickerCard key={p.id} product={p} onUsed={onClose} />
+              ))}
+            </div>
+          )}
+          <p className="mt-6 text-xs text-[color:var(--istikbal-blue)]/50 text-center">
+            İpucu: Bir ürünü sahneye yerleştirmek için sürükleyip bırakın.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FilterRow({
+  label, items, active, onSelect,
+}: {
+  label: string;
+  items: Array<{ id: string; label: string }>;
+  active: string | null;
+  onSelect: (v: string | null) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="text-[10px] font-extrabold tracking-[0.18em] text-[color:var(--istikbal-blue)]/40 w-24 shrink-0">{label}:</span>
+      <button
+        onClick={() => onSelect(null)}
+        className={`text-xs font-bold px-2 py-1 rounded ${active === null ? "text-[color:var(--istikbal-blue)] underline" : "text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]"}`}
+      >Tümü</button>
+      {items.map((it) => (
+        <button
+          key={it.id}
+          onClick={() => onSelect(it.id === active ? null : it.id)}
+          className={`text-xs font-bold px-2 py-1 rounded ${active === it.id ? "text-[color:var(--istikbal-blue)] underline" : "text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"}`}
+        >{it.label}</button>
+      ))}
+    </div>
+  );
+}
+
+function PickerCard({ product, onUsed }: { product: CatalogProduct; onUsed: () => void }) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("application/x-product", JSON.stringify(product));
+        e.dataTransfer.effectAllowed = "copy";
+      }}
+      onDragEnd={() => onUsed()}
+      className="group rounded-xl border border-black/5 bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-grab active:cursor-grabbing"
+      title="Sürükleyip sahneye bırakın"
+    >
+      <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative flex items-center justify-center text-[color:var(--istikbal-blue)]/30 text-xs font-semibold`}>
+        {product.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          "Görsel yok"
+        )}
+      </div>
+      <div className="mt-3 text-center text-xs font-bold text-[color:var(--istikbal-blue)] line-clamp-2 min-h-[2.5rem]">
+        {product.name}
+      </div>
+    </div>
+  );
+}
+
+export default AiStudioPage;
