@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslations } from "next-intl";
 
 const SCRIPT_SRC = "/vendor/sugar-room-designer.js";
 const APP_IDENTIFIER = "10203";
@@ -85,6 +86,7 @@ export const RoomDesignerHost = forwardRef<
   },
   ref,
 ) {
+  const t = useTranslations("hosts");
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const elRef = useRef<SugarRoomDesignerElement | null>(null);
@@ -125,14 +127,13 @@ export const RoomDesignerHost = forwardRef<
     <div className={className} style={{ position: "relative", minHeight: 0 }}>
       {!ready && !failed && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-50 text-sm text-[color:var(--istikbal-blue)]/60">
-          Oda tasarımcısı yükleniyor…
+          {t("roomDesignerLoading")}
         </div>
       )}
 
       {failed && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-50 px-6 text-center text-sm text-red-600">
-          Oda tasarımcısı yüklenemedi. `npm run sync:room-designer` çalıştırıp
-          sayfayı yenileyin.
+          {t("roomDesignerFailed")}
         </div>
       )}
 

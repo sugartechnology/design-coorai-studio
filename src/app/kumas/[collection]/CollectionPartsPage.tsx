@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getCollection } from "@/lib/catalog";
 import { parts, type Part } from "@/lib/kumas-data";
 
 function CollectionPartsPage() {
   const params = useParams<{ collection: string }>();
   const collectionId = params.collection;
-  const [collectionName, setCollectionName] = useState("Koleksiyon");
+  const t = useTranslations("kumas");
+  const tCommon = useTranslations("common");
+  const [collectionName, setCollectionName] = useState(tCommon("collectionFallback"));
 
   useEffect(() => {
     let cancelled = false;
@@ -29,12 +32,12 @@ function CollectionPartsPage() {
   return (
     <>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">Koleksiyon</p>
+        <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">{t("collectionEyebrow")}</p>
         <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
           {collectionName}
         </h1>
         <p className="mt-1.5 text-[color:var(--istikbal-blue)]/60">
-          Koleksiyona ait parçaları seçin ve kumaş kombinasyonunuzu oluşturun.
+          {t("collectionPartsHint")}
         </p>
       </div>
 
@@ -50,7 +53,7 @@ function CollectionPartsPage() {
             </div>
             <div className="px-4 py-4 text-center">
               <h3 className="font-bold text-[color:var(--istikbal-blue)]">{p.name}</h3>
-              <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{p.regions} kumaş bölgesi</p>
+              <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t("fabricRegionCount", { count: p.regions })}</p>
             </div>
           </Link>
         ))}

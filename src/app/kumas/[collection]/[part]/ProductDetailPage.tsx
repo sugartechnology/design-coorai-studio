@@ -14,6 +14,7 @@ import {
   RotateCw,
   Loader2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { parts, type Part } from "@/lib/kumas-data";
 import {
   getCollection,
@@ -49,7 +50,7 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DEFAULT_PART: Part = {
   slug: "uclu-koltuk",
-  name: "Ürün",
+  name: "",
   regions: 4,
   silhouette: "uclu",
 };
@@ -58,6 +59,9 @@ function ProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ collection: string; part: string }>();
   const searchParams = useSearchParams();
+  const t = useTranslations("kumas");
+  const tCommon = useTranslations("common");
+  const tCatalog = useTranslations("catalog");
   const collectionId = params.collection;
   const partParam = params.part;
   const fromCategory = searchParams.get("kategori");
@@ -65,7 +69,7 @@ function ProductDetailPage() {
   const mockPart = parts.find((x) => x.slug === partParam) ?? null;
   const isProductId = UUID_RE.test(partParam);
 
-  const [collectionName, setCollectionName] = useState("Koleksiyon");
+  const [collectionName, setCollectionName] = useState(tCommon("collectionFallback"));
   const [product, setProduct] = useState<CatalogProductDetail | null>(null);
   const [loading, setLoading] = useState(isProductId);
   const [error, setError] = useState<string | null>(null);
@@ -75,11 +79,13 @@ function ProductDetailPage() {
   /** Keep viewer mounted after first open so gallery switches don't reload the model. */
   const [viewerMounted, setViewerMounted] = useState(false);
 
-  const part: Part | null = mockPart ?? (isProductId || product ? DEFAULT_PART : null);
+  const part: Part | null = mockPart ?? (isProductId || product
+    ? { ...DEFAULT_PART, name: tCommon("productFallback") }
+    : null);
 
   const regionLabels = useMemo(
-    () => Array.from({ length: part?.regions ?? 0 }, (_, i) => `${i + 2}. Bölge`),
-    [part?.regions],
+    () => Array.from({ length: part?.regions ?? 0 }, (_, i) => t("regionLabel", { n: i + 2 })),
+    [part?.regions, t],
   );
 
   const sugarProductId = product?.productModalId?.trim() || null; // CRM productModalId ≡ Sugar sugarProductId
@@ -140,7 +146,7 @@ function ProductDetailPage() {
         } catch (err) {
           if (err instanceof PortalCrmError && err.status === 401) return;
           if (!cancelled) {
-            setError(err instanceof Error ? err.message : "Ürün yüklenemedi.");
+            setError(err instanceof Error ? err.message : tCatalog("productLoadError"));
             setProduct(null);
           }
         } finally {
@@ -161,12 +167,12 @@ function ProductDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [collectionId, isProductId, partParam, router]);
+  }, [collectionId, isProductId, partParam, router, tCatalog]);
 
   if (!isProductId && !mockPart) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
-        Ürün bulunamadı.
+        {t("productNotFound")}
       </div>
     );
   }
@@ -175,7 +181,7 @@ function ProductDetailPage() {
     return (
       <div className="rounded-2xl bg-white border border-black/5 py-20 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
         <Loader2 className="size-8 animate-spin" />
-        <p className="text-sm font-semibold">Ürün yükleniyor…</p>
+        <p className="text-sm font-semibold">{t("productsLoading")}</p>
       </div>
     );
   }
@@ -227,7 +233,7 @@ function ProductDetailPage() {
           href={backHref}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)] hover:opacity-80"
         >
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
       </div>
 
@@ -270,7 +276,7 @@ function ProductDetailPage() {
                 onClick={showInHome}
                 className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 inline-flex items-center gap-2 px-5 h-11 rounded-full bg-[color:var(--istikbal-blue)] text-white font-semibold text-sm shadow-lg hover:bg-[color:var(--istikbal-navy)] transition-colors"
               >
-                <Box className="size-4" /> Evinizde Görün
+                <Box className="size-4" /> {t("seeInYourHome")}
               </button>
             )}
             {galleryItems.length > 1 && (
@@ -278,7 +284,7 @@ function ProductDetailPage() {
                 type="button"
                 onClick={cycleGallery}
                 className="absolute top-5 right-5 z-10 size-10 grid place-items-center rounded-full bg-white/80 hover:bg-white text-[color:var(--istikbal-blue)] shadow-sm"
-                title="Sonraki görsel"
+                title={t("nextImageTitle")}
               >
                 <RotateCw className="size-4" />
               </button>
@@ -301,7 +307,7 @@ function ProductDetailPage() {
                   {item.kind === "3d" ? (
                     <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[color:var(--istikbal-blue)]/5 text-[color:var(--istikbal-blue)]">
                       <Box className="size-5" />
-                      <span className="text-[10px] font-bold tracking-wide">3D</span>
+                      <span className="text-[10px] font-bold tracking-wide">{t("gallery3d")}</span>
                     </span>
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -322,12 +328,12 @@ function ProductDetailPage() {
               {productTitle}
             </h2>
             {product?.sku && (
-              <p className="mt-1 text-xs text-[color:var(--istikbal-blue)]/50">SKU: {product.sku}</p>
+              <p className="mt-1 text-xs text-[color:var(--istikbal-blue)]/50">{t("skuLabel", { sku: product.sku })}</p>
             )}
           </div>
 
           <div className="mb-5 rounded-2xl bg-[color:var(--istikbal-blue)]/5 p-4">
-            <p className="text-xs font-bold text-[color:var(--istikbal-blue)] mb-2">KUMAŞ BÖLGELERİ</p>
+            <p className="text-xs font-bold text-[color:var(--istikbal-blue)] mb-2">{t("fabricRegionsTitle")}</p>
             <div className="flex items-center gap-1.5 mb-2">
               {regionLabels.map((r, i) => (
                 <div key={r} className="flex-1 h-2 rounded-full overflow-hidden bg-white">
@@ -342,7 +348,7 @@ function ProductDetailPage() {
               ))}
             </div>
             <p className="text-[10px] text-[color:var(--istikbal-blue)]/55 leading-relaxed">
-              Bölge eşleşmesi: Ana gövde + sırt yastıkları + kol + minder. Her bölge için uygun kumaşı seçin.
+              {t("regionMatchHelp")}
             </p>
           </div>
 
@@ -362,7 +368,7 @@ function ProductDetailPage() {
                         f ? "text-[color:var(--istikbal-blue)]/80" : "text-[color:var(--istikbal-blue)]/50"
                       }`}
                     >
-                      {f?.name || "Kumaş Seç"}
+                      {f?.name || t("chooseFabric")}
                     </span>
                     <span
                       className="size-7 rounded-md border border-black/10 shadow-inner"
@@ -384,11 +390,11 @@ function ProductDetailPage() {
               disabled={!allSelected}
               className="w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] disabled:bg-[color:var(--istikbal-blue)]/15 disabled:text-[color:var(--istikbal-blue)]/40 disabled:cursor-not-allowed transition-all shadow-md"
             >
-              <ShoppingCart className="size-4" /> Sepete Ekle
+              <ShoppingCart className="size-4" /> {t("addToCart")}
             </button>
             {!allSelected && (
               <p className="text-center text-xs font-semibold text-[#f0a400] bg-[color:var(--istikbal-yellow)]/15 py-2 rounded-xl">
-                Lütfen her bölge için bir kumaş seçiniz
+                {t("selectAllRegionsHint")}
               </p>
             )}
           </div>
@@ -421,6 +427,9 @@ function FabricPicker({
   onClose: () => void;
   onPick: (f: Fabric) => void;
 }) {
+  const t = useTranslations("kumas");
+  const tCommon = useTranslations("common");
+
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4"
@@ -440,9 +449,9 @@ function FabricPicker({
           <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/45">
             {region}
           </p>
-          <h3 className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">Uygun Kumaşlar</h3>
+          <h3 className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">{t("suitableFabricsTitle")}</h3>
           <p className="text-sm text-[color:var(--istikbal-blue)]/55 mt-1">
-            Sarı ikonlu kumaşlar bu bölge için özel uygulama gerektirir.
+            {t("suitableFabricsHint")}
           </p>
         </div>
 
@@ -474,7 +483,7 @@ function FabricPicker({
                   )}
                   {active && (
                     <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[color:var(--istikbal-blue)] text-white text-[11px] font-bold">
-                      <Check className="size-3" /> Seçili
+                      <Check className="size-3" /> {tCommon("selected")}
                     </span>
                   )}
                 </div>

@@ -19,42 +19,48 @@ export type PersonalizeOptionKey = "plant" | "art" | "decor";
 export type ImageSizeKey = "1K" | "2K" | "4K";
 export type AspectRatioKey = "16:9" | "9:16" | "4:5" | "1:1" | "3:4";
 
+/** Message keys under the `aiStudio` namespace (see messages/*.json). */
 export const LIGHTING_OPTIONS: ReadonlyArray<{
   key: LightingModeKey;
-  label: string;
+  labelKey:
+    | "lightingVerySunny"
+    | "lightingSunny"
+    | "lightingBalanced"
+    | "lightingEvening"
+    | "lightingNight";
 }> = [
-  { key: "very-sunny", label: "Çok güneşli" },
-  { key: "sunny", label: "Güneşli" },
-  { key: "balanced", label: "Dengeli" },
-  { key: "evening", label: "Akşam" },
-  { key: "night", label: "Gece" },
+  { key: "very-sunny", labelKey: "lightingVerySunny" },
+  { key: "sunny", labelKey: "lightingSunny" },
+  { key: "balanced", labelKey: "lightingBalanced" },
+  { key: "evening", labelKey: "lightingEvening" },
+  { key: "night", labelKey: "lightingNight" },
 ];
 
 export const PEOPLE_GENDER_OPTIONS: ReadonlyArray<{
   key: PeopleGenderKey;
-  label: string;
+  labelKey: "genderFemale" | "genderMale";
   symbol: string;
 }> = [
-  { key: "female", label: "Kadın", symbol: "♀" },
-  { key: "male", label: "Erkek", symbol: "♂" },
+  { key: "female", labelKey: "genderFemale", symbol: "♀" },
+  { key: "male", labelKey: "genderMale", symbol: "♂" },
 ];
 
 export const PEOPLE_AGE_OPTIONS: ReadonlyArray<{
   key: PeopleAgeKey;
-  label: string;
+  labelKey: "ageYoungAdult" | "ageChild" | "ageSenior";
 }> = [
-  { key: "young-adult", label: "Genç" },
-  { key: "child", label: "Çocuk" },
-  { key: "senior", label: "Yaşlı" },
+  { key: "young-adult", labelKey: "ageYoungAdult" },
+  { key: "child", labelKey: "ageChild" },
+  { key: "senior", labelKey: "ageSenior" },
 ];
 
 export const PERSONALIZE_OPTIONS: ReadonlyArray<{
   key: PersonalizeOptionKey;
-  label: string;
+  labelKey: "personalizePlant" | "personalizeArt" | "personalizeDecor";
 }> = [
-  { key: "plant", label: "Bitki ekle" },
-  { key: "art", label: "Sanat eseri" },
-  { key: "decor", label: "Dekor ekle" },
+  { key: "plant", labelKey: "personalizePlant" },
+  { key: "art", labelKey: "personalizeArt" },
+  { key: "decor", labelKey: "personalizeDecor" },
 ];
 
 export const IMAGE_SIZE_OPTIONS: ReadonlyArray<{
@@ -81,9 +87,3 @@ export const ASPECT_RATIO_OPTIONS: ReadonlyArray<{
 export const DEFAULT_LIGHTING_MODE: LightingModeKey = "balanced";
 export const DEFAULT_IMAGE_SIZE: ImageSizeKey = "1K";
 export const DEFAULT_ASPECT_RATIO: AspectRatioKey = "16:9";
-
-export function peopleLabel(person: ScenePerson): string {
-  const gender = PEOPLE_GENDER_OPTIONS.find((g) => g.key === person.gender)?.label ?? person.gender;
-  const age = PEOPLE_AGE_OPTIONS.find((a) => a.key === person.ageGroup)?.label ?? person.ageGroup;
-  return `${age} ${gender}`;
-}

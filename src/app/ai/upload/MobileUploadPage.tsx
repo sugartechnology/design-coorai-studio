@@ -2,9 +2,11 @@
 
 import { Upload, Check, Image as ImageIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Suspense, useRef, useState } from "react";
 
 function MobileUploadPageInner() {
+  const t = useTranslations("aiUpload");
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("s") ?? "—";
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,10 +28,10 @@ function MobileUploadPageInner() {
     <div className="min-h-screen bg-[color:var(--istikbal-bg)] flex flex-col items-center px-5 py-8">
       <div className="w-full max-w-md">
         <h1 className="text-base font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]">
-          ODA GÖRSELİ YÜKLE
+          {t("title")}
         </h1>
         <p className="mt-2 text-xs text-[color:var(--istikbal-blue)]/60">
-          Oturum: <span className="font-mono">{sessionId}</span>
+          {t("sessionLabel", { id: sessionId })}
         </p>
 
         <div
@@ -37,11 +39,11 @@ function MobileUploadPageInner() {
           className="mt-6 aspect-[4/3] rounded-2xl bg-white border-2 border-dashed border-[color:var(--istikbal-blue)]/20 flex items-center justify-center overflow-hidden cursor-pointer"
         >
           {preview ? (
-            <img src={preview} alt="seçilen" className="w-full h-full object-cover" />
+            <img src={preview} alt={t("selectedAlt")} className="w-full h-full object-cover" />
           ) : (
             <div className="flex flex-col items-center text-[color:var(--istikbal-blue)]/40">
               <ImageIcon className="size-10 mb-2" strokeWidth={1.5} />
-              <span className="text-xs font-semibold">Görsel seçmek için dokunun</span>
+              <span className="text-xs font-semibold">{t("tapToSelect")}</span>
             </div>
           )}
         </div>
@@ -60,7 +62,7 @@ function MobileUploadPageInner() {
             onClick={() => inputRef.current?.click()}
             className="h-12 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-sm font-bold inline-flex items-center justify-center gap-2"
           >
-            <Upload className="size-4" /> {preview ? "Değiştir" : "Görsel Seç"}
+            <Upload className="size-4" /> {preview ? t("changeImage") : t("chooseImage")}
           </button>
 
           <button
@@ -68,16 +70,16 @@ function MobileUploadPageInner() {
             onClick={send}
             className="h-12 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-bold inline-flex items-center justify-center gap-2 disabled:opacity-40"
           >
-            {sent ? <><Check className="size-4" /> Gönderildi</> : "Masaüstüne Gönder"}
+            {sent ? <><Check className="size-4" /> {t("sent")}</> : t("sendToDesktop")}
           </button>
 
           {sent && (
             <p className="text-center text-xs text-[color:var(--istikbal-blue)]/60">
-              Görseliniz iletildi. Masaüstü ekranına dönebilirsiniz.
+              {t("sentHint")}
             </p>
           )}
           <p className="text-center text-[10px] text-[color:var(--istikbal-blue)]/40 mt-2">
-            (Demo: gerçek aktarım için Cloud bağlandığında otomatik çalışacak.)
+            {t("demoNote")}
           </p>
         </div>
       </div>

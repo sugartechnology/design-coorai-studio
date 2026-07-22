@@ -27,6 +27,7 @@ import {
   Trash2,
   RotateCcw,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
@@ -49,7 +50,6 @@ import {
   PEOPLE_AGE_OPTIONS,
   PEOPLE_GENDER_OPTIONS,
   PERSONALIZE_OPTIONS,
-  peopleLabel,
   pollGenerationUntilDone,
   quoteAiCredits,
   resolveGenerationImageUrl,
@@ -91,6 +91,8 @@ const chipIdle =
   "bg-white text-[color:var(--istikbal-blue)] border-black/10 hover:border-[color:var(--istikbal-blue)]/30";
 
 function AiStudioPage() {
+  const t = useTranslations("aiStudio");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const { sessionId, ready: sessionReady } = useAiStudioSession();
   const {
@@ -290,10 +292,10 @@ function AiStudioPage() {
       setRoomPreviewUrl(localUrl);
       const uploaded = await uploadPortalFile(file, router);
       setReferenceImageUrl(uploaded);
-      setStatusMessage("Oda görseli yüklendi.");
+      setStatusMessage(t("statusRoomUploaded"));
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
-      setError(err instanceof Error ? err.message : "Oda görseli yüklenemedi.");
+      setError(err instanceof Error ? err.message : t("errorRoomUpload"));
       setRoomPreviewUrl(null);
       setReferenceImageUrl(null);
     } finally {
@@ -305,7 +307,7 @@ function AiStudioPage() {
     if (!sessionId) return;
     setError(null);
     setBusy("reference");
-    setStatusMessage("Referans oda üretiliyor…");
+    setStatusMessage(t("statusGeneratingReference"));
     try {
       const generation = await generateRoomReference(
         sessionId,
@@ -326,16 +328,16 @@ function AiStudioPage() {
             router,
           });
       if (!isGenerationSuccessful(done.status)) {
-        throw new Error("Referans oda üretimi başarısız oldu.");
+        throw new Error(t("errorReferenceFailed"));
       }
       const url = resolveGenerationImageUrl(done);
-      if (!url) throw new Error("Üretilen görsel bulunamadı.");
+      if (!url) throw new Error(t("errorGeneratedImageMissing"));
       setRoomPreviewUrl(url);
       setReferenceImageUrl(url);
-      setStatusMessage("Referans oda hazır.");
+      setStatusMessage(t("statusReferenceReady"));
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
-      setError(err instanceof Error ? err.message : "Oda üretilemedi.");
+      setError(err instanceof Error ? err.message : t("errorRoomGenerate"));
     } finally {
       setBusy("idle");
     }
@@ -344,12 +346,12 @@ function AiStudioPage() {
   const handleRender = async () => {
     if (!sessionId) return;
     if (!referenceImageUrl) {
-      setError("Önce bir oda görseli yükleyin veya Oda Üret ile referans oluşturun.");
+      setError(t("errorNeedRoomFirst"));
       return;
     }
     setError(null);
     setBusy("render");
-    setStatusMessage("Sahne render ediliyor…");
+    setStatusMessage(t("statusRendering"));
     try {
       const products = selected.map((p) => ({
         productId: p.product.id,
@@ -395,7 +397,7 @@ function AiStudioPage() {
             name: p.product.name,
           })),
         });
-        if (!previewBlob) throw new Error("Sahne önizlemesi oluşturulamadı.");
+        if (!previewBlob) throw new Error(t("errorScenePreview"));
         const previewFile = new File([previewBlob], `scene-preview-${Date.now()}.png`, {
           type: "image/png",
         });
@@ -434,18 +436,18 @@ function AiStudioPage() {
           });
 
       if (!isGenerationSuccessful(done.status)) {
-        throw new Error("Render başarısız oldu.");
+        throw new Error(t("errorRenderFailed"));
       }
       const url = resolveGenerationImageUrl(done);
-      if (!url) throw new Error("Render görseli bulunamadı.");
+      if (!url) throw new Error(t("errorRenderImageMissing"));
       setRoomPreviewUrl(url);
       setPlaced([]);
       setSelected([]);
       setSelectedUid(null);
-      setStatusMessage("Render tamamlandı.");
+      setStatusMessage(t("statusRenderDone"));
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
-      setError(err instanceof Error ? err.message : "Render başlatılamadı.");
+      setError(err instanceof Error ? err.message : t("errorRenderStart"));
     } finally {
       setBusy("idle");
     }
@@ -461,9 +463,9 @@ function AiStudioPage() {
     <div className="min-h-screen bg-[color:var(--istikbal-bg)] flex flex-col">
       <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">AI STUDIO</div>
+        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
         <div className="flex-1" />
         <Link href="/" className="text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]">
           <X className="size-5" />
@@ -474,7 +476,7 @@ function AiStudioPage() {
       {(() => {
         const sectionsContent = (
           <div className="p-4 lg:p-5 space-y-4">
-            <Section title="Tasarım Modu" open={openSections.design} onToggle={() => toggle("design")}>
+            <Section title={t("sectionDesignMode")} open={openSections.design} onToggle={() => toggle("design")}>
               <div className="grid grid-cols-2 gap-3">
                 <ModeCard
                   active={mode === "auto"}
@@ -484,21 +486,21 @@ function AiStudioPage() {
                     setSelectedUid(null);
                   }}
                   icon={<Wand2 className="size-5" />}
-                  title="OTOMATİK"
-                  subtitle="Nesneleri AI yerleştirir"
+                  title={t("modeAuto")}
+                  subtitle={t("modeAutoSubtitle")}
                 />
                 <ModeCard
                   active={mode === "manual"}
                   onClick={() => setMode("manual")}
                   icon={<Hand className="size-5" />}
-                  title="MANUEL"
-                  subtitle="Sürükle bırak"
+                  title={t("modeManual")}
+                  subtitle={t("modeManualSubtitle")}
                 />
               </div>
             </Section>
 
             <Section
-              title="Ürünler"
+              title={t("sectionProducts")}
               icon={<Sofa className="size-4" />}
               badge={selected.length || undefined}
               open={openSections.products}
@@ -506,10 +508,10 @@ function AiStudioPage() {
             >
               <div className="grid grid-cols-3 gap-1 mb-3 bg-[color:var(--istikbal-blue-soft)] rounded-full p-1">
                 {([
-                  ["all", "Tümü"],
-                  ["categories", "Kategori"],
-                  ["collections", "Koleksiyon"],
-                ] as const).map(([k, label]) => (
+                  ["all", "tabAll"],
+                  ["categories", "tabCategory"],
+                  ["collections", "tabCollection"],
+                ] as const).map(([k, labelKey]) => (
                   <button
                     key={k}
                     onClick={() => setProductTab(k)}
@@ -519,7 +521,7 @@ function AiStudioPage() {
                         : "text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
                     }`}
                   >
-                    {label.toUpperCase()}
+                    {t(labelKey).toUpperCase()}
                   </button>
                 ))}
               </div>
@@ -528,14 +530,13 @@ function AiStudioPage() {
                 onClick={() => openPicker()}
                 className="w-full h-10 rounded-full border border-dashed border-black/15 text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:border-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)] flex items-center justify-center gap-2 transition"
               >
-                <Upload className="size-4" /> Ürün Seç
+                <Upload className="size-4" /> {t("selectProduct")}
               </button>
 
               {selected.length > 0 && (
                 <div className="mt-3 space-y-2">
                   <p className="text-[10px] font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]/45">
-                    SEÇİLEN ÜRÜNLER
-                    {mode === "manual" ? " · Sürükleyip sahneye bırakın" : ""}
+                    {mode === "manual" ? t("selectedProductsManualHint") : t("selectedProducts")}
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     {selected.map((item) => (
@@ -558,7 +559,7 @@ function AiStudioPage() {
                         }`}
                         title={
                           mode === "manual"
-                            ? "Sahneye sürükleyip bırakın"
+                            ? t("dragToSceneTitle")
                             : item.product.name
                         }
                       >
@@ -566,7 +567,7 @@ function AiStudioPage() {
                           type="button"
                           onClick={() => removeSelected(item.uid)}
                           className="absolute top-1 right-1 z-10 size-6 rounded-full bg-white/90 border border-black/10 text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)] inline-flex items-center justify-center"
-                          title="Kaldır"
+                          title={tCommon("remove")}
                         >
                           <X className="size-3" />
                         </button>
@@ -593,7 +594,7 @@ function AiStudioPage() {
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {filtersLoading && (
                   <div className="col-span-2 text-xs text-[color:var(--istikbal-blue)]/50 py-2">
-                    {productTab === "collections" ? "Koleksiyonlar" : "Kategoriler"} yükleniyor…
+                    {productTab === "collections" ? t("collectionsLoading") : t("categoriesLoading")}
                   </div>
                 )}
                 {productTab === "collections"
@@ -628,24 +629,24 @@ function AiStudioPage() {
                 onClick={() => openPicker()}
                 className="w-full mt-3 h-9 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] transition"
               >
-                Daha fazla yükle
+                {t("loadMore")}
               </button>
             </Section>
 
-            <Section title="Aydınlatma" icon={<Lightbulb className="size-4" />} open={openSections.lighting} onToggle={() => toggle("lighting")}>
+            <Section title={t("sectionLighting")} icon={<Lightbulb className="size-4" />} open={openSections.lighting} onToggle={() => toggle("lighting")}>
               <div className="space-y-3">
                 <div className="grid grid-cols-5 gap-1.5">
                   {LIGHTING_OPTIONS.map((opt) => (
                     <button
                       key={opt.key}
                       type="button"
-                      title={opt.label}
+                      title={t(opt.labelKey)}
                       onClick={() => setLightingMode(opt.key)}
                       className={`h-12 rounded-xl border text-[10px] font-bold leading-tight px-1 transition ${
                         lightingMode === opt.key ? chipActive : chipIdle
                       }`}
                     >
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -667,10 +668,10 @@ function AiStudioPage() {
               </div>
             </Section>
 
-            <Section title="İnsanlar" icon={<Users className="size-4" />} open={openSections.people} onToggle={() => toggle("people")}>
+            <Section title={t("sectionPeople")} icon={<Users className="size-4" />} open={openSections.people} onToggle={() => toggle("people")}>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">Cinsiyet</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("genderLabel")}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {PEOPLE_GENDER_OPTIONS.map((opt) => (
                       <button
@@ -679,13 +680,13 @@ function AiStudioPage() {
                         onClick={() => setPeopleGender(opt.key)}
                         className={`${chipBase} w-full ${peopleGender === opt.key ? chipActive : chipIdle}`}
                       >
-                        <span>{opt.symbol}</span> {opt.label}
+                        <span>{opt.symbol}</span> {t(opt.labelKey)}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">Yaş</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("ageLabel")}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {PEOPLE_AGE_OPTIONS.map((opt) => (
                       <button
@@ -694,7 +695,7 @@ function AiStudioPage() {
                         onClick={() => setPeopleAgeGroup(opt.key)}
                         className={`${chipBase} w-full ${peopleAgeGroup === opt.key ? chipActive : chipIdle}`}
                       >
-                        {opt.label}
+                        {t(opt.labelKey)}
                       </button>
                     ))}
                   </div>
@@ -705,17 +706,23 @@ function AiStudioPage() {
                   disabled={!peopleGender || !peopleAgeGroup}
                   className="w-full h-10 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                 >
-                  <Plus className="size-3.5" /> Sahneye ekle
+                  <Plus className="size-3.5" /> {t("addToScene")}
                 </button>
                 {scenePeople.length > 0 && (
                   <ul className="space-y-2">
-                    {scenePeople.map((person, index) => (
+                    {scenePeople.map((person, index) => {
+                      const genderOpt = PEOPLE_GENDER_OPTIONS.find((g) => g.key === person.gender);
+                      const ageOpt = PEOPLE_AGE_OPTIONS.find((a) => a.key === person.ageGroup);
+                      return (
                       <li
                         key={`${person.gender}-${person.ageGroup}`}
                         className="flex items-center gap-2 rounded-xl border border-black/5 bg-white px-2.5 py-2"
                       >
                         <span className="flex-1 text-xs font-semibold text-[color:var(--istikbal-blue)] truncate">
-                          {peopleLabel(person)}
+                          {t("peopleComboLabel", {
+                            age: ageOpt ? t(ageOpt.labelKey) : person.ageGroup,
+                            gender: genderOpt ? t(genderOpt.labelKey) : person.gender,
+                          })}
                         </span>
                         <div className="inline-flex items-center gap-1">
                           <button
@@ -744,13 +751,14 @@ function AiStudioPage() {
                           </button>
                         </div>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
               </div>
             </Section>
 
-            <Section title="Kişiselleştir" icon={<Palette className="size-4" />} open={openSections.personalize} onToggle={() => toggle("personalize")}>
+            <Section title={t("sectionPersonalize")} icon={<Palette className="size-4" />} open={openSections.personalize} onToggle={() => toggle("personalize")}>
               <div className="grid grid-cols-1 gap-2">
                 {PERSONALIZE_OPTIONS.map((opt) => {
                   const active = personalizeOptions.includes(opt.key);
@@ -761,17 +769,17 @@ function AiStudioPage() {
                       onClick={() => togglePersonalize(opt.key)}
                       className={`${chipBase} w-full justify-start ${active ? chipActive : chipIdle}`}
                     >
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </button>
                   );
                 })}
               </div>
             </Section>
 
-            <Section title="Çözünürlük ve Boyut" icon={<Settings2 className="size-4" />} open={openSections.resolution} onToggle={() => toggle("resolution")}>
+            <Section title={t("sectionResolution")} icon={<Settings2 className="size-4" />} open={openSections.resolution} onToggle={() => toggle("resolution")}>
               <div className="space-y-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">Çözünürlük</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("resolutionLabel")}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {IMAGE_SIZE_OPTIONS.map((opt) => (
                       <button
@@ -791,7 +799,7 @@ function AiStudioPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">En-boy oranı</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("aspectRatioLabel")}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {ASPECT_RATIO_OPTIONS.map((opt) => (
                       <button
@@ -811,12 +819,12 @@ function AiStudioPage() {
         );
 
         const RAIL_ITEMS: { key: keyof typeof openSections; icon: typeof Wand2; label: string }[] = [
-          { key: "design", icon: Wand2, label: "Mod" },
-          { key: "products", icon: Sofa, label: "Ürünler" },
-          { key: "lighting", icon: Lightbulb, label: "Işık" },
-          { key: "people", icon: Users, label: "İnsan" },
-          { key: "personalize", icon: Palette, label: "Stil" },
-          { key: "resolution", icon: Settings2, label: "Boyut" },
+          { key: "design", icon: Wand2, label: t("railMod") },
+          { key: "products", icon: Sofa, label: t("railProducts") },
+          { key: "lighting", icon: Lightbulb, label: t("railLight") },
+          { key: "people", icon: Users, label: t("railPeople") },
+          { key: "personalize", icon: Palette, label: t("railStyle") },
+          { key: "resolution", icon: Settings2, label: t("railSize") },
         ];
 
         return (
@@ -846,7 +854,7 @@ function AiStudioPage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="sticky top-0 z-10 px-4 h-12 bg-white border-b border-black/5 flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">AYARLAR</span>
+                    <span className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("mobileSettings")}</span>
                     <button onClick={() => setMobileOpen(false)} className="text-[color:var(--istikbal-blue)]/50 hover:text-[color:var(--istikbal-blue)]">
                       <X className="size-4" />
                     </button>
@@ -859,9 +867,9 @@ function AiStudioPage() {
             <main className="flex-1 flex flex-col min-w-0">
               <div className="px-3 sm:px-5 lg:px-8 pt-3 lg:pt-8 pb-2 lg:pb-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl lg:text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight truncate">AI Sahne Oluşturucu</h1>
+                  <h1 className="text-lg sm:text-xl lg:text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight truncate">{t("pageTitle")}</h1>
                   <p className="hidden md:block mt-1.5 text-sm text-[color:var(--istikbal-blue)]/60">
-                    AI ile üretilen oda referansları ve katalog ürünleriyle oda sahneleri oluşturun.
+                    {t("pageSubtitle")}
                   </p>
                 </div>
               </div>
@@ -898,10 +906,10 @@ function AiStudioPage() {
                         <ImageIcon className="size-7 lg:size-10 text-[color:var(--istikbal-blue)]/30" strokeWidth={1.5} />
                       </div>
                       <h2 className="text-sm lg:text-lg font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]">
-                        ODA GÖRSELİ EKLEYİN
+                        {t("emptyCanvasTitle")}
                       </h2>
                       <p className="hidden sm:block mt-3 max-w-xl text-sm text-[color:var(--istikbal-blue)]/60">
-                        Müşteri oda fotoğrafı yükleyin veya boş bir referans oda üretin.
+                        {t("emptyCanvasHint")}
                       </p>
                       <div className="mt-4 lg:mt-6 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
                         <button
@@ -910,14 +918,14 @@ function AiStudioPage() {
                           className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs lg:text-sm font-bold inline-flex items-center gap-2 disabled:opacity-60"
                         >
                           {busy === "upload" ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-                          Oda Yükle
+                          {t("uploadRoom")}
                         </button>
                         <button
                           disabled={isBusy}
                           onClick={() => setQrOpen(true)}
                           className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)] disabled:opacity-60"
                         >
-                          <QrCode className="size-4" /> QR ile Yükle
+                          <QrCode className="size-4" /> {t("uploadViaQr")}
                         </button>
                         <button
                           disabled={isBusy || !sessionReady}
@@ -925,7 +933,7 @@ function AiStudioPage() {
                           className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)] disabled:opacity-60"
                         >
                           {busy === "reference" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                          Oda Üret
+                          {t("generateRoom")}
                         </button>
                       </div>
                       <input ref={roomInputRef} type="file" accept="image/*" hidden onChange={(e) => void onRoomUpload(e.target.files?.[0])} />
@@ -976,7 +984,7 @@ function AiStudioPage() {
                       }}
                       className="absolute top-3 right-3 h-9 px-3 rounded-full bg-white/90 backdrop-blur border border-black/10 text-xs font-bold text-[color:var(--istikbal-blue)] inline-flex items-center gap-1.5 hover:bg-white"
                     >
-                      <RotateCcw className="size-3.5" /> Sıfırla
+                      <RotateCcw className="size-3.5" /> {t("resetScene")}
                     </button>
                   )}
                 </div>
@@ -989,13 +997,13 @@ function AiStudioPage() {
                     <input
                       value={promptNotes}
                       onChange={(e) => setPromptNotes(e.target.value)}
-                      placeholder="Sahne için stil notları yazın…"
+                      placeholder={t("promptPlaceholder")}
                       className="w-full h-11 lg:h-12 pl-9 lg:pl-11 pr-3 lg:pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
                     />
                   </div>
                   <div className="hidden md:inline-flex h-11 lg:h-12 px-3 lg:px-4 rounded-full bg-white border border-black/5 items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)]">
                     <Sparkles className="size-4 text-[color:var(--istikbal-yellow)]" />
-                    <span className="text-[color:var(--istikbal-blue)]/50">MALİYET</span>
+                    <span className="text-[color:var(--istikbal-blue)]/50">{t("costLabel")}</span>
                     <span className="text-base">{estimatedCost}</span>
                   </div>
                   <button
@@ -1004,7 +1012,7 @@ function AiStudioPage() {
                     className="h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue)]/90 shrink-0 disabled:opacity-60"
                   >
                     {busy === "render" ? <Loader2 className="size-4 animate-spin" /> : null}
-                    <span className="hidden sm:inline">RENDER</span> <ArrowUp className="size-4" />
+                    <span className="hidden sm:inline">{t("render")}</span> <ArrowUp className="size-4" />
                   </button>
                 </div>
               </div>
@@ -1044,15 +1052,15 @@ function AiStudioPage() {
             </button>
             <div className="flex items-center gap-2 mb-1">
               <Smartphone className="size-4 text-[color:var(--istikbal-blue)]" />
-              <h3 className="text-xs font-extrabold tracking-[0.18em] text-[color:var(--istikbal-blue)]">TELEFONDAN YÜKLE</h3>
+              <h3 className="text-xs font-extrabold tracking-[0.18em] text-[color:var(--istikbal-blue)]">{t("qrTitle")}</h3>
             </div>
             <p className="text-xs text-[color:var(--istikbal-blue)]/60">
-              Müşteri telefonuyla QR kodu okutsun, görseli seçip göndersin.
+              {t("qrHint")}
             </p>
             <div className="mt-5 flex flex-col items-center">
               <div className="p-3 bg-white border border-black/10 rounded-xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qrImageUrl} alt="QR kod" width={240} height={240} className="block" />
+                <img src={qrImageUrl} alt={t("qrAlt")} width={240} height={240} className="block" />
               </div>
               <div className="mt-3 text-[10px] font-mono text-[color:var(--istikbal-blue)]/50 break-all text-center px-2">
                 {mobileUploadUrl}
@@ -1063,7 +1071,7 @@ function AiStudioPage() {
                 onClick={() => qrUploadInputRef.current?.click()}
                 className="w-full h-11 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs font-bold inline-flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)]"
               >
-                <Upload className="size-4" /> Bu cihazdan manuel yükle
+                <Upload className="size-4" /> {t("qrManualUpload")}
               </button>
               <input
                 ref={qrUploadInputRef}
@@ -1166,6 +1174,9 @@ function ProductPicker({
   initialCategoryId?: string | null;
   initialCollectionId?: string | null;
 }) {
+  const t = useTranslations("aiStudio");
+  const tCommon = useTranslations("common");
+  const tCatalog = useTranslations("catalog");
   const [q, setQ] = useState("");
   const [col, setCol] = useState<string | null>(initialCollectionId);
   const [cat, setCat] = useState<string | null>(initialCategoryId);
@@ -1215,17 +1226,23 @@ function ProductPicker({
 
   const searchPlaceholder =
     mode === "categories"
-      ? "Kategori ara…"
+      ? t("searchCategoryPlaceholder")
       : mode === "collections"
-        ? "Koleksiyon ara…"
-        : "Ürün ara…";
+        ? t("searchCollectionPlaceholder")
+        : t("searchProductPlaceholder");
 
   const helpText =
     mode === "categories"
-      ? "Kategori adına göre arayın, bir kategori seçin; ürünlere tıklayarak sahneye ekleyin."
+      ? t("pickerHelpCategories")
       : mode === "collections"
-        ? "Koleksiyon adına göre arayın, bir koleksiyon seçin; ürünlere tıklayarak sahneye ekleyin."
-        : "Ürün adıyla arayın. İsterseniz kategori veya koleksiyon ile daraltın; tıklayarak sahneye ekleyin.";
+        ? t("pickerHelpCollections")
+        : t("pickerHelpAll");
+
+  const displayError = filtersError
+    ? tCatalog("filtersLoadError")
+    : error
+      ? tCatalog("productsLoadError")
+      : null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-6 overflow-y-auto" onClick={onClose}>
@@ -1257,7 +1274,8 @@ function ProductPicker({
         <div className="px-6 pt-5 space-y-3 text-sm">
           {(mode === "all" || mode === "categories") && (
             <FilterRow
-              label="KATEGORİ"
+              label={t("filterCategory")}
+              allLabel={tCommon("all")}
               items={filteredCategories.map((c) => ({ id: c.id, label: c.name }))}
               active={cat}
               onSelect={setCat}
@@ -1265,7 +1283,8 @@ function ProductPicker({
           )}
           {(mode === "all" || mode === "collections") && (
             <FilterRow
-              label="KOLEKSİYON"
+              label={t("filterCollection")}
+              allLabel={tCommon("all")}
               items={filteredCollections.map((c) => ({ id: c.id, label: c.name }))}
               active={col}
               onSelect={setCol}
@@ -1277,19 +1296,19 @@ function ProductPicker({
           ref={setPickerScrollEl}
           className="px-6 py-6 max-h-[60vh] overflow-y-auto"
         >
-          {(filtersError || error) && (
+          {displayError && (
             <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {filtersError || error}
+              {displayError}
             </div>
           )}
           {((loading && products.length === 0) || filtersLoading) ? (
             <div className="py-16 flex flex-col items-center gap-3 text-sm text-[color:var(--istikbal-blue)]/60">
               <Loader2 className="size-6 animate-spin" />
-              Ürünler yükleniyor…
+              {t("productsLoading")}
             </div>
           ) : products.length === 0 ? (
             <div className="py-16 text-center text-sm text-[color:var(--istikbal-blue)]/60">
-              Eşleşen ürün bulunamadı.
+              {t("noMatchingProducts")}
             </div>
           ) : (
             <>
@@ -1310,7 +1329,7 @@ function ProductPicker({
             </>
           )}
           <p className="mt-6 text-xs text-[color:var(--istikbal-blue)]/50 text-center">
-            İpucu: Ürüne tıklayarak sahneye ekleyin; dilerseniz sürükleyip bırakabilirsiniz.
+            {t("pickerTip")}
           </p>
         </div>
       </div>
@@ -1319,9 +1338,10 @@ function ProductPicker({
 }
 
 function FilterRow({
-  label, items, active, onSelect,
+  label, allLabel, items, active, onSelect,
 }: {
   label: string;
+  allLabel: string;
   items: Array<{ id: string; label: string }>;
   active: string | null;
   onSelect: (v: string | null) => void;
@@ -1333,7 +1353,7 @@ function FilterRow({
         type="button"
         onClick={() => onSelect(null)}
         className={`text-xs font-bold px-2 py-1 rounded ${active === null ? "text-[color:var(--istikbal-blue)] underline" : "text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]"}`}
-      >Tümü</button>
+      >{allLabel}</button>
       {items.map((it) => (
         <button
           key={it.id}
@@ -1353,6 +1373,8 @@ function PickerCard({
   product: CatalogProduct;
   onSelect: () => void;
 }) {
+  const t = useTranslations("aiStudio");
+  const tCommon = useTranslations("common");
   const draggedRef = useRef(false);
 
   return (
@@ -1378,14 +1400,14 @@ function PickerCard({
         }, 0);
       }}
       className="group rounded-xl border border-black/5 bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer text-left w-full"
-      title="Sahneye eklemek için tıklayın"
+      title={t("pickerCardTitle")}
     >
       <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative flex items-center justify-center text-[color:var(--istikbal-blue)]/30 text-xs font-semibold`}>
         {product.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          "Görsel yok"
+          tCommon("noImage")
         )}
       </div>
       <div className="mt-3 text-center text-xs font-bold text-[color:var(--istikbal-blue)] line-clamp-2 min-h-[2.5rem]">

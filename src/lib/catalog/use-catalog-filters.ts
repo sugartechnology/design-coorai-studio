@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PortalCrmError, getPortalSessionView } from "@/lib/portal-crm";
 import {
   listCollections,
@@ -11,6 +12,7 @@ import type { CatalogCategory, CatalogCollection } from "./catalog-types";
 
 export function useCatalogFilters() {
   const router = useRouter();
+  const t = useTranslations("catalog");
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [collections, setCollections] = useState<CatalogCollection[]>([]);
   const [categories, setCategories] = useState<CatalogCategory[]>([]);
@@ -35,13 +37,13 @@ export function useCatalogFilters() {
       setCategories(cats);
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
-      setError(err instanceof Error ? err.message : "Katalog filtreleri yüklenemedi.");
+      setError(err instanceof Error ? err.message : t("filtersLoadError"));
       setCollections([]);
       setCategories([]);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     void reload();

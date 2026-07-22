@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const SCRIPT_SRC = "/vendor/sugar-model-viewer.js";
 /** İstikbal / Sugar catalog company for model fetch */
@@ -49,6 +50,7 @@ export function ModelViewerHost({
   className,
   ar = true,
 }: ModelViewerHostProps) {
+  const t = useTranslations("hosts");
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const elRef = useRef<SugarModelViewerElement | null>(null);
@@ -73,14 +75,13 @@ export function ModelViewerHost({
     <div className={className} style={{ position: "relative", minHeight: 0 }}>
       {!ready && !failed && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-50/80 text-sm text-[color:var(--istikbal-blue)]/60">
-          3D görüntüleyici yükleniyor…
+          {t("modelViewerLoading")}
         </div>
       )}
 
       {failed && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-50 px-6 text-center text-sm text-red-600">
-          3D görüntüleyici yüklenemedi. `npm run sync:model-viewer` çalıştırıp
-          sayfayı yenileyin.
+          {t("modelViewerFailed")}
         </div>
       )}
 
@@ -91,7 +92,7 @@ export function ModelViewerHost({
           }}
           sugar-product-id={String(sugarProductId)}
           company-id={String(companyId)}
-          {...(ar ? { ar: "" } : {})}
+          {...(ar ? { ar: true } : {})}
           style={{ display: "block", width: "100%", height: "100%" }}
         />
       )}

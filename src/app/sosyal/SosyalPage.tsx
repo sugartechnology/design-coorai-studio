@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Instagram, Facebook, Share2, Check, Download, Heart, MessageCircle, Plus, Search } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import sofa1 from "@/assets/sosyal/sofa1.jpg.asset.json";
 import sofa2 from "@/assets/sosyal/sofa2.jpg.asset.json";
 import sofa3 from "@/assets/sosyal/sofa3.jpg.asset.json";
@@ -28,6 +29,8 @@ const RENDERS: Render[] = [
 
 
 function SosyalPage() {
+  const t = useTranslations("sosyal");
+  const tCommon = useTranslations("common");
   const [connected, setConnected] = useState(false);
   const [query, setQuery] = useState("");
   const [shared, setShared] = useState<Record<string, "instagram" | "facebook" | null>>({});
@@ -44,9 +47,9 @@ function SosyalPage() {
       {/* Header */}
       <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">SOSYAL MEDYA</div>
+        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
         <div className="flex-1" />
       </header>
 
@@ -59,17 +62,15 @@ function SosyalPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-[color:var(--istikbal-blue)]">Instagram hesabını bağla</h2>
+                <h2 className="text-lg font-bold text-[color:var(--istikbal-blue)]">{t("connectTitle")}</h2>
                 {connected && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                    <Check className="size-3" /> Bağlı
+                    <Check className="size-3" /> {tCommon("connected")}
                   </span>
                 )}
               </div>
               <p className="text-sm text-[color:var(--istikbal-blue)]/60 mt-0.5">
-                {connected
-                  ? "@istikbal_magaza · Tasarımlarını tek tıkla mağaza hesabından paylaş."
-                  : "Tek tıkla mağaza Instagram hesabından paylaş, takipçi etkileşimini panelden takip et."}
+                {connected ? t("connectedHint") : t("disconnectedHint")}
               </p>
             </div>
             <button
@@ -80,7 +81,7 @@ function SosyalPage() {
                   : "bg-[color:var(--istikbal-blue)] text-white hover:opacity-90"
               }`}
             >
-              {connected ? "Bağlantıyı Kes" : <><Plus className="size-4" /> Hesabı Bağla</>}
+              {connected ? t("disconnect") : <><Plus className="size-4" /> {t("connectAccount")}</>}
             </button>
           </div>
         </section>
@@ -89,15 +90,15 @@ function SosyalPage() {
         <section>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div>
-              <h3 className="text-xl font-bold text-[color:var(--istikbal-blue)]">Render Galerisi</h3>
-              <p className="text-sm text-[color:var(--istikbal-blue)]/60">Yapay zeka ile oluşturulan oda tasarımların.</p>
+              <h3 className="text-xl font-bold text-[color:var(--istikbal-blue)]">{t("galleryTitle")}</h3>
+              <p className="text-sm text-[color:var(--istikbal-blue)]/60">{t("gallerySubtitle")}</p>
             </div>
             <div className="relative w-full sm:w-72">
               <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Render ara..."
+                placeholder={t("searchPlaceholder")}
                 className="w-full h-10 pl-9 pr-3 rounded-xl bg-white border border-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
               />
             </div>
@@ -110,14 +111,14 @@ function SosyalPage() {
                 <div className="relative aspect-[4/5] bg-stone-100 overflow-hidden">
                   <img src={r.image} alt={r.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition duration-500" />
                   <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/85 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-semibold text-[color:var(--istikbal-blue)]">
-                    AI Render
+                    {t("aiRenderBadge")}
                   </div>
                   <div className="absolute top-3 right-3 bg-white/85 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-semibold text-[color:var(--istikbal-blue)]/70">
                     {r.date}
                   </div>
                   {shared[r.id] && (
                     <div className="absolute inset-0 bg-emerald-500/90 text-white flex items-center justify-center gap-2 font-semibold animate-in fade-in">
-                      <Check className="size-5" /> {shared[r.id] === "instagram" ? "Instagram'da paylaşıldı" : "Facebook'ta paylaşıldı"}
+                      <Check className="size-5" /> {shared[r.id] === "instagram" ? t("sharedOnInstagram") : t("sharedOnFacebook")}
                     </div>
                   )}
                 </div>
@@ -126,7 +127,7 @@ function SosyalPage() {
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-bold text-[color:var(--istikbal-blue)] leading-tight">{r.title}</h4>
-                    <button className="text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]" title="İndir">
+                    <button className="text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]" title={t("downloadTitle")}>
                       <Download className="size-4" />
                     </button>
                   </div>
@@ -142,13 +143,13 @@ function SosyalPage() {
                       onClick={() => share(r.id, "instagram")}
                       className="h-10 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-1.5 bg-gradient-to-br from-[#feda77] via-[#f58529] to-[#dd2a7b] hover:opacity-90 transition"
                     >
-                      <Instagram className="size-4" /> Instagram
+                      <Instagram className="size-4" /> {t("shareInstagram")}
                     </button>
                     <button
                       onClick={() => share(r.id, "facebook")}
                       className="h-10 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-1.5 bg-[#1877f2] hover:bg-[#1465d4] transition"
                     >
-                      <Facebook className="size-4" /> Facebook
+                      <Facebook className="size-4" /> {t("shareFacebook")}
                     </button>
                   </div>
                 </div>
@@ -158,7 +159,7 @@ function SosyalPage() {
 
           {filtered.length === 0 && (
             <div className="bg-white rounded-3xl p-12 text-center text-[color:var(--istikbal-blue)]/60">
-              Sonuç bulunamadı.
+              {tCommon("noResults")}
             </div>
           )}
         </section>

@@ -43,5 +43,4 @@ export {
   PEOPLE_AGE_OPTIONS,
   PEOPLE_GENDER_OPTIONS,
   PERSONALIZE_OPTIONS,
-  peopleLabel,
 } from "./room-options";

@@ -20,6 +20,9 @@ import {
   Upload,
 } from "lucide-react";
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useSetLocale } from "@/i18n/locale-client";
+import { isAppLocale } from "@/i18n/config";
 
 type SectionId =
   | "magaza"
@@ -33,21 +36,39 @@ type SectionId =
 
 const SECTIONS: {
   id: SectionId;
-  title: string;
-  desc: string;
+  titleKey:
+    | "navStoreTitle"
+    | "navNotificationsTitle"
+    | "navAppearanceTitle"
+    | "navLocaleTitle"
+    | "navSecurityTitle"
+    | "navBillingTitle"
+    | "navIntegrationsTitle"
+    | "navDataTitle";
+  descKey:
+    | "navStoreDesc"
+    | "navNotificationsDesc"
+    | "navAppearanceDesc"
+    | "navLocaleDesc"
+    | "navSecurityDesc"
+    | "navBillingDesc"
+    | "navIntegrationsDesc"
+    | "navDataDesc";
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  { id: "magaza",       title: "Mağaza Bilgileri",  desc: "Bayi adı, iletişim, adres ve logo", icon: Store },
-  { id: "bildirim",     title: "Bildirimler",       desc: "E-posta, push ve sistem uyarıları", icon: Bell },
-  { id: "gorunum",      title: "Görünüm",           desc: "Tema, renk vurguları ve yoğunluk",  icon: Palette },
-  { id: "dil",          title: "Dil & Bölge",       desc: "Arayüz dili, para birimi, saat",     icon: Languages },
-  { id: "guvenlik",     title: "Güvenlik",          desc: "Şifre, 2FA ve oturum yönetimi",      icon: Shield },
-  { id: "odeme",        title: "Ödeme & Fatura",    desc: "Plan, kart ve fatura geçmişi",       icon: CreditCard },
-  { id: "entegrasyon",  title: "Entegrasyonlar",    desc: "WhatsApp, Meta, Google, ERP",        icon: Plug },
-  { id: "veri",         title: "Veri & Yedekleme",  desc: "Dışa aktarma, yedek ve silme",       icon: Database },
+  { id: "magaza", titleKey: "navStoreTitle", descKey: "navStoreDesc", icon: Store },
+  { id: "bildirim", titleKey: "navNotificationsTitle", descKey: "navNotificationsDesc", icon: Bell },
+  { id: "gorunum", titleKey: "navAppearanceTitle", descKey: "navAppearanceDesc", icon: Palette },
+  { id: "dil", titleKey: "navLocaleTitle", descKey: "navLocaleDesc", icon: Languages },
+  { id: "guvenlik", titleKey: "navSecurityTitle", descKey: "navSecurityDesc", icon: Shield },
+  { id: "odeme", titleKey: "navBillingTitle", descKey: "navBillingDesc", icon: CreditCard },
+  { id: "entegrasyon", titleKey: "navIntegrationsTitle", descKey: "navIntegrationsDesc", icon: Plug },
+  { id: "veri", titleKey: "navDataTitle", descKey: "navDataDesc", icon: Database },
 ];
 
 function AyarlarPage() {
+  const t = useTranslations("ayarlar");
+  const tCommon = useTranslations("common");
   const [active, setActive] = useState<SectionId>("magaza");
 
   return (
@@ -55,9 +76,9 @@ function AyarlarPage() {
       {/* Header */}
       <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">AYARLAR</div>
+        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
         <div className="flex-1" />
       </header>
 
@@ -92,7 +113,7 @@ function AyarlarPage() {
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-[13px] font-semibold leading-tight truncate">
-                        {s.title}
+                        {t(s.titleKey)}
                       </span>
                       <span
                         className={[
@@ -100,7 +121,7 @@ function AyarlarPage() {
                           isActive ? "text-white/70" : "text-[color:var(--istikbal-blue)]/55",
                         ].join(" ")}
                       >
-                        {s.desc}
+                        {t(s.descKey)}
                       </span>
                     </span>
                     <ChevronRight
@@ -282,6 +303,8 @@ function GhostBtn({ children, onClick }: { children: React.ReactNode; onClick?: 
 /* ---------- Panels ---------- */
 
 function MagazaPanel() {
+  const t = useTranslations("ayarlar");
+  const tCommon = useTranslations("common");
   const [name, setName] = useState("İstikbal Kadıköy");
   const [email, setEmail] = useState("kadikoy@istikbal.com.tr");
   const [phone, setPhone] = useState("+90 216 555 12 34");
@@ -289,70 +312,78 @@ function MagazaPanel() {
 
   return (
     <PanelCard
-      title="Mağaza Bilgileri"
-      desc="Bayi profilin ve müşterilere görünen iletişim bilgileri."
-      action={<PrimaryBtn><Check className="size-4" /> Kaydet</PrimaryBtn>}
+      title={t("storeTitle")}
+      desc={t("storeDesc")}
+      action={<PrimaryBtn><Check className="size-4" /> {tCommon("save")}</PrimaryBtn>}
     >
       <div className="flex items-center gap-5 pb-6 mb-6 border-b border-black/5">
         <div className="size-20 rounded-2xl bg-gradient-to-br from-[color:var(--istikbal-blue)] to-[color:var(--istikbal-blue)]/70 grid place-items-center text-white text-2xl font-black italic">
           i
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">Mağaza Logosu</p>
+          <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t("storeLogo")}</p>
           <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">
-            PNG / SVG · maks 2MB · 1:1 önerilir
+            {t("storeLogoHint")}
           </p>
           <div className="flex gap-2 mt-3">
-            <GhostBtn><Upload className="size-4" /> Yükle</GhostBtn>
+            <GhostBtn><Upload className="size-4" /> {tCommon("upload")}</GhostBtn>
             <button className="text-xs font-semibold text-[color:var(--istikbal-blue)]/50 hover:text-[color:var(--istikbal-blue)] px-2">
-              Kaldır
+              {tCommon("remove")}
             </button>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Mağaza Adı"   icon={<Building2 className="size-4" />} value={name}  onChange={setName} />
-        <Field label="E-posta"      icon={<Mail className="size-4" />}       value={email} onChange={setEmail} type="email" />
-        <Field label="Telefon"      icon={<Phone className="size-4" />}      value={phone} onChange={setPhone} />
-        <Field label="Adres"        icon={<MapPin className="size-4" />}     value={addr}  onChange={setAddr} />
+        <Field label={t("storeName")} icon={<Building2 className="size-4" />} value={name} onChange={setName} />
+        <Field label={t("storeEmail")} icon={<Mail className="size-4" />} value={email} onChange={setEmail} type="email" />
+        <Field label={t("storePhone")} icon={<Phone className="size-4" />} value={phone} onChange={setPhone} />
+        <Field label={t("storeAddress")} icon={<MapPin className="size-4" />} value={addr} onChange={setAddr} />
       </div>
     </PanelCard>
   );
 }
 
 function BildirimPanel() {
+  const t = useTranslations("ayarlar");
   const [n, setN] = useState({ email: true, push: true, sms: false, news: true, weekly: false });
   return (
-    <PanelCard title="Bildirimler" desc="Hangi olaylar için bildirim almak istediğini seç.">
-      <ToggleRow title="E-posta bildirimleri" desc="Sipariş, randevu ve mesaj uyarıları" checked={n.email} onChange={(v) => setN({ ...n, email: v })} />
-      <ToggleRow title="Push bildirimleri"    desc="Tarayıcı ve uygulama anlık bildirimleri" checked={n.push} onChange={(v) => setN({ ...n, push: v })} />
-      <ToggleRow title="SMS bildirimleri"     desc="Kritik olaylar için SMS gönder"          checked={n.sms} onChange={(v) => setN({ ...n, sms: v })} />
-      <ToggleRow title="Ürün haberleri"       desc="Yeni özellikler ve duyurular"             checked={n.news} onChange={(v) => setN({ ...n, news: v })} />
-      <ToggleRow title="Haftalık özet"        desc="Pazartesi sabahı performans raporu"        checked={n.weekly} onChange={(v) => setN({ ...n, weekly: v })} />
+    <PanelCard title={t("notificationsTitle")} desc={t("notificationsDesc")}>
+      <ToggleRow title={t("notifEmailTitle")} desc={t("notifEmailDesc")} checked={n.email} onChange={(v) => setN({ ...n, email: v })} />
+      <ToggleRow title={t("notifPushTitle")} desc={t("notifPushDesc")} checked={n.push} onChange={(v) => setN({ ...n, push: v })} />
+      <ToggleRow title={t("notifSmsTitle")} desc={t("notifSmsDesc")} checked={n.sms} onChange={(v) => setN({ ...n, sms: v })} />
+      <ToggleRow title={t("notifNewsTitle")} desc={t("notifNewsDesc")} checked={n.news} onChange={(v) => setN({ ...n, news: v })} />
+      <ToggleRow title={t("notifWeeklyTitle")} desc={t("notifWeeklyDesc")} checked={n.weekly} onChange={(v) => setN({ ...n, weekly: v })} />
     </PanelCard>
   );
 }
 
 function GorunumPanel() {
+  const t = useTranslations("ayarlar");
   const [theme, setTheme] = useState<"light" | "dark" | "auto">("light");
   const [density, setDensity] = useState<"compact" | "cozy" | "comfortable">("cozy");
   const accents = ["#1f5fa8", "#0d3b73", "#2da5b8", "#f5b945", "#e85d3a", "#7d57c1"];
   const [accent, setAccent] = useState(accents[0]);
 
+  const themeLabels = { light: t("themeLight"), dark: t("themeDark"), auto: t("themeAuto") } as const;
+  const densityLabels = {
+    compact: t("densityCompact"),
+    cozy: t("densityCozy"),
+    comfortable: t("densityComfortable"),
+  } as const;
+
   return (
-    <PanelCard title="Görünüm" desc="Tema, vurgu rengi ve arayüz yoğunluğu.">
+    <PanelCard title={t("appearanceTitle")} desc={t("appearanceDesc")}>
       <div className="space-y-6">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">Tema</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">{t("themeLabel")}</p>
           <div className="grid grid-cols-3 gap-3">
-            {(["light", "dark", "auto"] as const).map((t) => {
-              const isActive = theme === t;
-              const labels = { light: "Aydınlık", dark: "Karanlık", auto: "Otomatik" };
+            {(["light", "dark", "auto"] as const).map((th) => {
+              const isActive = theme === th;
               return (
                 <button
-                  key={t}
-                  onClick={() => setTheme(t)}
+                  key={th}
+                  onClick={() => setTheme(th)}
                   className={[
                     "rounded-2xl p-3 border-2 transition text-left",
                     isActive
@@ -363,12 +394,12 @@ function GorunumPanel() {
                   <div
                     className={[
                       "h-14 rounded-lg mb-2 border border-black/5",
-                      t === "light" && "bg-white",
-                      t === "dark" && "bg-[#0d1424]",
-                      t === "auto" && "bg-gradient-to-r from-white via-white to-[#0d1424]",
+                      th === "light" && "bg-white",
+                      th === "dark" && "bg-[#0d1424]",
+                      th === "auto" && "bg-gradient-to-r from-white via-white to-[#0d1424]",
                     ].filter(Boolean).join(" ")}
                   />
-                  <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]">{labels[t]}</p>
+                  <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]">{themeLabels[th]}</p>
                 </button>
               );
             })}
@@ -376,7 +407,7 @@ function GorunumPanel() {
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">Vurgu Rengi</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">{t("accentLabel")}</p>
           <div className="flex flex-wrap gap-2">
             {accents.map((c) => (
               <button
@@ -395,25 +426,22 @@ function GorunumPanel() {
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">Yoğunluk</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">{t("densityLabel")}</p>
           <div className="inline-flex bg-[color:var(--istikbal-blue-soft)] rounded-xl p-1">
-            {(["compact", "cozy", "comfortable"] as const).map((d) => {
-              const labels = { compact: "Sık", cozy: "Dengeli", comfortable: "Geniş" };
-              return (
-                <button
-                  key={d}
-                  onClick={() => setDensity(d)}
-                  className={[
-                    "px-4 py-1.5 rounded-lg text-xs font-semibold transition",
-                    density === d
-                      ? "bg-white text-[color:var(--istikbal-blue)] shadow-sm"
-                      : "text-[color:var(--istikbal-blue)]/60",
-                  ].join(" ")}
-                >
-                  {labels[d]}
-                </button>
-              );
-            })}
+            {(["compact", "cozy", "comfortable"] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDensity(d)}
+                className={[
+                  "px-4 py-1.5 rounded-lg text-xs font-semibold transition",
+                  density === d
+                    ? "bg-white text-[color:var(--istikbal-blue)] shadow-sm"
+                    : "text-[color:var(--istikbal-blue)]/60",
+                ].join(" ")}
+              >
+                {densityLabels[d]}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -422,95 +450,134 @@ function GorunumPanel() {
 }
 
 function DilPanel() {
-  const [lang, setLang] = useState("tr");
+  const t = useTranslations("ayarlar");
+  const locale = useLocale();
+  const { setLocale, pending } = useSetLocale();
   const [currency, setCurrency] = useState("TRY");
   const [tz, setTz] = useState("Europe/Istanbul");
 
   return (
-    <PanelCard title="Dil & Bölge">
+    <PanelCard title={t("localeTitle")}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Select label="Arayüz Dili" value={lang} onChange={setLang} options={[
-          { v: "tr", l: "🇹🇷  Türkçe" },
-          { v: "en", l: "🇬🇧  English" },
-          { v: "de", l: "🇩🇪  Deutsch" },
-          { v: "ar", l: "🇸🇦  العربية" },
-        ]} />
-        <Select label="Para Birimi" value={currency} onChange={setCurrency} options={[
-          { v: "TRY", l: "₺  Türk Lirası" },
-          { v: "USD", l: "$  US Dollar" },
-          { v: "EUR", l: "€  Euro" },
-        ]} />
-        <Select label="Saat Dilimi" value={tz} onChange={setTz} options={[
-          { v: "Europe/Istanbul", l: "İstanbul (UTC+3)" },
-          { v: "Europe/Berlin",   l: "Berlin (UTC+1)" },
-          { v: "Europe/London",   l: "London (UTC+0)" },
-        ]} />
+        <Select
+          label={t("uiLanguage")}
+          value={locale}
+          disabled={pending}
+          onChange={(v) => {
+            if (isAppLocale(v)) setLocale(v);
+          }}
+          options={[
+            { v: "tr", l: `🇹🇷  ${t("langTr")}` },
+            { v: "en", l: `🇬🇧  ${t("langEn")}` },
+            { v: "de", l: `🇩🇪  ${t("langDe")}`, disabled: true },
+            { v: "ar", l: `🇸🇦  ${t("langAr")}`, disabled: true },
+          ]}
+        />
+        <Select
+          label={t("currency")}
+          value={currency}
+          onChange={setCurrency}
+          options={[
+            { v: "TRY", l: t("currencyTry") },
+            { v: "USD", l: t("currencyUsd") },
+            { v: "EUR", l: t("currencyEur") },
+          ]}
+        />
+        <Select
+          label={t("timezone")}
+          value={tz}
+          onChange={setTz}
+          options={[
+            { v: "Europe/Istanbul", l: t("tzIstanbul") },
+            { v: "Europe/Berlin", l: t("tzBerlin") },
+            { v: "Europe/London", l: t("tzLondon") },
+          ]}
+        />
       </div>
     </PanelCard>
   );
 }
 
-function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { v: string; l: string }[] }) {
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { v: string; l: string; disabled?: boolean }[];
+  disabled?: boolean;
+}) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">{label}</span>
       <select
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-xl bg-[color:var(--istikbal-blue-soft)]/50 border border-transparent text-sm text-[color:var(--istikbal-blue)] px-3.5 py-2.5 outline-none focus:bg-white focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10"
+        className="rounded-xl bg-[color:var(--istikbal-blue-soft)]/50 border border-transparent text-sm text-[color:var(--istikbal-blue)] px-3.5 py-2.5 outline-none focus:bg-white focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10 disabled:opacity-60"
       >
-        {options.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+        {options.map((o) => (
+          <option key={o.v} value={o.v} disabled={o.disabled}>
+            {o.l}
+          </option>
+        ))}
       </select>
     </label>
   );
 }
 
 function GuvenlikPanel() {
+  const t = useTranslations("ayarlar");
   const [twoFA, setTwoFA] = useState(true);
   const [loginAlerts, setLoginAlerts] = useState(true);
   return (
     <div className="space-y-6">
-      <PanelCard title="Şifre" desc="Hesabını korumak için güçlü ve eşsiz bir şifre kullan.">
+      <PanelCard title={t("passwordTitle")} desc={t("passwordDesc")}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Mevcut" value="" onChange={() => {}} type="password" placeholder="••••••••" />
-          <Field label="Yeni"   value="" onChange={() => {}} type="password" placeholder="••••••••" />
-          <Field label="Tekrar" value="" onChange={() => {}} type="password" placeholder="••••••••" />
+          <Field label={t("passwordCurrent")} value="" onChange={() => {}} type="password" placeholder={t("passwordPlaceholder")} />
+          <Field label={t("passwordNew")} value="" onChange={() => {}} type="password" placeholder={t("passwordPlaceholder")} />
+          <Field label={t("passwordConfirm")} value="" onChange={() => {}} type="password" placeholder={t("passwordPlaceholder")} />
         </div>
         <div className="mt-4">
-          <PrimaryBtn>Şifreyi Güncelle</PrimaryBtn>
+          <PrimaryBtn>{t("updatePassword")}</PrimaryBtn>
         </div>
       </PanelCard>
 
-      <PanelCard title="Çift Faktörlü Doğrulama">
-        <ToggleRow title="Authenticator uygulaması" desc="Google Authenticator, Authy ile 6 haneli kod" checked={twoFA} onChange={setTwoFA} />
-        <ToggleRow title="Yeni giriş uyarısı"      desc="Tanımadığın bir cihazda giriş olunca e-posta" checked={loginAlerts} onChange={setLoginAlerts} />
+      <PanelCard title={t("twoFaTitle")}>
+        <ToggleRow title={t("twoFaAuthAppTitle")} desc={t("twoFaAuthAppDesc")} checked={twoFA} onChange={setTwoFA} />
+        <ToggleRow title={t("loginAlertTitle")} desc={t("loginAlertDesc")} checked={loginAlerts} onChange={setLoginAlerts} />
       </PanelCard>
     </div>
   );
 }
 
 function OdemePanel() {
+  const t = useTranslations("ayarlar");
   return (
-    <PanelCard title="Ödeme & Fatura">
+    <PanelCard title={t("billingTitle")}>
       <div className="rounded-2xl bg-gradient-to-br from-[color:var(--istikbal-blue)] to-[color:var(--istikbal-blue)]/80 text-white p-5 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-white/70">Aktif Plan</p>
-            <p className="text-2xl font-extrabold mt-1">Pro · Bayi</p>
-            <p className="text-xs text-white/70 mt-1">Sıradaki tahsilat: 14 Tem 2026</p>
+            <p className="text-[11px] uppercase tracking-wider text-white/70">{t("activePlan")}</p>
+            <p className="text-2xl font-extrabold mt-1">{t("planProDealer")}</p>
+            <p className="text-xs text-white/70 mt-1">{t("nextCharge", { date: "14 Tem 2026" })}</p>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-extrabold">₺2.490<span className="text-sm font-medium text-white/70">/ay</span></p>
-            <button className="mt-2 text-xs font-semibold underline underline-offset-2">Planı yönet</button>
+            <p className="text-3xl font-extrabold">₺2.490<span className="text-sm font-medium text-white/70">{t("perMonth")}</span></p>
+            <button className="mt-2 text-xs font-semibold underline underline-offset-2">{t("managePlan")}</button>
           </div>
         </div>
       </div>
 
       <div className="space-y-2">
         {[
-          { date: "14 Haz 2026", n: "INV-2026-006", amt: "₺2.490", st: "Ödendi" },
-          { date: "14 May 2026", n: "INV-2026-005", amt: "₺2.490", st: "Ödendi" },
-          { date: "14 Nis 2026", n: "INV-2026-004", amt: "₺2.490", st: "Ödendi" },
+          { date: "14 Haz 2026", n: "INV-2026-006", amt: "₺2.490" },
+          { date: "14 May 2026", n: "INV-2026-005", amt: "₺2.490" },
+          { date: "14 Nis 2026", n: "INV-2026-004", amt: "₺2.490" },
         ].map((r) => (
           <div key={r.n} className="flex items-center justify-between bg-[color:var(--istikbal-blue-soft)]/40 rounded-xl px-4 py-3">
             <div>
@@ -518,7 +585,7 @@ function OdemePanel() {
               <p className="text-xs text-[color:var(--istikbal-blue)]/55">{r.date}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{r.st}</span>
+              <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{t("invoicePaid")}</span>
               <span className="text-sm font-bold text-[color:var(--istikbal-blue)]">{r.amt}</span>
             </div>
           </div>
@@ -529,15 +596,17 @@ function OdemePanel() {
 }
 
 function EntegrasyonPanel() {
+  const t = useTranslations("ayarlar");
+  const tCommon = useTranslations("common");
   const items = [
-    { name: "WhatsApp Business",  desc: "Resmi WhatsApp API",      connected: true },
-    { name: "Meta Ads",           desc: "Facebook & Instagram",    connected: true },
-    { name: "Google My Business", desc: "Harita ve değerlendirme", connected: false },
-    { name: "ERP / Stok",         desc: "İstikbal merkez sistemi", connected: true },
-    { name: "Google Analytics",   desc: "Site trafik ölçümü",      connected: false },
+    { name: t("integWhatsappName"), desc: t("integWhatsappDesc"), connected: true },
+    { name: t("integMetaAdsName"), desc: t("integMetaAdsDesc"), connected: true },
+    { name: t("integGmbName"), desc: t("integGmbDesc"), connected: false },
+    { name: t("integErpName"), desc: t("integErpDesc"), connected: true },
+    { name: t("integGaName"), desc: t("integGaDesc"), connected: false },
   ];
   return (
-    <PanelCard title="Entegrasyonlar" desc="Bağlı uygulamaları yönet veya yeni bağlantı ekle.">
+    <PanelCard title={t("integrationsTitle")} desc={t("integrationsDesc")}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {items.map((i) => (
           <div key={i.name} className="rounded-2xl border border-black/5 bg-[color:var(--istikbal-blue-soft)]/40 p-4 flex items-start justify-between gap-3">
@@ -550,7 +619,7 @@ function EntegrasyonPanel() {
                   i.connected ? "bg-emerald-100 text-emerald-700" : "bg-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)]/60",
                 ].join(" ")}
               >
-                {i.connected ? "Bağlı" : "Bağlı değil"}
+                {i.connected ? tCommon("connected") : tCommon("notConnected")}
               </span>
             </div>
             <button
@@ -561,7 +630,7 @@ function EntegrasyonPanel() {
                   : "bg-[color:var(--istikbal-blue)] text-white hover:opacity-90",
               ].join(" ")}
             >
-              {i.connected ? "Yönet" : "Bağla"}
+              {i.connected ? tCommon("manage") : tCommon("connect")}
             </button>
           </div>
         ))}
@@ -571,30 +640,32 @@ function EntegrasyonPanel() {
 }
 
 function VeriPanel() {
+  const t = useTranslations("ayarlar");
+  const tCommon = useTranslations("common");
   return (
-    <PanelCard title="Veri & Yedekleme">
+    <PanelCard title={t("dataTitle")}>
       <div className="space-y-3">
         <div className="flex items-center justify-between rounded-2xl bg-[color:var(--istikbal-blue-soft)]/40 p-4">
           <div>
-            <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">Tüm veriyi dışa aktar</p>
-            <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">Müşteri, sipariş ve render verisi (ZIP)</p>
+            <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t("exportAllTitle")}</p>
+            <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t("exportAllDesc")}</p>
           </div>
-          <GhostBtn>İndir</GhostBtn>
+          <GhostBtn>{tCommon("download")}</GhostBtn>
         </div>
         <div className="flex items-center justify-between rounded-2xl bg-[color:var(--istikbal-blue-soft)]/40 p-4">
           <div>
-            <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">Otomatik yedekleme</p>
-            <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">Haftalık, bulutta saklanır</p>
+            <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t("autoBackupTitle")}</p>
+            <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t("autoBackupDesc")}</p>
           </div>
           <Toggle checked={true} onChange={() => {}} />
         </div>
         <div className="flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-50 p-4">
           <div>
-            <p className="text-sm font-semibold text-rose-700">Hesabı sil</p>
-            <p className="text-xs text-rose-600/80 mt-0.5">Bu işlem geri alınamaz. Tüm veriler 30 gün sonra silinir.</p>
+            <p className="text-sm font-semibold text-rose-700">{t("deleteAccountTitle")}</p>
+            <p className="text-xs text-rose-600/80 mt-0.5">{t("deleteAccountDesc")}</p>
           </div>
           <button className="text-xs font-semibold px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">
-            Hesabı Sil
+            {t("deleteAccountAction")}
           </button>
         </div>
       </div>

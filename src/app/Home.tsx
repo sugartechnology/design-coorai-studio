@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 type SessionUser = {
   displayName: string;
@@ -189,86 +190,87 @@ type Tile = {
   decoration: React.FC<{ className?: string }>;
 };
 
-const tiles: Tile[] = [
-  {
-    title: "Kumaş Seç",
-    subtitle: "Kategoriye göre ürün ve kumaş seçimi",
-    icon: Sofa,
-    to: "/kumas",
-    className:
-      "bg-[color:var(--istikbal-blue)] text-white col-span-2 sm:col-span-3 row-span-2",
-    size: "lg",
-    decoration: FabricIllustration,
-  },
-  {
-    title: "Yapay Zeka ile Tasarla",
-    subtitle: "Müşterinin oda fotoğrafıyla tasarla",
-    icon: Sparkles,
-    to: "/ai",
-    className:
-      "bg-gradient-to-br from-[color:var(--istikbal-yellow)] to-[#f6b900] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-2",
-    size: "lg",
-    decoration: AiIllustration,
-  },
-  {
-    title: "Oda Planla",
-    subtitle: "Sürükle-bırak yerleşim",
-    icon: LayoutDashboard,
-    to: "/oda",
-    className:
-      "bg-white text-[color:var(--istikbal-blue)] col-span-2 row-span-2",
-    size: "md",
-    decoration: RoomIllustration,
-  },
-  {
-    title: "Modüler Ürün",
-    subtitle: "Parça parça yapılandır",
-    icon: Boxes,
-    to: "/moduler",
-    className:
-      "bg-[color:var(--istikbal-navy)] text-white col-span-2 row-span-2",
-    size: "md",
-    decoration: ModularIllustration,
-  },
-  {
-    title: "Pazarlama",
-    subtitle: "Sosyal medya, WhatsApp & SMS",
-    icon: Megaphone,
-    links: [
-      { label: "Sosyal Medya Yönet", to: "/sosyal" },
-      { label: "Whatsapp & SMS Marketing", to: "/whatsapp-sms" },
-    ],
-    className:
-      "bg-white text-[color:var(--istikbal-blue)] col-span-2 row-span-2",
-    size: "md",
-    decoration: SocialIllustration,
-  },
-  {
-    title: "Ayarlar",
-    subtitle: "Mağaza tercihleri",
-    icon: Settings,
-    to: "/ayarlar",
-    className:
-      "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-1",
-    size: "sm",
-    decoration: SettingsIllustration,
-  },
-  {
-    title: "Kullanıcılar",
-    subtitle: "Ekip & yetkiler",
-    icon: Users,
-    to: "/kullanicilar",
-    className:
-      "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-1",
-    size: "sm",
-    decoration: UsersIllustration,
-  },
-];
-
-
 function Home() {
   const router = useRouter();
+  const t = useTranslations("home");
+  const tCommon = useTranslations("common");
   const [session, setSession] = useState<SessionPayload | null>(null);
+
+  const tiles: Tile[] = [
+    {
+      title: t("tileFabricTitle"),
+      subtitle: t("tileFabricSubtitle"),
+      icon: Sofa,
+      to: "/kumas",
+      className:
+        "bg-[color:var(--istikbal-blue)] text-white col-span-2 sm:col-span-3 row-span-2",
+      size: "lg",
+      decoration: FabricIllustration,
+    },
+    {
+      title: t("tileAiTitle"),
+      subtitle: t("tileAiSubtitle"),
+      icon: Sparkles,
+      to: "/ai",
+      className:
+        "bg-gradient-to-br from-[color:var(--istikbal-yellow)] to-[#f6b900] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-2",
+      size: "lg",
+      decoration: AiIllustration,
+    },
+    {
+      title: t("tileRoomTitle"),
+      subtitle: t("tileRoomSubtitle"),
+      icon: LayoutDashboard,
+      to: "/oda",
+      className:
+        "bg-white text-[color:var(--istikbal-blue)] col-span-2 row-span-2",
+      size: "md",
+      decoration: RoomIllustration,
+    },
+    {
+      title: t("tileModularTitle"),
+      subtitle: t("tileModularSubtitle"),
+      icon: Boxes,
+      to: "/moduler",
+      className:
+        "bg-[color:var(--istikbal-navy)] text-white col-span-2 row-span-2",
+      size: "md",
+      decoration: ModularIllustration,
+    },
+    {
+      title: t("tileMarketingTitle"),
+      subtitle: t("tileMarketingSubtitle"),
+      icon: Megaphone,
+      links: [
+        { label: t("tileMarketingSocial"), to: "/sosyal" },
+        { label: t("tileMarketingWhatsapp"), to: "/whatsapp-sms" },
+      ],
+      className:
+        "bg-white text-[color:var(--istikbal-blue)] col-span-2 row-span-2",
+      size: "md",
+      decoration: SocialIllustration,
+    },
+    {
+      title: t("tileSettingsTitle"),
+      subtitle: t("tileSettingsSubtitle"),
+      icon: Settings,
+      to: "/ayarlar",
+      className:
+        "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-1",
+      size: "sm",
+      decoration: SettingsIllustration,
+    },
+    {
+      title: t("tileUsersTitle"),
+      subtitle: t("tileUsersSubtitle"),
+      icon: Users,
+      to: "/kullanicilar",
+      className:
+        "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-1",
+      size: "sm",
+      decoration: UsersIllustration,
+    },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -291,7 +293,7 @@ function Home() {
     router.refresh();
   };
 
-  const displayName = session?.user?.displayName || "Bayi";
+  const displayName = session?.user?.displayName || tCommon("dealerFallback");
   const initial = (session?.user?.firstName || displayName).charAt(0).toUpperCase() || "B";
 
   return (
@@ -305,7 +307,7 @@ function Home() {
             </span>
           </div>
           <span className="ml-3 hidden md:inline text-sm font-medium text-[color:var(--istikbal-blue)]/60 truncate">
-            3D Tasarım Stüdyosu
+            {t("productSubtitle")}
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -315,18 +317,20 @@ function Home() {
               onClick={logout}
               className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-full border border-[color:var(--istikbal-blue)]/15 text-[color:var(--istikbal-blue)] text-sm font-semibold hover:bg-[color:var(--istikbal-blue)]/5 transition-colors"
             >
-              Çıkış
+              {t("logout")}
             </button>
           ) : (
             <Link href="/login"
               className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-semibold hover:bg-[color:var(--istikbal-navy)] transition-colors shadow-sm"
             >
               <LogIn className="size-4" />
-              <span className="hidden sm:inline">Giriş Yap</span>
+              <span className="hidden sm:inline">{t("login")}</span>
             </Link>
           )}
           <span className="text-sm text-[color:var(--istikbal-blue)]/70 hidden md:inline">
-            {session?.authenticated ? `Hoş geldin, ${displayName}` : "Hoş geldin"}
+            {session?.authenticated
+              ? t("welcomeNamed", { name: displayName })
+              : t("welcome")}
           </span>
           <div className="size-9 sm:size-10 rounded-full bg-[color:var(--istikbal-blue)] text-white grid place-items-center font-semibold">
             {initial}
@@ -337,56 +341,56 @@ function Home() {
       <main className="px-4 sm:px-6 lg:px-8 py-5 sm:py-7 lg:py-10 max-w-[1600px] mx-auto">
         <div className="mb-5 sm:mb-7 lg:mb-10">
           <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
-            Ne yapmak istersin?
+            {t("headline")}
           </h1>
           <p className="mt-1.5 sm:mt-2 text-[color:var(--istikbal-blue)]/60 text-sm sm:text-base lg:text-lg">
-            Tasarım, planlama ve yönetim tek panelde.
+            {t("subhead")}
           </p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-6 auto-rows-[130px] sm:auto-rows-[150px] lg:auto-rows-[180px] gap-3 sm:gap-4">
-          {tiles.map((t) => {
-            const Icon = t.icon;
-            const Deco = t.decoration;
+          {tiles.map((tile) => {
+            const Icon = tile.icon;
+            const Deco = tile.decoration;
             const inner = (
               <>
                 <div className="flex items-start justify-between z-10">
                   <Icon
                     className={
-                      t.size === "lg"
+                      tile.size === "lg"
                         ? "size-9 sm:size-11 lg:size-14"
-                        : t.size === "md"
+                        : tile.size === "md"
                         ? "size-7 sm:size-9 lg:size-10"
                         : "size-6 sm:size-7 lg:size-8"
                     }
                     strokeWidth={1.5}
                   />
-                  {t.to && (
+                  {tile.to && (
                     <ArrowUpRight className="size-4 sm:size-5 opacity-0 group-hover:opacity-70 transition-opacity" />
                   )}
                 </div>
                 <div className="z-10">
                   <h2
                     className={
-                      t.size === "lg"
+                      tile.size === "lg"
                         ? "text-xl sm:text-2xl lg:text-3xl font-extrabold leading-tight"
-                        : t.size === "md"
+                        : tile.size === "md"
                         ? "text-base sm:text-xl lg:text-2xl font-bold leading-tight"
                         : "text-sm sm:text-base lg:text-lg font-bold leading-tight"
                     }
                   >
-                    {t.title}
+                    {tile.title}
                   </h2>
                   <p
                     className={`mt-0.5 sm:mt-1 opacity-75 ${
-                      t.size === "sm" ? "text-[11px] sm:text-xs" : "text-xs sm:text-sm"
+                      tile.size === "sm" ? "text-[11px] sm:text-xs" : "text-xs sm:text-sm"
                     } line-clamp-2`}
                   >
-                    {t.subtitle}
+                    {tile.subtitle}
                   </p>
-                  {t.links && (
+                  {tile.links && (
                     <div className="mt-2 sm:mt-3 flex gap-1.5 sm:gap-2 flex-wrap">
-                      {t.links.map((link) => (
+                      {tile.links.map((link) => (
                         <Link key={link.to}
                           href={link.to}
                           className="inline-flex items-center gap-1 sm:gap-1.5 rounded-lg bg-black/10 px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-sm font-medium hover:bg-black/20 transition-colors"
@@ -402,17 +406,17 @@ function Home() {
                 <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-white/10 blur-2xl" />
               </>
             );
-            const className = `group relative overflow-hidden rounded-2xl p-3 sm:p-4 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl shadow-md ${t.className}`;
+            const className = `group relative overflow-hidden rounded-2xl p-3 sm:p-4 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl shadow-md ${tile.className}`;
 
-            if (t.to) {
+            if (tile.to) {
               return (
-                <Link key={t.title} href={t.to} className={className}>
+                <Link key={tile.title} href={tile.to} className={className}>
                   {inner}
                 </Link>
               );
             }
             return (
-              <div key={t.title} className={className}>
+              <div key={tile.title} className={className}>
                 {inner}
               </div>
             );

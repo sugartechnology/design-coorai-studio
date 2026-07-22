@@ -13,6 +13,7 @@ import {
   KeyRound,
   Info,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Step = "code" | "phone" | "pin";
 
@@ -33,6 +34,7 @@ type LookupResult = {
 
 function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("login");
   const [step, setStep] = useState<Step>("code");
   const [dealerCode, setDealerCode] = useState("");
   const [lookup, setLookup] = useState<LookupResult | null>(null);
@@ -57,7 +59,7 @@ function LoginPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(
-          typeof data.error === "string" ? data.error : "Bayi bulunamadı.",
+          typeof data.error === "string" ? data.error : t("errorDealerNotFound"),
         );
         return;
       }
@@ -67,7 +69,7 @@ function LoginPage() {
       setPin("");
       setStep("phone");
     } catch {
-      setError("Bayi servisine ulaşılamıyor.");
+      setError(t("errorDealerUnreachable"));
     } finally {
       setBusy(false);
     }
@@ -98,19 +100,19 @@ function LoginPage() {
             ? data.error
             : typeof data.message === "string"
               ? data.message
-              : "SMS gönderilemedi.",
+              : t("errorSmsSendFailed"),
         );
         return;
       }
       if (!data.sessionId) {
-        setError("Oturum oluşturulamadı.");
+        setError(t("errorSessionCreate"));
         return;
       }
       setSessionId(data.sessionId);
       setPin("");
       setStep("pin");
     } catch {
-      setError("SMS servisine ulaşılamıyor.");
+      setError(t("errorSmsUnreachable"));
     } finally {
       setBusy(false);
     }
@@ -132,14 +134,14 @@ function LoginPage() {
         setError(
           typeof data.error === "string"
             ? data.error
-            : "Pin kodu doğrulanamadı.",
+            : t("errorPinInvalid"),
         );
         return;
       }
       router.push("/");
       router.refresh();
     } catch {
-      setError("Doğrulama servisine ulaşılamıyor.");
+      setError(t("errorVerifyUnreachable"));
     } finally {
       setBusy(false);
     }
@@ -158,22 +160,21 @@ function LoginPage() {
         <div className="pointer-events-none absolute right-32 bottom-40 w-24 h-24 rounded-full bg-[color:var(--istikbal-blue)]/15" />
 
         <div className="relative z-10 max-w-md">
-          <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight">
-            Bayi Paneline<br />Hoş Geldiniz
+          <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight whitespace-pre-line">
+            {t("asideTitle")}
           </h1>
           <p className="mt-5 text-lg text-[color:var(--istikbal-blue)]/70 leading-relaxed">
-            Bayi kodunuzla giriş yapın, mağazadaki yetkili telefona gelen SMS pin
-            kodunu girerek panele erişin.
+            {t("asideBody")}
           </p>
           <div className="mt-10 flex items-center gap-6 text-sm font-medium text-[color:var(--istikbal-blue)]/70">
-            <span className="flex items-center gap-2"><CheckCircle2 className="size-4" /> Bayi kodu</span>
-            <span className="flex items-center gap-2"><CheckCircle2 className="size-4" /> SMS pin</span>
-            <span className="flex items-center gap-2"><ShieldCheck className="size-4" /> Güvenli</span>
+            <span className="flex items-center gap-2"><CheckCircle2 className="size-4" /> {t("featureDealerCode")}</span>
+            <span className="flex items-center gap-2"><CheckCircle2 className="size-4" /> {t("featureSmsPin")}</span>
+            <span className="flex items-center gap-2"><ShieldCheck className="size-4" /> {t("featureSecure")}</span>
           </div>
         </div>
 
         <p className="relative z-10 text-xs text-[color:var(--istikbal-blue)]/60">
-          © {new Date().getFullYear()} İstikbal · 3D Tasarım Stüdyosu
+          {t("footerCopyright", { year: new Date().getFullYear() })}
         </p>
       </aside>
 
@@ -185,14 +186,14 @@ function LoginPage() {
           </div>
 
           <div className="mb-6">
-            <h2 className="text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">Giriş Yap</h2>
+            <h2 className="text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">{t("title")}</h2>
             <p className="mt-2 text-[color:var(--istikbal-blue)]/60">
-              {step === "code" && "Bayi kodunuzla başlayın."}
+              {step === "code" && t("stepCodeHint")}
               {step === "phone" && lookup?.status === "NEEDS_PROVISION" &&
-                "Bayi kaydı için admin telefonunu seçin."}
+                t("stepPhoneProvisionHint")}
               {step === "phone" && lookup?.status === "READY" &&
-                "SMS pin kodunun gönderileceği numarayı seçin."}
-              {step === "pin" && "Telefona gelen 6 haneli SMS pin kodunu girin."}
+                t("stepPhoneReadyHint")}
+              {step === "pin" && t("stepPinHint")}
             </p>
           </div>
 
@@ -229,7 +230,7 @@ function LoginPage() {
             <form onSubmit={submitCode} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
-                  Bayi Kodu
+                  {t("dealerCodeLabel")}
                 </label>
                 <div className="relative">
                   <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
@@ -240,21 +241,19 @@ function LoginPage() {
                     onChange={(e) => setDealerCode(e.target.value.replace(/\D/g, ""))}
                     inputMode="numeric"
                     maxLength={13}
-                    placeholder="120________"
+                    placeholder={t("dealerCodePlaceholder")}
                     className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all tracking-wider font-semibold"
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-[color:var(--istikbal-blue)]/50">
-                  Bayi kodları 120 ile başlar · Örn: 1201001 · 1203209033
+                  {t("dealerCodeHelp")}
                 </p>
               </div>
 
               <div className="flex gap-2.5 p-3.5 rounded-2xl bg-[color:var(--istikbal-yellow)]/25 border border-[color:var(--istikbal-yellow)]/40">
                 <Info className="size-4.5 shrink-0 text-[color:var(--istikbal-blue)] mt-0.5" />
                 <p className="text-xs leading-relaxed text-[color:var(--istikbal-blue)]/80">
-                  <b>Şifre geçerlilik süresi 6 aydır.</b> Güvenliğiniz için her 6 ayda
-                  bir bayi şifresi otomatik olarak yenilenir. Süresi dolduğunda giriş
-                  sırasında yeni şifre belirlemeniz istenir.
+                  {t("passwordExpiryInfo")}
                 </p>
               </div>
 
@@ -263,7 +262,7 @@ function LoginPage() {
                 disabled={busy || !dealerCode.trim()}
                 className="group w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] active:scale-[0.99] shadow-lg shadow-[color:var(--istikbal-blue)]/25 transition-all disabled:opacity-60"
               >
-                {busy ? <Loader2 className="size-4 animate-spin" /> : <>DEVAM ET <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" /></>}
+                {busy ? <Loader2 className="size-4 animate-spin" /> : <>{t("continue")} <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" /></>}
               </button>
 
               <button
@@ -271,7 +270,7 @@ function LoginPage() {
                 onClick={() => setForgotOpen(true)}
                 className="w-full text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:underline"
               >
-                Şifremi unuttum
+                {t("forgotPassword")}
               </button>
             </form>
           )}
@@ -279,12 +278,12 @@ function LoginPage() {
           {step === "phone" && lookup && (
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-[color:var(--istikbal-blue)]/5">
-                <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">Bayi</p>
+                <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">{t("dealerLabel")}</p>
                 <p className="mt-0.5 font-bold text-[color:var(--istikbal-blue)]">{lookup.dealerName}</p>
               </div>
 
               <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">
-                SMS pin kodu hangi numaraya gönderilsin?
+                {t("choosePhonePrompt")}
               </p>
 
               <div className="space-y-2">
@@ -320,7 +319,7 @@ function LoginPage() {
                 }}
                 className="flex items-center gap-1 text-sm font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
               >
-                <ChevronLeft className="size-4" /> Bayi kodunu değiştir
+                <ChevronLeft className="size-4" /> {t("changeDealerCode")}
               </button>
             </div>
           )}
@@ -330,13 +329,13 @@ function LoginPage() {
               <div className="p-4 rounded-2xl bg-[color:var(--istikbal-yellow)]/25 border border-[color:var(--istikbal-yellow)]/40 flex gap-2.5">
                 <CheckCircle2 className="size-4.5 shrink-0 text-[color:var(--istikbal-blue)] mt-0.5" />
                 <p className="text-xs leading-relaxed text-[color:var(--istikbal-blue)]/80">
-                  <b>{selectedPhone.maskedNumber}</b> numarasına 6 haneli SMS pin kodu gönderildi.
+                  {t("pinSentNotice", { masked: selectedPhone.maskedNumber })}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
-                  SMS Pin Kodu
+                  {t("smsPinLabel")}
                 </label>
                 <div className="relative">
                   <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
@@ -346,7 +345,7 @@ function LoginPage() {
                     maxLength={6}
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                    placeholder="• • • • • •"
+                    placeholder={t("smsPinPlaceholder")}
                     className="w-full pl-11 pr-4 h-14 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all text-center text-2xl font-bold tracking-[0.5em]"
                   />
                 </div>
@@ -357,7 +356,7 @@ function LoginPage() {
                 disabled={busy || pin.length < 4}
                 className="group w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] active:scale-[0.99] shadow-lg shadow-[color:var(--istikbal-blue)]/25 transition-all disabled:opacity-60"
               >
-                {busy ? <Loader2 className="size-4 animate-spin" /> : <>GİRİŞ YAP <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" /></>}
+                {busy ? <Loader2 className="size-4 animate-spin" /> : <>{t("submitLogin")} <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" /></>}
               </button>
 
               <div className="flex items-center justify-between text-sm">
@@ -369,7 +368,7 @@ function LoginPage() {
                   }}
                   className="flex items-center gap-1 font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
                 >
-                  <ChevronLeft className="size-4" /> Numarayı değiştir
+                  <ChevronLeft className="size-4" /> {t("changeNumber")}
                 </button>
                 <button
                   type="button"
@@ -377,7 +376,7 @@ function LoginPage() {
                   onClick={() => selectedPhone && chooseAndSend(selectedPhone)}
                   className="font-semibold text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:underline disabled:opacity-50"
                 >
-                  Tekrar gönder
+                  {t("resend")}
                 </button>
               </div>
             </form>
@@ -391,6 +390,9 @@ function LoginPage() {
 }
 
 function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("login");
+  const tCommon = useTranslations("common");
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div
@@ -398,18 +400,16 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute left-4 top-4 flex items-center gap-1 text-sm text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]">
-          <ChevronLeft className="size-4" /> Kapat
+          <ChevronLeft className="size-4" /> {tCommon("close")}
         </button>
         <div className="mt-6 mb-5">
-          <h3 className="text-2xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">Şifremi Unuttum</h3>
+          <h3 className="text-2xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">{t("forgotTitle")}</h3>
           <p className="mt-2 text-sm text-[color:var(--istikbal-blue)]/60 leading-relaxed">
-            Bu portal SMS pin ile giriş yapar. Bayi kodunuz ve kayıtlı telefonunuzla
-            giriş adımlarını tekrar deneyin. Hesap yardımına ihtiyacınız varsa
-            destek ekibiyle iletişime geçin.
+            {t("forgotBody")}
           </p>
         </div>
         <button onClick={onClose} className="w-full h-12 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold hover:bg-[color:var(--istikbal-navy)] transition-colors">
-          Tamam
+          {tCommon("done")}
         </button>
       </div>
     </div>

@@ -19,11 +19,12 @@ import {
   Phone,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { redirectToLoginOnUnauthorized } from "@/lib/auth-redirect";
-import { localizeCrmError } from "@/lib/crm-errors";
+import { localizeCrmError, type CrmErrorLocale } from "@/lib/crm-errors";
 
-type Role = "Sahip" | "Yönetici" | "Tasarımcı" | "Görüntüleyici";
-type Status = "Aktif" | "Davet" | "Pasif";
+type Role = "owner" | "admin" | "designer" | "viewer";
+type Status = "active" | "invite" | "passive";
 
 type Member = {
   id: string;
@@ -33,7 +34,7 @@ type Member = {
   role: Role;
   roleLabel: string;
   status: Status;
-  lastSeen: string;
+  updatedAt?: string;
   initials: string;
   color: string;
 };
@@ -62,28 +63,43 @@ type CrmUsersPage = {
 
 const ROLE_META: Record<
   Role,
-  { icon: React.ComponentType<{ className?: string }>; label: string; tint: string }
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    labelKey: "roleOwner" | "roleAdmin" | "roleDesigner" | "roleViewer";
+    descKey: "roleOwnerDesc" | "roleAdminDesc" | "roleDesignerDesc" | "roleViewerDesc";
+    tint: string;
+  }
 > = {
-  Sahip: {
+  owner: {
     icon: Crown,
-    label: "Tüm yetkiler + faturalama",
+    labelKey: "roleOwner",
+    descKey: "roleOwnerDesc",
     tint: "bg-[color:var(--istikbal-yellow)]/20 text-amber-700",
   },
-  Yönetici: {
+  admin: {
     icon: ShieldCheck,
-    label: "Kullanıcı ve içerik yönetimi",
+    labelKey: "roleAdmin",
+    descKey: "roleAdminDesc",
     tint: "bg-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)]",
   },
-  Tasarımcı: {
+  designer: {
     icon: UserIcon,
-    label: "Oda, render ve kumaş düzenleme",
+    labelKey: "roleDesigner",
+    descKey: "roleDesignerDesc",
     tint: "bg-violet-100 text-violet-700",
   },
-  Görüntüleyici: {
+  viewer: {
     icon: Eye,
-    label: "Sadece görüntüleme",
+    labelKey: "roleViewer",
+    descKey: "roleViewerDesc",
     tint: "bg-stone-100 text-stone-600",
   },
+};
+
+const STATUS_LABEL_KEYS: Record<Status, "statusActive" | "statusInvite" | "statusPassive"> = {
+  active: "statusActive",
+  invite: "statusInvite",
+  passive: "statusPassive",
 };
 
 const AVATAR_COLORS = ["#1f5fa8", "#2da5b8", "#7d57c1", "#e85d3a", "#0d3b73", "#f5b945"];
@@ -92,46 +108,49 @@ function mapCrmRole(roleNames: string[]): { role: Role; roleLabel: string } {
   const normalized = roleNames.map((n) => n.trim().toLowerCase());
   if (normalized.some((n) => n === "admin" || n.includes("yönetici") || n.includes("yonetici"))) {
     if (normalized.some((n) => n.includes("sahip") || n.includes("owner"))) {
-      return { role: "Sahip", roleLabel: roleNames[0] ?? "Sahip" };
+      return { role: "owner", roleLabel: roleNames[0] ?? "owner" };
     }
-    return { role: "Yönetici", roleLabel: roleNames.find((n) => /admin|yönetici|yonetici/i.test(n)) ?? roleNames[0] ?? "Yönetici" };
+    return { role: "admin", roleLabel: roleNames.find((n) => /admin|yönetici|yonetici/i.test(n)) ?? roleNames[0] ?? "admin" };
   }
   if (normalized.some((n) => n.includes("temsilci") || n.includes("tasarım") || n.includes("designer"))) {
     return {
-      role: "Tasarımcı",
-      roleLabel: roleNames.find((n) => /temsilci|tasarım|designer/i.test(n)) ?? roleNames[0] ?? "Tasarımcı",
+      role: "designer",
+      roleLabel: roleNames.find((n) => /temsilci|tasarım|designer/i.test(n)) ?? roleNames[0] ?? "designer",
     };
   }
   return {
-    role: "Görüntüleyici",
-    roleLabel: roleNames[0] ?? "Görüntüleyici",
+    role: "viewer",
+    roleLabel: roleNames[0] ?? "viewer",
   };
 }
 
 function mapStatus(user: CrmUser): Status {
   const raw = (user.status ?? "").trim().toLowerCase();
   if (raw === "passive" || raw === "pasif" || raw === "inactive" || raw === "disabled") {
-    return "Pasif";
+    return "passive";
   }
   if (raw === "invite" || raw === "davet" || raw === "pending") {
-    return "Davet";
+    return "invite";
   }
-  return "Aktif";
+  return "active";
 }
 
-function formatLastSeen(updatedAt?: string): string {
-  if (!updatedAt) return "—";
+function formatLastSeen(
+  updatedAt: string | undefined,
+  tCommon: ReturnType<typeof useTranslations<"common">>,
+): string {
+  if (!updatedAt) return tCommon("emDash");
   const date = new Date(updatedAt);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return tCommon("emDash");
   const diffMs = Date.now() - date.getTime();
   const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return "Şimdi";
-  if (mins < 60) return `${mins} dk önce`;
+  if (mins < 1) return tCommon("now");
+  if (mins < 60) return tCommon("minutesAgo", { n: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} sa önce`;
+  if (hours < 24) return tCommon("hoursAgo", { n: hours });
   const days = Math.floor(hours / 24);
-  if (days === 1) return "Dün";
-  if (days < 14) return `${days} gün önce`;
+  if (days === 1) return tCommon("yesterday");
+  if (days < 14) return tCommon("daysAgo", { n: days });
   return date.toLocaleDateString("tr-TR");
 }
 
@@ -142,22 +161,30 @@ function initialsOf(firstName?: string, lastName?: string, email?: string): stri
   return (email ?? "?").trim().charAt(0).toUpperCase();
 }
 
-function toMember(user: CrmUser, index: number): Member {
+function toMember(
+  user: CrmUser,
+  index: number,
+  tCommon: ReturnType<typeof useTranslations<"common">>,
+): Member {
   const roleNames =
     user.roleAssignments?.flatMap((assignment) =>
       (assignment.roles ?? []).map((role) => role.name ?? "").filter(Boolean),
     ) ?? [];
   const { role, roleLabel } = mapCrmRole(roleNames);
-  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.username || user.email || "Kullanıcı";
+  const name =
+    `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+    user.username ||
+    user.email ||
+    tCommon("userFallback");
   return {
     id: user.id,
     name,
-    email: user.email ?? "—",
-    phone: user.phoneNumber ?? "—",
+    email: user.email ?? tCommon("emDash"),
+    phone: user.phoneNumber ?? tCommon("emDash"),
     role,
     roleLabel,
     status: mapStatus(user),
-    lastSeen: formatLastSeen(user.updatedAt),
+    updatedAt: user.updatedAt,
     initials: initialsOf(user.firstName, user.lastName, user.email),
     color: AVATAR_COLORS[index % AVATAR_COLORS.length],
   };
@@ -165,12 +192,18 @@ function toMember(user: CrmUser, index: number): Member {
 
 function KullanicilarPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("kullanicilar");
+  const tCommon = useTranslations("common");
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<"Tümü" | Role>("Tümü");
+  const [filter, setFilter] = useState<"all" | Role>("all");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const emDash = tCommon("emDash");
+  const crmLocale = (locale === "en" ? "en" : "tr") as CrmErrorLocale;
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -195,17 +228,17 @@ function KullanicilarPage() {
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(localizeCrmError(body, "Kullanıcılar yüklenemedi."));
+        throw new Error(localizeCrmError(body, t("loadError"), crmLocale));
       }
       const page = (await res.json()) as CrmUsersPage;
-      setMembers((page.content ?? []).map(toMember));
+      setMembers((page.content ?? []).map((user, index) => toMember(user, index, tCommon)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kullanıcılar yüklenemedi.");
+      setError(err instanceof Error ? err.message : t("loadError"));
       setMembers([]);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, t, tCommon, crmLocale]);
 
   useEffect(() => {
     void loadUsers();
@@ -218,7 +251,7 @@ function KullanicilarPage() {
         m.name.toLowerCase().includes(q.toLowerCase()) ||
         m.email.toLowerCase().includes(q.toLowerCase()) ||
         m.phone.toLowerCase().includes(q.toLowerCase());
-      const matchR = filter === "Tümü" || m.role === filter;
+      const matchR = filter === "all" || m.role === filter;
       return matchQ && matchR;
     });
   }, [q, filter, members]);
@@ -226,43 +259,47 @@ function KullanicilarPage() {
   const stats = useMemo(
     () => ({
       total: members.length,
-      active: members.filter((m) => m.status === "Aktif").length,
-      pending: members.filter((m) => m.status === "Davet").length,
-      admins: members.filter((m) => m.role === "Sahip" || m.role === "Yönetici").length,
+      active: members.filter((m) => m.status === "active").length,
+      pending: members.filter((m) => m.status === "invite").length,
+      admins: members.filter((m) => m.role === "owner" || m.role === "admin").length,
     }),
     [members],
   );
+
+  const roleFilters: ("all" | Role)[] = ["all", "owner", "admin", "designer", "viewer"];
+  const roleFilterLabel = (r: "all" | Role) =>
+    r === "all" ? t("filterAll") : t(ROLE_META[r].labelKey);
 
   return (
     <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
       <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">KULLANICILAR</div>
+        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
         <div className="flex-1" />
         <button
           type="button"
           onClick={() => void loadUsers()}
           className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--istikbal-blue)]/15 text-[color:var(--istikbal-blue)] text-xs font-semibold px-3 py-2 hover:bg-[color:var(--istikbal-blue-soft)]"
         >
-          Yenile
+          {tCommon("refresh")}
         </button>
         <button
           type="button"
           onClick={() => setInviteOpen(true)}
           className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs font-semibold px-3 py-2 shadow-sm"
         >
-          <Plus className="size-4" /> Davet Et
+          <Plus className="size-4" /> {t("invite")}
         </button>
       </header>
 
       <div className="px-4 md:px-8 py-8 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Toplam Üye" value={stats.total} icon={Users} />
-          <StatCard label="Aktif" value={stats.active} icon={Check} accent="emerald" />
-          <StatCard label="Bekleyen Davet" value={stats.pending} icon={Mail} accent="amber" />
-          <StatCard label="Yönetici Sayısı" value={stats.admins} icon={ShieldCheck} />
+          <StatCard label={t("statTotal")} value={stats.total} icon={Users} />
+          <StatCard label={t("statActive")} value={stats.active} icon={Check} accent="emerald" />
+          <StatCard label={t("statPending")} value={stats.pending} icon={Mail} accent="amber" />
+          <StatCard label={t("statAdmins")} value={stats.admins} icon={ShieldCheck} />
         </div>
 
         <div className="flex flex-col md:flex-row gap-3">
@@ -271,12 +308,12 @@ function KullanicilarPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="İsim, e-posta veya telefon ara…"
+              placeholder={t("searchPlaceholder")}
               className="w-full rounded-2xl bg-white border border-black/5 text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 pl-10 pr-4 py-3 outline-none focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10"
             />
           </div>
           <div className="inline-flex bg-white border border-black/5 rounded-2xl p-1 overflow-x-auto">
-            {(["Tümü", "Sahip", "Yönetici", "Tasarımcı", "Görüntüleyici"] as const).map((r) => (
+            {roleFilters.map((r) => (
               <button
                 key={r}
                 type="button"
@@ -288,7 +325,7 @@ function KullanicilarPage() {
                     : "text-[color:var(--istikbal-blue)]/65 hover:bg-[color:var(--istikbal-blue-soft)]",
                 ].join(" ")}
               >
-                {r}
+                {roleFilterLabel(r)}
               </button>
             ))}
           </div>
@@ -302,17 +339,17 @@ function KullanicilarPage() {
 
         <div className="rounded-3xl bg-white border border-black/5 shadow-sm overflow-hidden">
           <div className="hidden md:grid grid-cols-12 gap-3 px-6 py-3 bg-[color:var(--istikbal-blue-soft)]/50 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
-            <div className="col-span-4">Üye</div>
-            <div className="col-span-3">Rol</div>
-            <div className="col-span-2">Durum</div>
-            <div className="col-span-2">Son Güncelleme</div>
-            <div className="col-span-1 text-right">İşlem</div>
+            <div className="col-span-4">{t("colMember")}</div>
+            <div className="col-span-3">{t("colRole")}</div>
+            <div className="col-span-2">{t("colStatus")}</div>
+            <div className="col-span-2">{t("colLastUpdate")}</div>
+            <div className="col-span-1 text-right">{t("colActions")}</div>
           </div>
 
           {loading && (
             <div className="p-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/70">
               <Loader2 className="size-8 animate-spin" />
-              <p className="text-sm font-medium">Kullanıcılar yükleniyor…</p>
+              <p className="text-sm font-medium">{t("loading")}</p>
             </div>
           )}
 
@@ -322,12 +359,10 @@ function KullanicilarPage() {
                 <Users className="size-6" />
               </div>
               <p className="mt-3 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-                {members.length === 0 ? "Henüz kullanıcı yok" : "Eşleşen kullanıcı yok"}
+                {members.length === 0 ? t("emptyNoneTitle") : t("emptyFilterTitle")}
               </p>
               <p className="text-xs text-[color:var(--istikbal-blue)]/55">
-                {members.length === 0
-                  ? "Oturumdaki şirket için CRM kullanıcı listesi boş."
-                  : "Arama veya filtreyi değiştirmeyi dene."}
+                {members.length === 0 ? t("emptyNoneBody") : t("emptyFilterBody")}
               </p>
             </div>
           )}
@@ -353,7 +388,7 @@ function KullanicilarPage() {
                         <p className="text-xs text-[color:var(--istikbal-blue)]/55 truncate flex items-center gap-1">
                           <Mail className="size-3" /> {m.email}
                         </p>
-                        {m.phone !== "—" && (
+                        {m.phone !== emDash && (
                           <p className="text-xs text-[color:var(--istikbal-blue)]/45 truncate flex items-center gap-1 mt-0.5">
                             <Phone className="size-3" /> {m.phone}
                           </p>
@@ -368,7 +403,7 @@ function KullanicilarPage() {
                           ROLE_META[m.role].tint,
                         ].join(" ")}
                       >
-                        <RoleIcon className="size-3.5" /> {m.role}
+                        <RoleIcon className="size-3.5" /> {t(ROLE_META[m.role].labelKey)}
                       </span>
                       <p className="hidden md:block text-[11px] text-[color:var(--istikbal-blue)]/45 mt-1 truncate">
                         {m.roleLabel}
@@ -380,7 +415,7 @@ function KullanicilarPage() {
                     </div>
 
                     <div className="hidden md:block col-span-2 text-xs text-[color:var(--istikbal-blue)]/60">
-                      {m.lastSeen}
+                      {formatLastSeen(m.updatedAt, tCommon)}
                     </div>
 
                     <div className="col-span-12 md:col-span-1 flex md:justify-end">
@@ -399,8 +434,8 @@ function KullanicilarPage() {
         </div>
 
         <div className="rounded-3xl bg-white border border-black/5 shadow-sm p-6">
-          <h2 className="text-base font-extrabold text-[color:var(--istikbal-blue)] tracking-tight mb-1">Roller</h2>
-          <p className="text-xs text-[color:var(--istikbal-blue)]/60 mb-4">CRM rollerinin portal özeti.</p>
+          <h2 className="text-base font-extrabold text-[color:var(--istikbal-blue)] tracking-tight mb-1">{t("rolesTitle")}</h2>
+          <p className="text-xs text-[color:var(--istikbal-blue)]/60 mb-4">{t("rolesSubtitle")}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {(Object.keys(ROLE_META) as Role[]).map((r) => {
               const Icon = ROLE_META[r].icon;
@@ -413,8 +448,8 @@ function KullanicilarPage() {
                     </span>
                     <span className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">{count}</span>
                   </div>
-                  <p className="text-sm font-bold text-[color:var(--istikbal-blue)] mt-3">{r}</p>
-                  <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{ROLE_META[r].label}</p>
+                  <p className="text-sm font-bold text-[color:var(--istikbal-blue)] mt-3">{t(ROLE_META[r].labelKey)}</p>
+                  <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t(ROLE_META[r].descKey)}</p>
                 </div>
               );
             })}
@@ -460,27 +495,30 @@ function StatCard({
 }
 
 function StatusBadge({ status }: { status: Status }) {
+  const t = useTranslations("kullanicilar");
   const map: Record<Status, string> = {
-    Aktif: "bg-emerald-100 text-emerald-700",
-    Davet: "bg-amber-100 text-amber-700",
-    Pasif: "bg-stone-100 text-stone-500",
+    active: "bg-emerald-100 text-emerald-700",
+    invite: "bg-amber-100 text-amber-700",
+    passive: "bg-stone-100 text-stone-500",
   };
   const dot: Record<Status, string> = {
-    Aktif: "bg-emerald-500",
-    Davet: "bg-amber-500",
-    Pasif: "bg-stone-400",
+    active: "bg-emerald-500",
+    invite: "bg-amber-500",
+    passive: "bg-stone-400",
   };
   return (
     <span className={["inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold", map[status]].join(" ")}>
       <span className={["size-1.5 rounded-full", dot[status]].join(" ")} />
-      {status}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }
 
 function InviteModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("kullanicilar");
+  const tCommon = useTranslations("common");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<Role>("Tasarımcı");
+  const [role, setRole] = useState<Role>("designer");
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
@@ -493,7 +531,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
             <span className="size-8 grid place-items-center rounded-xl bg-[color:var(--istikbal-blue)] text-white">
               <Plus className="size-4" />
             </span>
-            <h3 className="text-sm font-extrabold text-[color:var(--istikbal-blue)]">Kullanıcı Davet Et</h3>
+            <h3 className="text-sm font-extrabold text-[color:var(--istikbal-blue)]">{t("inviteTitle")}</h3>
           </div>
           <button
             type="button"
@@ -506,11 +544,11 @@ function InviteModal({ onClose }: { onClose: () => void }) {
 
         <div className="p-6 space-y-4">
           <p className="text-xs text-[color:var(--istikbal-blue)]/60 leading-relaxed">
-            Davet şu an UI hazır; CRM create/invite endpoint bağlantısı sonraki adımda eklenecek.
+            {t("inviteHint")}
           </p>
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
-              E-posta
+              {t("emailLabel")}
             </span>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
@@ -518,7 +556,7 @@ function InviteModal({ onClose }: { onClose: () => void }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                placeholder="kisi@istikbal.com.tr"
+                placeholder={t("emailPlaceholder")}
                 className="w-full rounded-xl bg-[color:var(--istikbal-blue-soft)]/50 border border-transparent text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 pl-10 pr-4 py-2.5 outline-none focus:bg-white focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10"
               />
             </div>
@@ -526,10 +564,10 @@ function InviteModal({ onClose }: { onClose: () => void }) {
 
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
-              Rol
+              {t("roleLabel")}
             </span>
             <div className="grid grid-cols-2 gap-2 mt-1.5">
-              {(["Yönetici", "Tasarımcı", "Görüntüleyici"] as Role[]).map((r) => {
+              {(["admin", "designer", "viewer"] as Role[]).map((r) => {
                 const Icon = ROLE_META[r].icon;
                 const isActive = role === r;
                 return (
@@ -545,9 +583,9 @@ function InviteModal({ onClose }: { onClose: () => void }) {
                     ].join(" ")}
                   >
                     <Icon className="size-4 text-[color:var(--istikbal-blue)]" />
-                    <p className="text-xs font-bold text-[color:var(--istikbal-blue)] mt-2">{r}</p>
+                    <p className="text-xs font-bold text-[color:var(--istikbal-blue)] mt-2">{t(ROLE_META[r].labelKey)}</p>
                     <p className="text-[10px] text-[color:var(--istikbal-blue)]/55 leading-tight mt-0.5">
-                      {ROLE_META[r].label}
+                      {t(ROLE_META[r].descKey)}
                     </p>
                   </button>
                 );
@@ -562,14 +600,14 @@ function InviteModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="text-xs font-semibold px-4 py-2.5 rounded-xl text-[color:var(--istikbal-blue)]/70 hover:bg-white"
           >
-            Vazgeç
+            {tCommon("cancel")}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs font-semibold px-4 py-2.5 shadow-sm"
           >
-            <Mail className="size-3.5" /> Daveti Gönder
+            <Mail className="size-3.5" /> {t("sendInvite")}
           </button>
         </div>
       </div>

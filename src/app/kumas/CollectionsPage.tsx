@@ -9,12 +9,14 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   listProductFilterCategories,
   type CatalogCategory,
 } from "@/lib/catalog";
 import { PortalCrmError, getPortalSessionView } from "@/lib/portal-crm";
+import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 type SortKey = "default" | "name-asc" | "name-desc";
 
@@ -49,6 +51,11 @@ function gradientFor(id: string) {
 
 function CollectionsPage() {
   const router = useRouter();
+  const t = useTranslations("kumas");
+  const tCommon = useTranslations("common");
+  const tCatalog = useTranslations("catalog");
+  const locale = useLocale();
+  const bcp47 = toBcp47(isAppLocale(locale) ? locale : defaultLocale);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("default");
@@ -57,8 +64,8 @@ function CollectionsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
+    return () => window.clearTimeout(timer);
   }, [query]);
 
   useEffect(() => {
@@ -80,7 +87,7 @@ function CollectionsPage() {
       } catch (err) {
         if (err instanceof PortalCrmError && err.status === 401) return;
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Kategoriler yüklenemedi.");
+          setError(err instanceof Error ? err.message : tCatalog("categoriesLoadError"));
           setCategories([]);
         }
       } finally {
@@ -90,7 +97,7 @@ function CollectionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, tCatalog]);
 
   const filtered = useMemo(() => {
     let list = [...categories];
@@ -100,28 +107,28 @@ function CollectionsPage() {
     }
     switch (sort) {
       case "name-asc":
-        list.sort((a, b) => a.name.localeCompare(b.name, "tr"));
+        list.sort((a, b) => a.name.localeCompare(b.name, bcp47));
         break;
       case "name-desc":
-        list.sort((a, b) => b.name.localeCompare(a.name, "tr"));
+        list.sort((a, b) => b.name.localeCompare(a.name, bcp47));
         break;
       default:
         break;
     }
     return list;
-  }, [categories, debouncedQuery, sort]);
+  }, [categories, debouncedQuery, sort, bcp47]);
 
   return (
     <>
       <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
-            Kategoriler
+            {t("categoriesTitle")}
           </h1>
           <p className="mt-1.5 text-[color:var(--istikbal-blue)]/60">
             {loading
-              ? "Kategoriler yükleniyor…"
-              : `${filtered.length} kategori · Bir kategori seçin, ürünleri keşfedin.`}
+              ? t("categoriesLoading")
+              : t("categoriesCountHint", { count: filtered.length })}
           </p>
         </div>
 
@@ -131,7 +138,7 @@ function CollectionsPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Kategori adı ile ara…"
+              placeholder={t("searchCategoryPlaceholder")}
               className="w-full h-11 pl-11 pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40 transition-all"
             />
           </div>
@@ -142,9 +149,9 @@ function CollectionsPage() {
               onChange={(e) => setSort(e.target.value as SortKey)}
               className="h-11 pl-9 pr-8 rounded-full bg-white border border-black/5 text-sm font-semibold text-[color:var(--istikbal-blue)] outline-none focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 appearance-none cursor-pointer"
             >
-              <option value="default">Varsayılan</option>
-              <option value="name-asc">İsim (A → Z)</option>
-              <option value="name-desc">İsim (Z → A)</option>
+              <option value="default">{tCommon("defaultSort")}</option>
+              <option value="name-asc">{tCommon("nameAsc")}</option>
+              <option value="name-desc">{tCommon("nameDesc")}</option>
             </select>
           </div>
         </div>
@@ -159,11 +166,11 @@ function CollectionsPage() {
       {loading ? (
         <div className="rounded-2xl bg-white border border-black/5 py-20 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
           <Loader2 className="size-8 animate-spin" />
-          <p className="text-sm font-semibold">Kategoriler yükleniyor…</p>
+          <p className="text-sm font-semibold">{t("categoriesLoading")}</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl bg-white border border-dashed border-black/10 py-20 text-center text-[color:var(--istikbal-blue)]/60">
-          Aramanızla eşleşen kategori bulunamadı.
+          {t("emptyCategories")}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -195,7 +202,7 @@ function CollectionsPage() {
                   <h3 className="text-base font-bold text-[color:var(--istikbal-blue)]">{c.name}</h3>
                   {c.productCount != null && (
                     <p className="mt-2 text-xs text-[color:var(--istikbal-blue)]/55">
-                      {c.productCount} ürün
+                      {tCatalog("productCount", { count: c.productCount })}
                     </p>
                   )}
                 </div>

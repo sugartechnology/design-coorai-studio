@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { PortalCrmError } from "@/lib/portal-crm";
 import { buildProductSearchCriteria, searchRootProducts } from "./catalog-api";
 import type { CatalogProduct } from "./catalog-types";
@@ -17,6 +18,7 @@ export function useProductSearch(input: {
   size?: number;
 }) {
   const router = useRouter();
+  const t = useTranslations("catalog");
   const pageSize = input.size ?? 48;
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -86,7 +88,7 @@ export function useProductSearch(input: {
       } catch (err) {
         if (requestId !== requestIdRef.current) return;
         if (err instanceof PortalCrmError && err.status === 401) return;
-        setError(err instanceof Error ? err.message : "Ürünler yüklenemedi.");
+        setError(err instanceof Error ? err.message : t("productsLoadError"));
         if (!append) {
           setProducts([]);
           productsLenRef.current = 0;
@@ -106,6 +108,7 @@ export function useProductSearch(input: {
     },
     [
       router,
+      t,
       debouncedQuery,
       input.collectionId,
       input.categoryId,

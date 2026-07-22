@@ -15,39 +15,44 @@ import {
   Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Brand modular products (köşe + kanepe takımları)
+type CategoryId = "cornerSet" | "modularSofa" | "sofa";
+type BadgeId = "new" | "popular";
+
 type Product = {
   id: string;
   name: string;
-  category: "Köşe Takımı" | "Modüler Kanepe" | "Kanepe";
+  category: CategoryId;
   price: number;
   modules: string[]; // default build (module ids)
-  badge?: string;
+  badge?: BadgeId;
 };
 
 const PRODUCTS: Product[] = [
-  { id: "p-klem-kose",   name: "Klem Modüler Köşe Takımı",   category: "Köşe Takımı",    price: 64900, modules: ["m-uclu","m-kose","m-ikili"], badge: "Yeni" },
-  { id: "p-klem-uclu",   name: "Klem Modüler Üçlü Kanepe",    category: "Modüler Kanepe", price: 42900, modules: ["m-uclu","m-tekli"] },
-  { id: "p-klem-l",      name: "Klem L Köşe Takımı",          category: "Köşe Takımı",    price: 71500, modules: ["m-uclu","m-kose","m-uclu"], badge: "Popüler" },
-  { id: "p-klem-u",      name: "Klem U Köşe Takımı",          category: "Köşe Takımı",    price: 89500, modules: ["m-ikili","m-kose","m-uclu","m-kose","m-ikili"] },
-  { id: "p-klem-love",   name: "Klem Loveseat Modüler",       category: "Modüler Kanepe", price: 38900, modules: ["m-love","m-puf"] },
-  { id: "p-klem-large",  name: "Klem Large Modüler Kanepe",   category: "Modüler Kanepe", price: 47500, modules: ["m-large","m-large","m-puf"] },
-  { id: "p-klem-tekli",  name: "Klem Tekli Berjer",           category: "Kanepe",         price: 16500, modules: ["m-tekli"] },
-  { id: "p-klem-island", name: "Klem Ada Köşe Takımı",        category: "Köşe Takımı",    price: 98500, modules: ["m-uclu","m-kose","m-uclu","m-puf"] },
+  { id: "p-klem-kose",   name: "Klem Modüler Köşe Takımı",   category: "cornerSet",    price: 64900, modules: ["m-uclu","m-kose","m-ikili"], badge: "new" },
+  { id: "p-klem-uclu",   name: "Klem Modüler Üçlü Kanepe",    category: "modularSofa", price: 42900, modules: ["m-uclu","m-tekli"] },
+  { id: "p-klem-l",      name: "Klem L Köşe Takımı",          category: "cornerSet",    price: 71500, modules: ["m-uclu","m-kose","m-uclu"], badge: "popular" },
+  { id: "p-klem-u",      name: "Klem U Köşe Takımı",          category: "cornerSet",    price: 89500, modules: ["m-ikili","m-kose","m-uclu","m-kose","m-ikili"] },
+  { id: "p-klem-love",   name: "Klem Loveseat Modüler",       category: "modularSofa", price: 38900, modules: ["m-love","m-puf"] },
+  { id: "p-klem-large",  name: "Klem Large Modüler Kanepe",   category: "modularSofa", price: 47500, modules: ["m-large","m-large","m-puf"] },
+  { id: "p-klem-tekli",  name: "Klem Tekli Berjer",           category: "sofa",         price: 16500, modules: ["m-tekli"] },
+  { id: "p-klem-island", name: "Klem Ada Köşe Takımı",        category: "cornerSet",    price: 98500, modules: ["m-uclu","m-kose","m-uclu","m-puf"] },
 ];
 
 // ---------- Data ----------
-type Wood = { id: string; label: string; color: string };
+type WoodLabelKey = "woodLight" | "woodWhite" | "woodNatural" | "woodWalnut" | "woodBlack";
+type Wood = { id: string; labelKey: WoodLabelKey; color: string };
 type Fabric = { id: string; label: string; color: string };
 type Module = { id: string; name: string; kind: "tekli" | "ikili" | "uclu" | "kose" | "loveseat" | "large" | "puf"; price: number; width: number };
 
 const WOODS: Wood[] = [
-  { id: "w1", label: "Açık",         color: "#c9a87a" },
-  { id: "w2", label: "Beyaz",        color: "#efe6d6" },
-  { id: "w3", label: "Naturel",      color: "#b87a3d" },
-  { id: "w4", label: "Ceviz",        color: "#5b3a22" },
-  { id: "w5", label: "Siyah",        color: "#1f1d1c" },
+  { id: "w1", labelKey: "woodLight",   color: "#c9a87a" },
+  { id: "w2", labelKey: "woodWhite",   color: "#efe6d6" },
+  { id: "w3", labelKey: "woodNatural", color: "#b87a3d" },
+  { id: "w4", labelKey: "woodWalnut",  color: "#5b3a22" },
+  { id: "w5", labelKey: "woodBlack",   color: "#1f1d1c" },
 ];
 
 const FABRICS: Fabric[] = [
@@ -61,13 +66,13 @@ const FABRICS: Fabric[] = [
 ];
 
 const CUSHIONS = [
-  { id: "c1", label: "Rahat Dolgu" },
-  { id: "c2", label: "Sıkı Dolgu" },
+  { id: "c1", labelKey: "cushionSoft" as const },
+  { id: "c2", labelKey: "cushionFirm" as const },
 ];
 
 const ARMS = [
-  { id: "a1", label: "İnce Kol" },
-  { id: "a2", label: "Kalın Kol" },
+  { id: "a1", labelKey: "armThin" as const },
+  { id: "a2", labelKey: "armThick" as const },
 ];
 
 const MODULES: Module[] = [
@@ -80,8 +85,21 @@ const MODULES: Module[] = [
   { id: "m-puf",       name: "Klem Puf",                kind: "puf",      price: 6500,  width: 80  },
 ];
 
+const CATEGORY_LABEL_KEYS: Record<CategoryId, "filterCornerSet" | "filterModularSofa" | "filterSofa"> = {
+  cornerSet: "filterCornerSet",
+  modularSofa: "filterModularSofa",
+  sofa: "filterSofa",
+};
+
+const BADGE_LABEL_KEYS: Record<BadgeId, "badgeNew" | "badgePopular"> = {
+  new: "badgeNew",
+  popular: "badgePopular",
+};
+
 // ---------- Page ----------
 function ModulerPage() {
+  const t = useTranslations("moduler");
+  const tCommon = useTranslations("common");
   const [wood, setWood] = useState(WOODS[0].id);
   const [fabric, setFabric] = useState(FABRICS[0].id);
   const [cushion, setCushion] = useState(CUSHIONS[0].id);
@@ -93,7 +111,7 @@ function ModulerPage() {
   const [listOpen, setListOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [query, setQuery] = useState("");
-  const [catFilter, setCatFilter] = useState<"Tümü" | Product["category"]>("Tümü");
+  const [catFilter, setCatFilter] = useState<"all" | CategoryId>("all");
   const [dragOver, setDragOver] = useState(false);
 
   const openProduct = (p: Product) => {
@@ -103,7 +121,7 @@ function ModulerPage() {
   const backToList = () => setSelectedProduct(null);
 
   const filteredProducts = PRODUCTS.filter(p =>
-    (catFilter === "Tümü" || p.category === catFilter) &&
+    (catFilter === "all" || p.category === catFilter) &&
     (query === "" || p.name.toLowerCase().includes(query.toLowerCase()))
   );
 
@@ -119,6 +137,9 @@ function ModulerPage() {
   const fabricObj = FABRICS.find(f => f.id === fabric)!;
   const cushionObj = CUSHIONS.find(c => c.id === cushion)!;
   const armObj = ARMS.find(a => a.id === arm)!;
+  const woodLabel = t(woodObj.labelKey);
+  const cushionLabel = t(cushionObj.labelKey);
+  const armLabel = t(armObj.labelKey);
 
   const total = useMemo(
     () => build.reduce((sum, b) => sum + (MODULES.find(m => m.id === b.moduleId)?.price ?? 0), 0),
@@ -134,15 +155,17 @@ function ModulerPage() {
       {/* Header (shared style) */}
       <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
         <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">
-          MODÜLER ÜRÜN{selectedProduct ? ` · ${selectedProduct.name}` : ""}
+          {selectedProduct
+            ? t("headerTitleWithProduct", { name: selectedProduct.name })
+            : t("headerTitle")}
         </div>
         <div className="flex-1" />
         {selectedProduct && (
           <button onClick={backToList} className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]">
-            ← Listeye Dön
+            {t("backToList")}
           </button>
         )}
       </header>
@@ -172,30 +195,30 @@ function ModulerPage() {
               <SofaPreview build={build} fabric={fabricObj} wood={woodObj} arm={armObj.id} />
               {dragOver && (
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="px-4 py-2 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-semibold shadow-lg">Bırakarak ekle</div>
+                  <div className="px-4 py-2 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-semibold shadow-lg">{t("dropToAdd")}</div>
                 </div>
               )}
 
               {/* Bottom toolbar */}
               <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                <ToolBtn icon={<Ruler className="size-4" />} label="Boyutlar" />
-                <ToolBtn icon={<Eraser className="size-4" />} label="Alanı Sıfırla" onClick={clearAll} />
-                <ToolBtn icon={<Eye className="size-4" />} label="Üstten Görüş" />
+                <ToolBtn icon={<Ruler className="size-4" />} label={t("toolDimensions")} />
+                <ToolBtn icon={<Eraser className="size-4" />} label={t("toolClearArea")} onClick={clearAll} />
+                <ToolBtn icon={<Eye className="size-4" />} label={t("toolTopView")} />
               </div>
 
               {/* Price + list */}
               <div className="absolute bottom-4 right-4 flex items-center gap-3">
                 <div className="text-right">
-                  <div className="text-xs text-[color:var(--istikbal-blue)]/50 font-medium">Toplam</div>
+                  <div className="text-xs text-[color:var(--istikbal-blue)]/50 font-medium">{tCommon("total")}</div>
                   <div className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">
-                    {total.toLocaleString("tr-TR")}<span className="text-sm font-semibold">,00 TL</span>
+                    {total.toLocaleString("tr-TR")}<span className="text-sm font-semibold">,00 {tCommon("currencyTl")}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setListOpen(true)}
                   className="h-12 px-5 rounded-full bg-[color:var(--istikbal-blue)] text-white font-semibold hover:opacity-90 flex items-center gap-2"
                 >
-                  <ListOrdered className="size-4" /> Ürün Listesi <ChevronRight className="size-4" />
+                  <ListOrdered className="size-4" /> {t("productList")} <ChevronRight className="size-4" />
                 </button>
               </div>
             </div>
@@ -203,8 +226,8 @@ function ModulerPage() {
 
           {/* Selected modules row */}
           <div className="mt-4 bg-white rounded-2xl shadow-sm p-3 flex items-center gap-2 overflow-x-auto">
-            <span className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider px-2 shrink-0">Seçilen Modüller</span>
-            {build.length === 0 && <span className="text-sm text-[color:var(--istikbal-blue)]/40 px-2">Henüz modül eklenmedi. Sağdan ekleyin.</span>}
+            <span className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider px-2 shrink-0">{t("selectedModules")}</span>
+            {build.length === 0 && <span className="text-sm text-[color:var(--istikbal-blue)]/40 px-2">{t("noModulesYet")}</span>}
             {build.map(b => {
               const m = MODULES.find(x => x.id === b.moduleId)!;
               return (
@@ -222,7 +245,7 @@ function ModulerPage() {
         {/* Right options panel */}
         <aside className="col-span-12 lg:col-span-4 space-y-3">
           {/* Ahşap */}
-          <OptionBlock title="Ahşap Seçeneği" value={`Ahşap Ayak / ${woodObj.label}`}>
+          <OptionBlock title={t("woodOption")} value={t("woodValuePrefix", { label: woodLabel })}>
             <div className="flex items-center gap-2 flex-wrap">
               {WOODS.map(w => (
                 <button key={w.id} onClick={() => setWood(w.id)} className={`size-11 rounded-full border-2 transition flex items-center justify-center ${wood === w.id ? "border-[color:var(--istikbal-blue)]" : "border-transparent hover:border-black/10"}`}>
@@ -233,7 +256,7 @@ function ModulerPage() {
           </OptionBlock>
 
           {/* Kumaş */}
-          <OptionBlock title="Kumaş Seçeneği" value={`/ ${fabricObj.label}`}>
+          <OptionBlock title={t("fabricOption")} value={`/ ${fabricObj.label}`}>
             <div className="flex items-center gap-2 flex-wrap">
               {FABRICS.map(f => (
                 <button key={f.id} onClick={() => setFabric(f.id)} className={`size-11 rounded-full border-2 transition ${fabric === f.id ? "border-[color:var(--istikbal-blue)]" : "border-transparent hover:border-black/10"}`}>
@@ -244,24 +267,24 @@ function ModulerPage() {
           </OptionBlock>
 
           {/* Sırt Minderi */}
-          <OptionBlock title="Sırt Minderi" value={cushionObj.label}>
+          <OptionBlock title={t("backCushion")} value={cushionLabel}>
             <div className="flex items-center gap-2">
               {CUSHIONS.map(c => (
                 <button key={c.id} onClick={() => setCushion(c.id)} className={`flex items-center gap-2 h-11 px-4 rounded-xl border-2 transition ${cushion === c.id ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5" : "border-black/5 hover:border-black/20"}`}>
                   <CushionIcon variant={c.id === "c1" ? "soft" : "firm"} active={cushion === c.id} />
-                  <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{c.label}</span>
+                  <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t(c.labelKey)}</span>
                 </button>
               ))}
             </div>
           </OptionBlock>
 
           {/* Kol */}
-          <OptionBlock title="Kol Seçeneği" value={armObj.label}>
+          <OptionBlock title={t("armOption")} value={armLabel}>
             <div className="flex items-center gap-2">
               {ARMS.map(a => (
                 <button key={a.id} onClick={() => setArm(a.id)} className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition w-24 ${arm === a.id ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5" : "border-black/5 hover:border-black/20"}`}>
                   <ArmIcon variant={a.id === "a1" ? "thin" : "thick"} active={arm === a.id} />
-                  <span className="text-[11px] font-semibold text-[color:var(--istikbal-blue)]">{a.label}</span>
+                  <span className="text-[11px] font-semibold text-[color:var(--istikbal-blue)]">{t(a.labelKey)}</span>
                 </button>
               ))}
             </div>
@@ -269,7 +292,7 @@ function ModulerPage() {
 
           {/* Modules */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-3 flex items-center gap-1.5"><GripVertical className="size-3" /> Modüller · sürükle veya tıkla</h3>
+            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-3 flex items-center gap-1.5"><GripVertical className="size-3" /> {t("modulesDragHint")}</h3>
             <div className="grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto pr-1">
               {MODULES.map(m => (
                 <button
@@ -284,7 +307,7 @@ function ModulerPage() {
                   </div>
                   <div className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] leading-tight line-clamp-2">{m.name}</div>
                   <div className="mt-1 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[color:var(--istikbal-blue)]/60">{m.price.toLocaleString("tr-TR")} TL</span>
+                    <span className="text-[10px] font-bold text-[color:var(--istikbal-blue)]/60">{m.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</span>
                     <Plus className="size-3.5 text-[color:var(--istikbal-blue)]/40 group-hover:text-[color:var(--istikbal-blue)]" />
                   </div>
                 </button>
@@ -300,30 +323,30 @@ function ModulerPage() {
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setListOpen(false)}>
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[color:var(--istikbal-blue)]">Ürün Listesi</h3>
+              <h3 className="text-lg font-bold text-[color:var(--istikbal-blue)]">{t("productList")}</h3>
               <button onClick={() => setListOpen(false)} className="size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--istikbal-blue)]"><X className="size-4" /></button>
             </div>
             <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-              {build.length === 0 && <p className="text-sm text-[color:var(--istikbal-blue)]/50">Liste boş.</p>}
+              {build.length === 0 && <p className="text-sm text-[color:var(--istikbal-blue)]/50">{t("listEmpty")}</p>}
               {build.map(b => {
                 const m = MODULES.find(x => x.id === b.moduleId)!;
                 return (
                   <div key={b.uid} className="flex items-center justify-between p-3 rounded-xl bg-stone-50">
                     <div>
                       <div className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{m.name}</div>
-                      <div className="text-[11px] text-[color:var(--istikbal-blue)]/50">{fabricObj.label} · Ahşap {woodObj.label}</div>
+                      <div className="text-[11px] text-[color:var(--istikbal-blue)]/50">{t("listLineMeta", { fabric: fabricObj.label, wood: woodLabel })}</div>
                     </div>
-                    <div className="text-sm font-bold text-[color:var(--istikbal-blue)]">{m.price.toLocaleString("tr-TR")} TL</div>
+                    <div className="text-sm font-bold text-[color:var(--istikbal-blue)]">{m.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</div>
                   </div>
                 );
               })}
             </div>
             <div className="mt-4 pt-4 border-t border-black/5 flex items-center justify-between">
-              <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]/70">Toplam</span>
-              <span className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">{total.toLocaleString("tr-TR")},00 TL</span>
+              <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]/70">{tCommon("total")}</span>
+              <span className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">{total.toLocaleString("tr-TR")},00 {tCommon("currencyTl")}</span>
             </div>
             <button className="mt-4 w-full h-12 rounded-xl bg-[color:var(--istikbal-blue)] text-white font-semibold hover:opacity-90 flex items-center justify-center gap-2">
-              <Check className="size-4" /> Onayla ve Kaydet
+              <Check className="size-4" /> {t("confirmSave")}
             </button>
           </div>
         </div>
@@ -412,13 +435,14 @@ function ModuleSilhouette({ kind, color, woodColor }: { kind: Module["kind"]; co
 
 // Large sofa preview
 function SofaPreview({ build, fabric, wood, arm }: { build: { uid: string; moduleId: string }[]; fabric: Fabric; wood: Wood; arm: string }) {
+  const t = useTranslations("moduler");
   const totalW = build.reduce((s, b) => s + (MODULES.find(m => m.id === b.moduleId)?.width ?? 0), 0);
   if (totalW === 0) {
     return (
       <div className="absolute inset-0 flex items-center justify-center text-center px-8">
         <div>
           <div className="text-5xl mb-2">🛋️</div>
-          <p className="text-[color:var(--istikbal-blue)]/50 text-sm font-medium">Sağdaki modüllerden ekleyerek<br />kendi kanepenizi oluşturun.</p>
+          <p className="text-[color:var(--istikbal-blue)]/50 text-sm font-medium whitespace-pre-line">{t("emptyPreviewHint")}</p>
         </div>
       </div>
     );
@@ -515,17 +539,22 @@ function CatalogView({
   wood: Wood;
   query: string;
   setQuery: (s: string) => void;
-  catFilter: "Tümü" | Product["category"];
-  setCatFilter: (s: "Tümü" | Product["category"]) => void;
+  catFilter: "all" | CategoryId;
+  setCatFilter: (s: "all" | CategoryId) => void;
   onOpen: (p: Product) => void;
 }) {
-  const cats: ("Tümü" | Product["category"])[] = ["Tümü", "Köşe Takımı", "Modüler Kanepe", "Kanepe"];
+  const t = useTranslations("moduler");
+  const tCommon = useTranslations("common");
+  const cats: ("all" | CategoryId)[] = ["all", "cornerSet", "modularSofa", "sofa"];
+  const catLabel = (c: "all" | CategoryId) =>
+    c === "all" ? t("filterAll") : t(CATEGORY_LABEL_KEYS[c]);
+
   return (
     <main className="px-4 lg:px-8 py-6">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-[color:var(--istikbal-blue)]">Modüler Ürünler</h1>
-          <p className="text-sm text-[color:var(--istikbal-blue)]/60 mt-1">Markanın modüler köşe ve kanepe koleksiyonu. Birini seçerek özelleştirmeye başlayın.</p>
+          <h1 className="text-3xl font-extrabold text-[color:var(--istikbal-blue)]">{t("catalogTitle")}</h1>
+          <p className="text-sm text-[color:var(--istikbal-blue)]/60 mt-1">{t("catalogSubtitle")}</p>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-72">
@@ -533,7 +562,7 @@ function CatalogView({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ürün ara..."
+              placeholder={t("searchPlaceholder")}
               className="w-full h-11 pl-9 pr-3 rounded-xl bg-white border border-black/5 text-sm text-[color:var(--istikbal-blue)] outline-none focus:border-[color:var(--istikbal-blue)]/30"
             />
           </div>
@@ -547,7 +576,7 @@ function CatalogView({
             onClick={() => setCatFilter(c)}
             className={`h-9 px-4 rounded-full text-xs font-semibold whitespace-nowrap transition border ${catFilter === c ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)]" : "bg-white text-[color:var(--istikbal-blue)]/70 border-black/5 hover:border-black/20"}`}
           >
-            {c}
+            {catLabel(c)}
           </button>
         ))}
       </div>
@@ -562,21 +591,21 @@ function CatalogView({
             <div className="aspect-[4/3] bg-gradient-to-br from-stone-50 to-stone-100 relative flex items-center justify-center">
               <ProductThumb modules={p.modules} fabric={fabric} wood={wood} />
               {p.badge && (
-                <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-[color:var(--istikbal-yellow)] text-[10px] font-bold text-[color:var(--istikbal-blue)]">{p.badge}</span>
+                <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-[color:var(--istikbal-yellow)] text-[10px] font-bold text-[color:var(--istikbal-blue)]">{t(BADGE_LABEL_KEYS[p.badge])}</span>
               )}
             </div>
             <div className="p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">{p.category}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">{t(CATEGORY_LABEL_KEYS[p.category])}</div>
               <div className="text-sm font-bold text-[color:var(--istikbal-blue)] mt-0.5 line-clamp-1">{p.name}</div>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-sm font-extrabold text-[color:var(--istikbal-blue)]">{p.price.toLocaleString("tr-TR")} TL</span>
-                <span className="text-[11px] font-semibold text-[color:var(--istikbal-blue)]/60 group-hover:text-[color:var(--istikbal-blue)] flex items-center gap-0.5">Özelleştir <ChevronRight className="size-3.5" /></span>
+                <span className="text-sm font-extrabold text-[color:var(--istikbal-blue)]">{p.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</span>
+                <span className="text-[11px] font-semibold text-[color:var(--istikbal-blue)]/60 group-hover:text-[color:var(--istikbal-blue)] flex items-center gap-0.5">{t("customize")} <ChevronRight className="size-3.5" /></span>
               </div>
             </div>
           </button>
         ))}
         {products.length === 0 && (
-          <div className="col-span-full bg-white rounded-2xl p-10 text-center text-sm text-[color:var(--istikbal-blue)]/50">Sonuç bulunamadı.</div>
+          <div className="col-span-full bg-white rounded-2xl p-10 text-center text-sm text-[color:var(--istikbal-blue)]/50">{tCommon("noResults")}</div>
         )}
       </div>
     </main>
@@ -603,7 +632,7 @@ function ProductThumb({ modules, fabric, wood }: { modules: string[]; fabric: Fa
             <rect x={x} y={60} width={w} height={36} rx="6" fill={shade(fabric.color, -10)} />
             {!isPuf && <rect x={x + 2} y={30} width={w - 4} height={38} rx="5" fill={fabric.color} />}
             {isPuf && <rect x={x + 3} y={56} width={w - 6} height={36} rx="7" fill={fabric.color} />}
-            {isKose && <rect x={x} y={30} width={14} height={38} rx="4" fill={shade(fabric.color, -15)} />}
+            {isKose && <rect x={x} y={30} width="14" height={38} rx="4" fill={shade(fabric.color, -15)} />}
             <rect x={x + 4} y={94} width="4" height="8" rx="1" fill={wood.color} />
             <rect x={x + w - 8} y={94} width="4" height="8" rx="1" fill={wood.color} />
           </g>
@@ -613,7 +642,5 @@ function ProductThumb({ modules, fabric, wood }: { modules: string[]; fabric: Fa
   );
 }
 
-
-// Mark unused imports
 
 export default ModulerPage;

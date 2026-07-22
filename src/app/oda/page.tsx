@@ -15,6 +15,7 @@ import {
   Box,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   RoomDesignerHost,
@@ -23,15 +24,9 @@ import {
 } from "@/components/RoomDesignerHost";
 import { useCatalogFilters, useInfiniteScroll, useProductSearch, type CatalogProduct } from "@/lib/catalog";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 type TemplateKey = "kare" | "L" | "U" | "T";
-
-const TEMPLATE_LABELS: Record<TemplateKey, string> = {
-  kare: "Kare Oda",
-  L: "L Oda",
-  U: "U Oda",
-  T: "T Oda",
-};
 
 /** Room designer Api.fetchProduct expects numeric Sugar productModalId. */
 function resolveSugarProductId(product: CatalogProduct): number | null {
@@ -42,6 +37,10 @@ function resolveSugarProductId(product: CatalogProduct): number | null {
 }
 
 function OdaPage() {
+  const t = useTranslations("oda");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
+  const bcp47 = toBcp47(isAppLocale(locale) ? locale : defaultLocale);
   const [designerEl, setDesignerEl] = useState<SugarRoomDesignerElement | null>(
     null,
   );
@@ -71,17 +70,28 @@ function OdaPage() {
     root: productScrollEl,
   });
 
+  const templateLabels = useMemo(
+    (): Record<TemplateKey, string> => ({
+      kare: t("templateSquare"),
+      L: t("templateL"),
+      U: t("templateU"),
+      T: t("templateT"),
+    }),
+    [t],
+  );
+
   const productsByCollection = useMemo(() => {
+    const otherLabel = tCommon("other");
     const map: Record<string, CatalogProduct[]> = {};
     for (const p of products) {
       const key =
         p.collectionName ||
         collections.find((c) => c.id === p.collectionId)?.name ||
-        "Diğer";
+        otherLabel;
       (map[key] ||= []).push(p);
     }
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b, "tr"));
-  }, [products, collections]);
+    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b, bcp47));
+  }, [products, collections, tCommon, bcp47]);
 
   const onDesignerReady = useCallback((el: SugarRoomDesignerElement) => {
     designerRef.current = el;
@@ -192,10 +202,10 @@ function OdaPage() {
           href="/"
           className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]"
         >
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
         <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">
-          ODA PLANLA
+          {t("headerTitle")}
         </div>
         <div className="flex-1" />
       </header>
@@ -218,7 +228,7 @@ function OdaPage() {
                 }`}
               >
                 <Layers className="size-4" />
-                2D
+                {t("view2d")}
               </button>
               <button
                 onClick={() => setViewMode("3D")}
@@ -229,7 +239,7 @@ function OdaPage() {
                 }`}
               >
                 <Box className="size-4" />
-                3D
+                {t("view3d")}
               </button>
             </div>
           </div>
@@ -241,10 +251,10 @@ function OdaPage() {
               className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--istikbal-blue)] ${
                 canUndo ? "hover:bg-black/5" : "opacity-30"
               }`}
-              title="Geri Al"
+              title={t("undoTitle")}
             >
               <Undo2 className="size-4" />
-              <span className="text-[10px] font-semibold">Geri</span>
+              <span className="text-[10px] font-semibold">{t("undo")}</span>
             </button>
             <button
               disabled={!canRedo}
@@ -252,10 +262,10 @@ function OdaPage() {
               className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--istikbal-blue)] ${
                 canRedo ? "hover:bg-black/5" : "opacity-30"
               }`}
-              title="İleri Al"
+              title={t("redoTitle")}
             >
               <Redo2 className="size-4" />
-              <span className="text-[10px] font-semibold">İleri</span>
+              <span className="text-[10px] font-semibold">{t("redo")}</span>
             </button>
           </div>
 
@@ -263,10 +273,10 @@ function OdaPage() {
             <button
               onClick={() => withDesigner((el) => void el.newScene())}
               className="h-16 rounded-xl flex flex-col items-center justify-center gap-1 text-[color:var(--istikbal-blue)] hover:bg-black/5"
-              title="Sıfırla"
+              title={t("resetTitle")}
             >
               <RotateCcw className="size-4" />
-              <span className="text-[10px] font-bold">Sıfırla</span>
+              <span className="text-[10px] font-bold">{t("reset")}</span>
             </button>
             <button
               onClick={() =>
@@ -275,31 +285,31 @@ function OdaPage() {
                 })
               }
               className="h-16 rounded-xl flex flex-col items-center justify-center gap-1 text-rose-600 hover:bg-rose-50"
-              title="Sıfırdan Çiz"
+              title={t("drawFromScratchTitle")}
             >
               <Pencil className="size-4" />
-              <span className="text-[10px] font-bold">Sıfırdan Çiz</span>
+              <span className="text-[10px] font-bold">{t("drawFromScratch")}</span>
             </button>
           </div>
 
           <div className="bg-white rounded-2xl p-3 shadow-sm">
             <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2">
-              Şablonlar
+              {t("templates")}
             </h3>
             <div className="grid grid-cols-2 gap-2">
-              {(Object.keys(TEMPLATE_LABELS) as TemplateKey[]).map((t) => (
+              {(Object.keys(templateLabels) as TemplateKey[]).map((key) => (
                 <button
-                  key={t}
-                  onClick={() => applyTemplate(t)}
+                  key={key}
+                  onClick={() => applyTemplate(key)}
                   className={`aspect-square rounded-xl border-2 transition flex flex-col items-center justify-center gap-1 p-2 ${
-                    template === t
+                    template === key
                       ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5"
                       : "border-black/5 hover:border-black/20"
                   }`}
                 >
-                  <TemplateIcon kind={t} active={template === t} />
+                  <TemplateIcon kind={key} active={template === key} />
                   <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]">
-                    {TEMPLATE_LABELS[t]}
+                    {templateLabels[key]}
                   </span>
                 </button>
               ))}
@@ -308,7 +318,7 @@ function OdaPage() {
 
           <div className="bg-white rounded-2xl p-3 shadow-sm">
             <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2">
-              Eklentiler
+              {t("openings")}
             </h3>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -319,7 +329,7 @@ function OdaPage() {
                     : "border-black/5 hover:border-black/20 text-[color:var(--istikbal-blue)]"
                 }`}
               >
-                <DoorOpen className="size-4" /> Kapı
+                <DoorOpen className="size-4" /> {t("door")}
               </button>
               <button
                 onClick={() => toggleOpening("pencere")}
@@ -329,12 +339,12 @@ function OdaPage() {
                     : "border-black/5 hover:border-black/20 text-[color:var(--istikbal-blue)]"
                 }`}
               >
-                <AppWindow className="size-4" /> Pencere
+                <AppWindow className="size-4" /> {t("window")}
               </button>
             </div>
             {addingOpening && (
               <p className="mt-2 text-[10px] text-[color:var(--istikbal-blue)]/60">
-                Duvara tıklayarak ekleyin.
+                {t("clickWallHint")}
               </p>
             )}
           </div>
@@ -357,12 +367,12 @@ function OdaPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ürün ara..."
+                placeholder={t("searchProductsPlaceholder")}
                 className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
               />
             </div>
             <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Ürünler · Koleksiyona Göre</span>
+              <span>{t("productsByCollection")}</span>
               <span className="text-[color:var(--istikbal-blue)]/40 normal-case font-medium">
                 {products.length}
               </span>
@@ -373,14 +383,14 @@ function OdaPage() {
             >
               {(filtersLoading || (productsLoading && products.length === 0)) && (
                 <p className="text-xs text-[color:var(--istikbal-blue)]/50 text-center py-6">
-                  Yükleniyor…
+                  {tCommon("loading")}
                 </p>
               )}
               {!filtersLoading &&
                 !productsLoading &&
                 productsByCollection.length === 0 && (
                   <div className="text-sm text-[color:var(--istikbal-blue)]/40 text-center py-6">
-                    Sonuç bulunamadı.
+                    {tCommon("noResults")}
                   </div>
                 )}
               {productsByCollection.map(([collection, items]) => (
@@ -404,7 +414,7 @@ function OdaPage() {
                         title={
                           canPlace
                             ? p.name
-                            : `${p.name} (oda yerleşimi için model id yok)`
+                            : t("noModelIdTitle", { name: p.name })
                         }
                         draggable={canPlace}
                         onDragStart={(e) => onProductDragStart(e, p)}
@@ -424,7 +434,7 @@ function OdaPage() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-[color:var(--istikbal-blue)]/20 text-xs">
-                              —
+                              {tCommon("emDash")}
                             </div>
                           )}
                         </div>

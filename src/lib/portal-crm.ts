@@ -1,7 +1,15 @@
 "use client";
 
-import { localizeCrmError, type CrmErrorBody } from "@/lib/crm-errors";
+import { localizeCrmError, type CrmErrorBody, type CrmErrorLocale } from "@/lib/crm-errors";
 import { redirectToLoginOnUnauthorized } from "@/lib/auth-redirect";
+import { LOCALE_COOKIE, isAppLocale } from "@/i18n/config";
+
+function resolveCrmLocale(): CrmErrorLocale {
+  if (typeof document === "undefined") return "tr";
+  const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
+  const value = match?.[1] ? decodeURIComponent(match[1]) : undefined;
+  return isAppLocale(value) ? value : "tr";
+}
 
 export type PortalSessionView = {
   authenticated: true;
@@ -77,17 +85,24 @@ export async function portalCrmFetch<T>(
   });
 
   if (router && redirectToLoginOnUnauthorized(res.status, router)) {
-    throw new PortalCrmError("Oturum gerekli.", 401);
+    throw new PortalCrmError(localizeCrmError({}, undefined, resolveCrmLocale()), 401);
   }
 
   if (!res.ok) {
     const contentType = res.headers.get("Content-Type") ?? "";
     if (contentType.includes("application/json")) {
       const errBody = (await res.json().catch(() => ({}))) as CrmErrorBody;
-      throw new PortalCrmError(localizeCrmError(errBody, "İşlem şu an yapılamıyor."), res.status, errBody);
+      throw new PortalCrmError(
+        localizeCrmError(errBody, undefined, resolveCrmLocale()),
+        res.status,
+        errBody,
+      );
     }
     const text = await res.text().catch(() => "");
-    throw new PortalCrmError(text || "İşlem şu an yapılamıyor.", res.status);
+    throw new PortalCrmError(
+      text || localizeCrmError({}, undefined, resolveCrmLocale()),
+      res.status,
+    );
   }
 
   if (res.status === 204) {

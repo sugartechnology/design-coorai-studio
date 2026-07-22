@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import {
@@ -17,7 +18,10 @@ function CategoryProductsPage() {
   const router = useRouter();
   const params = useParams<{ category: string }>();
   const categoryId = params.category;
-  const [categoryName, setCategoryName] = useState("Kategori");
+  const t = useTranslations("kumas");
+  const tCommon = useTranslations("common");
+  const tCatalog = useTranslations("catalog");
+  const [categoryName, setCategoryName] = useState(tCommon("categoryFallback"));
   const [query, setQuery] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
 
@@ -59,19 +63,19 @@ function CategoryProductsPage() {
       } catch (err) {
         if (err instanceof PortalCrmError && err.status === 401) return;
         if (!cancelled) {
-          setNameError(err instanceof Error ? err.message : "Kategori yüklenemedi.");
+          setNameError(err instanceof Error ? err.message : tCatalog("categoryLoadError"));
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [categoryId, router]);
+  }, [categoryId, router, tCatalog]);
 
   const subtitle = useMemo(() => {
-    if (loading && products.length === 0) return "Ürünler yükleniyor…";
-    return `${totalElements} ürün · Kategoriye göre listeleniyor.`;
-  }, [loading, products.length, totalElements]);
+    if (loading && products.length === 0) return t("productsLoading");
+    return t("productsCountHint", { count: totalElements });
+  }, [loading, products.length, totalElements, t]);
 
   return (
     <>
@@ -80,14 +84,14 @@ function CategoryProductsPage() {
           href="/kumas"
           className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)] hover:opacity-80"
         >
-          <ArrowLeft className="size-4" /> Kategorilere dön
+          <ArrowLeft className="size-4" /> {t("backToCategories")}
         </Link>
       </div>
 
       <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">
-            Kategori
+            {t("categoryEyebrow")}
           </p>
           <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
             {categoryName}
@@ -100,7 +104,7 @@ function CategoryProductsPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Bu kategoride ürün ara…"
+            placeholder={t("searchInCategoryPlaceholder")}
             className="w-full h-11 pl-11 pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
           />
         </div>
@@ -115,11 +119,11 @@ function CategoryProductsPage() {
       {loading && products.length === 0 ? (
         <div className="rounded-2xl bg-white border border-black/5 py-20 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
           <Loader2 className="size-8 animate-spin" />
-          <p className="text-sm font-semibold">Ürünler yükleniyor…</p>
+          <p className="text-sm font-semibold">{t("productsLoading")}</p>
         </div>
       ) : products.length === 0 ? (
         <div className="rounded-2xl bg-white border border-dashed border-black/10 py-20 text-center text-[color:var(--istikbal-blue)]/60">
-          Bu kategoride ürün bulunamadı.
+          {t("emptyCategoryProducts")}
         </div>
       ) : (
         <>
@@ -143,7 +147,7 @@ function CategoryProductsPage() {
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-[color:var(--istikbal-blue)]/30">
-                        Görsel yok
+                        {tCommon("noImage")}
                       </div>
                     )}
                   </div>

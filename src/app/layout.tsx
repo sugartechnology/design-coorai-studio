@@ -1,24 +1,30 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { TutorialButton } from "@/components/TutorialButton";
 import { getPortalTheme } from "@/lib/branding";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "İstikbal 3D Tasarım Stüdyosu",
-  description:
-    "Mobilya mağazaları için 3D tasarım, kumaş seçimi, yapay zeka destekli oda planlama ve modüler ürün yönetimi.",
-  openGraph: {
-    title: "İstikbal 3D Tasarım Stüdyosu",
-    description: "Kumaş seç, yapay zeka ile tasarla, oda planla ve mağazanı tek panelden yönet.",
-    type: "website",
-  },
-  twitter: {
-    card: "summary",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta");
+  return {
+    title: t("title"),
+    description: t("description"),
+    openGraph: {
+      title: t("title"),
+      description: t("ogDescription"),
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+    },
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
   const theme = await getPortalTheme();
   const themeStyles = {
     "--istikbal-blue": theme.primary,
@@ -29,10 +35,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   } as CSSProperties;
 
   return (
-    <html lang="tr">
+    <html lang={locale}>
       <body style={themeStyles}>
-        {children}
-        <TutorialButton />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+          <TutorialButton />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

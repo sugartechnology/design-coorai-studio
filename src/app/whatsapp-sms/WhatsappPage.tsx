@@ -15,9 +15,10 @@ import {
   Tag,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 // ---------- Data ----------
-type Segment = "VIP" | "Yeni" | "Pasif" | "Sıcak";
+type Segment = "vip" | "hot" | "new" | "passive";
 type Customer = {
   id: string;
   name: string;
@@ -29,57 +30,43 @@ type Customer = {
 };
 
 const CUSTOMERS: Customer[] = [
-  { id: "c01", name: "Ayşe Yılmaz",     phone: "+90 532 111 22 33", city: "İstanbul", segment: "VIP",   lastOrder: "2 gün önce",  total: 84500 },
-  { id: "c02", name: "Mehmet Demir",    phone: "+90 533 222 33 44", city: "Ankara",   segment: "Sıcak", lastOrder: "1 hafta önce", total: 32400 },
-  { id: "c03", name: "Zeynep Kara",     phone: "+90 535 333 44 55", city: "İzmir",    segment: "VIP",   lastOrder: "5 gün önce",  total: 124000 },
-  { id: "c04", name: "Hasan Çelik",     phone: "+90 537 444 55 66", city: "Bursa",    segment: "Yeni",  lastOrder: "Bugün",       total: 18900 },
-  { id: "c05", name: "Elif Aydın",      phone: "+90 538 555 66 77", city: "Antalya",  segment: "Pasif", lastOrder: "6 ay önce",   total: 8700 },
-  { id: "c06", name: "Burak Şahin",     phone: "+90 539 666 77 88", city: "Adana",    segment: "Sıcak", lastOrder: "3 gün önce",  total: 45600 },
-  { id: "c07", name: "Selin Doğan",     phone: "+90 541 777 88 99", city: "İstanbul", segment: "VIP",   lastOrder: "1 gün önce",  total: 99800 },
-  { id: "c08", name: "Emre Kılıç",      phone: "+90 542 888 99 00", city: "Kocaeli",  segment: "Yeni",  lastOrder: "Dün",         total: 22300 },
-  { id: "c09", name: "Fatma Acar",      phone: "+90 543 999 00 11", city: "Gaziantep", segment: "Pasif", lastOrder: "1 yıl önce", total: 6500 },
-  { id: "c10", name: "Mert Polat",      phone: "+90 544 000 11 22", city: "İstanbul", segment: "Sıcak", lastOrder: "4 gün önce",  total: 36900 },
-  { id: "c11", name: "Deniz Aksoy",     phone: "+90 545 111 22 33", city: "İzmir",    segment: "VIP",   lastOrder: "1 gün önce",  total: 152000 },
-  { id: "c12", name: "Canan Erdoğan",   phone: "+90 546 222 33 44", city: "Ankara",   segment: "Yeni",  lastOrder: "3 gün önce",  total: 14200 },
-  { id: "c13", name: "Onur Yıldız",     phone: "+90 547 333 44 55", city: "Konya",    segment: "Sıcak", lastOrder: "2 hafta önce", total: 28600 },
-  { id: "c14", name: "Pınar Güneş",     phone: "+90 548 444 55 66", city: "Eskişehir", segment: "Pasif", lastOrder: "8 ay önce",  total: 11300 },
+  { id: "c01", name: "Ayşe Yılmaz",     phone: "+90 532 111 22 33", city: "İstanbul", segment: "vip",     lastOrder: "2 gün önce",  total: 84500 },
+  { id: "c02", name: "Mehmet Demir",    phone: "+90 533 222 33 44", city: "Ankara",   segment: "hot",     lastOrder: "1 hafta önce", total: 32400 },
+  { id: "c03", name: "Zeynep Kara",     phone: "+90 535 333 44 55", city: "İzmir",    segment: "vip",     lastOrder: "5 gün önce",  total: 124000 },
+  { id: "c04", name: "Hasan Çelik",     phone: "+90 537 444 55 66", city: "Bursa",    segment: "new",     lastOrder: "Bugün",       total: 18900 },
+  { id: "c05", name: "Elif Aydın",      phone: "+90 538 555 66 77", city: "Antalya",  segment: "passive", lastOrder: "6 ay önce",   total: 8700 },
+  { id: "c06", name: "Burak Şahin",     phone: "+90 539 666 77 88", city: "Adana",    segment: "hot",     lastOrder: "3 gün önce",  total: 45600 },
+  { id: "c07", name: "Selin Doğan",     phone: "+90 541 777 88 99", city: "İstanbul", segment: "vip",     lastOrder: "1 gün önce",  total: 99800 },
+  { id: "c08", name: "Emre Kılıç",      phone: "+90 542 888 99 00", city: "Kocaeli",  segment: "new",     lastOrder: "Dün",         total: 22300 },
+  { id: "c09", name: "Fatma Acar",      phone: "+90 543 999 00 11", city: "Gaziantep", segment: "passive", lastOrder: "1 yıl önce", total: 6500 },
+  { id: "c10", name: "Mert Polat",      phone: "+90 544 000 11 22", city: "İstanbul", segment: "hot",     lastOrder: "4 gün önce",  total: 36900 },
+  { id: "c11", name: "Deniz Aksoy",     phone: "+90 545 111 22 33", city: "İzmir",    segment: "vip",     lastOrder: "1 gün önce",  total: 152000 },
+  { id: "c12", name: "Canan Erdoğan",   phone: "+90 546 222 33 44", city: "Ankara",   segment: "new",     lastOrder: "3 gün önce",  total: 14200 },
+  { id: "c13", name: "Onur Yıldız",     phone: "+90 547 333 44 55", city: "Konya",    segment: "hot",     lastOrder: "2 hafta önce", total: 28600 },
+  { id: "c14", name: "Pınar Güneş",     phone: "+90 548 444 55 66", city: "Eskişehir", segment: "passive", lastOrder: "8 ay önce",  total: 11300 },
 ];
 
-type Template = { id: string; name: string; subject: string; body: string; tag: string };
-const TEMPLATES: Template[] = [
-  {
-    id: "t1",
-    name: "Yeni Koleksiyon Duyurusu",
-    subject: "🛋️ Yeni Sezon Geldi",
-    tag: "Kampanya",
-    body: "Merhaba {ad}, 2026 yeni koleksiyonumuz mağazamızda! Size özel %15 indirim fırsatını kaçırmayın.",
-  },
-  {
-    id: "t2",
-    name: "VIP Özel İndirim",
-    subject: "🎁 Size Özel Davet",
-    tag: "VIP",
-    body: "Sayın {ad}, sadece seçkin müşterilerimize özel %25 indirim kuponunuz hazır. Mağazamızda sizi bekliyoruz.",
-  },
-  {
-    id: "t3",
-    name: "Sipariş Hatırlatma",
-    subject: "📦 Siparişiniz Hakkında",
-    tag: "Bilgilendirme",
-    body: "Merhaba {ad}, son siparişinizi tamamlayabilirsiniz. Sepetinizdeki ürünler 24 saat içinde stoktan düşecek.",
-  },
-  {
-    id: "t4",
-    name: "Geri Kazanım Kampanyası",
-    subject: "💛 Sizi Özledik",
-    tag: "Pasif Müşteri",
-    body: "Merhaba {ad}, uzun zamandır görüşemedik. Size özel %20 indirim ile mağazamıza beklerken.",
-  },
+type TemplateKeyPrefix = "tplNewCollection" | "tplVip" | "tplOrder" | "tplWinback";
+type TemplateDef = { id: string; prefix: TemplateKeyPrefix };
+const TEMPLATES: TemplateDef[] = [
+  { id: "t1", prefix: "tplNewCollection" },
+  { id: "t2", prefix: "tplVip" },
+  { id: "t3", prefix: "tplOrder" },
+  { id: "t4", prefix: "tplWinback" },
 ];
+
+const SEGMENT_LABEL_KEYS: Record<Segment, "segmentVip" | "segmentHot" | "segmentNew" | "segmentPassive"> = {
+  vip: "segmentVip",
+  hot: "segmentHot",
+  new: "segmentNew",
+  passive: "segmentPassive",
+};
 
 type SendStatus = "pending" | "sending" | "sent" | "failed";
 
 function WhatsappPage() {
+  const t = useTranslations("whatsappSms");
+  const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [segmentFilter, setSegmentFilter] = useState<Segment | "all">("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
@@ -90,7 +77,12 @@ function WhatsappPage() {
   const [statuses, setStatuses] = useState<Record<string, SendStatus>>({});
   const [showProgress, setShowProgress] = useState(false);
 
-  const template = TEMPLATES.find(t => t.id === templateId)!;
+  const templateDef = TEMPLATES.find(tmpl => tmpl.id === templateId)!;
+  const templateName = t(`${templateDef.prefix}Name`);
+  const templateSubject = t(`${templateDef.prefix}Subject`);
+  const templateBody = t(`${templateDef.prefix}Body`, { ad: "Ayşe" });
+  const templateBodyPreview = (prefix: TemplateKeyPrefix) =>
+    t(`${prefix}Body`, { ad: "{ad}" });
 
   const cities = useMemo(() => Array.from(new Set(CUSTOMERS.map(c => c.city))).sort(), []);
 
@@ -153,9 +145,9 @@ function WhatsappPage() {
       {/* Header */}
       <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> Geri
+          <ArrowLeft className="size-4" /> {tCommon("back")}
         </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">WHATSAPP & SMS</div>
+        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
         <div className="flex-1" />
       </header>
 
@@ -170,26 +162,26 @@ function WhatsappPage() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="İsim, telefon veya şehir ara..."
+                  placeholder={t("searchPlaceholder")}
                   className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
                 />
               </div>
               <FilterChip
-                label="Segment"
+                label={t("filterSegment")}
                 value={segmentFilter}
                 options={[
-                  { v: "all", l: "Tümü" },
-                  { v: "VIP", l: "VIP" },
-                  { v: "Sıcak", l: "Sıcak" },
-                  { v: "Yeni", l: "Yeni" },
-                  { v: "Pasif", l: "Pasif" },
+                  { v: "all", l: tCommon("all") },
+                  { v: "vip", l: t("segmentVip") },
+                  { v: "hot", l: t("segmentHot") },
+                  { v: "new", l: t("segmentNew") },
+                  { v: "passive", l: t("segmentPassive") },
                 ]}
                 onChange={(v) => setSegmentFilter(v as Segment | "all")}
               />
               <FilterChip
-                label="Şehir"
+                label={t("filterCity")}
                 value={cityFilter}
-                options={[{ v: "all", l: "Tümü" }, ...cities.map(c => ({ v: c, l: c }))]}
+                options={[{ v: "all", l: tCommon("all") }, ...cities.map(c => ({ v: c, l: c }))]}
                 onChange={setCityFilter}
               />
             </div>
@@ -207,7 +199,9 @@ function WhatsappPage() {
                   {selected.size > 0 && selected.size < filtered.length && <span className="size-2 bg-[color:var(--istikbal-blue)] rounded-sm" />}
                 </button>
                 <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]">
-                  {selected.size > 0 ? `${selected.size} seçili` : `${filtered.length} müşteri`}
+                  {selected.size > 0
+                    ? t("selectedCount", { count: selected.size })
+                    : t("customerCount", { count: filtered.length })}
                 </span>
               </div>
               <Users className="size-4 text-[color:var(--istikbal-blue)]/40" />
@@ -229,7 +223,7 @@ function WhatsappPage() {
                       <div className="text-xs text-[color:var(--istikbal-blue)]/50 truncate">{c.phone} · {c.city}</div>
                     </div>
                     <div className="text-right hidden sm:block">
-                      <div className="text-xs text-[color:var(--istikbal-blue)]/60 font-semibold">{c.total.toLocaleString("tr-TR")} TL</div>
+                      <div className="text-xs text-[color:var(--istikbal-blue)]/60 font-semibold">{c.total.toLocaleString("tr-TR")} {tCommon("currencyTl")}</div>
                       <div className="text-[11px] text-[color:var(--istikbal-blue)]/40">{c.lastOrder}</div>
                     </div>
                   </label>
@@ -238,7 +232,7 @@ function WhatsappPage() {
               {filtered.length === 0 && (
                 <div className="px-4 py-12 text-center text-sm text-[color:var(--istikbal-blue)]/50">
                   <Filter className="size-6 mx-auto mb-2 opacity-40" />
-                  Filtreye uyan müşteri yok.
+                  {t("emptyFiltered")}
                 </div>
               )}
             </div>
@@ -253,36 +247,36 @@ function WhatsappPage() {
               onClick={() => setChannel("whatsapp")}
               className={`flex-1 h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${channel === "whatsapp" ? "bg-[#25D366] text-white" : "text-[color:var(--istikbal-blue)] hover:bg-black/5"}`}
             >
-              <MessageCircle className="size-4" /> WhatsApp
+              <MessageCircle className="size-4" /> {t("channelWhatsapp")}
             </button>
             <button
               onClick={() => setChannel("sms")}
               className={`flex-1 h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${channel === "sms" ? "bg-[color:var(--istikbal-blue)] text-white" : "text-[color:var(--istikbal-blue)] hover:bg-black/5"}`}
             >
-              <Send className="size-4" /> SMS
+              <Send className="size-4" /> {t("channelSms")}
             </button>
           </div>
 
           {/* Templates */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">Mesaj Şablonu</h3>
+              <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">{t("templateSection")}</h3>
               <button className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] flex items-center gap-1 hover:underline">
-                <Sparkles className="size-3" /> AI ile oluştur
+                <Sparkles className="size-3" /> {t("createWithAi")}
               </button>
             </div>
             <div className="space-y-2">
-              {TEMPLATES.map(t => (
+              {TEMPLATES.map(tmpl => (
                 <button
-                  key={t.id}
-                  onClick={() => setTemplateId(t.id)}
-                  className={`w-full text-left p-3 rounded-xl border-2 transition ${templateId === t.id ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5" : "border-black/5 hover:border-black/15"}`}
+                  key={tmpl.id}
+                  onClick={() => setTemplateId(tmpl.id)}
+                  className={`w-full text-left p-3 rounded-xl border-2 transition ${templateId === tmpl.id ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5" : "border-black/5 hover:border-black/15"}`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-sm text-[color:var(--istikbal-blue)]">{t.name}</span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color:var(--istikbal-yellow)]/30 text-[color:var(--istikbal-blue)]"><Tag className="size-2.5 inline -mt-0.5" /> {t.tag}</span>
+                    <span className="font-semibold text-sm text-[color:var(--istikbal-blue)]">{t(`${tmpl.prefix}Name`)}</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color:var(--istikbal-yellow)]/30 text-[color:var(--istikbal-blue)]"><Tag className="size-2.5 inline -mt-0.5" /> {t(`${tmpl.prefix}Tag`)}</span>
                   </div>
-                  <p className="text-xs text-[color:var(--istikbal-blue)]/60 line-clamp-2">{t.body}</p>
+                  <p className="text-xs text-[color:var(--istikbal-blue)]/60 line-clamp-2">{templateBodyPreview(tmpl.prefix)}</p>
                 </button>
               ))}
             </div>
@@ -290,11 +284,11 @@ function WhatsappPage() {
 
           {/* Preview */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-3">Önizleme</h3>
+            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-3">{t("preview")}</h3>
             <div className={`rounded-2xl p-3 ${channel === "whatsapp" ? "bg-[#dcf8c6]" : "bg-[color:var(--istikbal-blue)]/10"}`}>
-              <div className="text-[11px] font-bold text-[color:var(--istikbal-blue)] mb-1">{template.subject}</div>
+              <div className="text-[11px] font-bold text-[color:var(--istikbal-blue)] mb-1">{templateSubject}</div>
               <p className="text-sm text-[color:var(--istikbal-blue)] leading-snug whitespace-pre-line">
-                {template.body.replace("{ad}", "Ayşe")}
+                {templateBody}
               </p>
               <div className="text-[10px] text-[color:var(--istikbal-blue)]/50 text-right mt-1">14:32 ✓✓</div>
             </div>
@@ -313,7 +307,7 @@ function WhatsappPage() {
             }`}
           >
             <Send className="size-4" />
-            {selected.size === 0 ? "Önce müşteri seç" : `${selected.size} kişiye gönder`}
+            {selected.size === 0 ? t("sendSelectFirst") : t("sendToCount", { count: selected.size })}
             {selected.size > 0 && <ChevronRight className="size-4" />}
           </button>
         </aside>
@@ -326,10 +320,10 @@ function WhatsappPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-[color:var(--istikbal-blue)]">
-                  {sending ? "Gönderiliyor..." : "Gönderim Tamamlandı"}
+                  {sending ? t("progressSending") : t("progressDone")}
                 </h3>
                 <p className="text-xs text-[color:var(--istikbal-blue)]/60 mt-0.5">
-                  {channel === "whatsapp" ? "WhatsApp" : "SMS"} · {template.name}
+                  {channel === "whatsapp" ? t("channelWhatsapp") : t("channelSms")} · {templateName}
                 </p>
               </div>
               {!sending && (
@@ -341,9 +335,9 @@ function WhatsappPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-2 mb-4">
-              <Stat label="Toplam" value={total} color="text-[color:var(--istikbal-blue)]" />
-              <Stat label="Başarılı" value={sentCount} color="text-emerald-600" />
-              <Stat label="Başarısız" value={failedCount} color="text-rose-600" />
+              <Stat label={tCommon("total")} value={total} color="text-[color:var(--istikbal-blue)]" />
+              <Stat label={tCommon("success")} value={sentCount} color="text-emerald-600" />
+              <Stat label={tCommon("failed")} value={failedCount} color="text-rose-600" />
             </div>
 
             {/* Progress bar */}
@@ -376,7 +370,7 @@ function WhatsappPage() {
 
             {!sending && (
               <button onClick={() => { setShowProgress(false); setStatuses({}); setSelected(new Set()); }} className="mt-4 w-full h-11 rounded-xl bg-[color:var(--istikbal-blue)] text-white font-semibold hover:opacity-90">
-                Tamam
+                {tCommon("done")}
               </button>
             )}
           </div>
@@ -399,13 +393,14 @@ function FilterChip({ label, value, options, onChange }: { label: string; value:
 }
 
 function SegmentBadge({ s }: { s: Segment }) {
+  const t = useTranslations("whatsappSms");
   const styles: Record<Segment, string> = {
-    VIP:   "bg-[color:var(--istikbal-yellow)]/30 text-[color:var(--istikbal-blue)]",
-    Sıcak: "bg-orange-100 text-orange-700",
-    Yeni:  "bg-emerald-100 text-emerald-700",
-    Pasif: "bg-zinc-200 text-zinc-600",
+    vip:     "bg-[color:var(--istikbal-yellow)]/30 text-[color:var(--istikbal-blue)]",
+    hot:     "bg-orange-100 text-orange-700",
+    new:     "bg-emerald-100 text-emerald-700",
+    passive: "bg-zinc-200 text-zinc-600",
   };
-  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${styles[s]}`}>{s}</span>;
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${styles[s]}`}>{t(SEGMENT_LABEL_KEYS[s])}</span>;
 }
 
 function Stat({ label, value, color }: { label: string; value: number; color: string }) {
@@ -418,10 +413,11 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
 }
 
 function StatusPill({ status }: { status: SendStatus }) {
-  if (status === "pending") return <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]/40 px-2 py-1 rounded-full bg-white">Beklemede</span>;
-  if (status === "sending") return <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)] px-2 py-1 rounded-full bg-[color:var(--istikbal-blue)]/10 flex items-center gap-1"><span className="size-1.5 bg-[color:var(--istikbal-blue)] rounded-full animate-pulse" /> Gönderiliyor</span>;
-  if (status === "sent") return <span className="text-[10px] font-semibold text-emerald-700 px-2 py-1 rounded-full bg-emerald-50 flex items-center gap-1"><Check className="size-3" /> Gönderildi</span>;
-  return <span className="text-[10px] font-semibold text-rose-700 px-2 py-1 rounded-full bg-rose-50 flex items-center gap-1"><X className="size-3" /> Başarısız</span>;
+  const tCommon = useTranslations("common");
+  if (status === "pending") return <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]/40 px-2 py-1 rounded-full bg-white">{tCommon("pending")}</span>;
+  if (status === "sending") return <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)] px-2 py-1 rounded-full bg-[color:var(--istikbal-blue)]/10 flex items-center gap-1"><span className="size-1.5 bg-[color:var(--istikbal-blue)] rounded-full animate-pulse" /> {tCommon("sending")}</span>;
+  if (status === "sent") return <span className="text-[10px] font-semibold text-emerald-700 px-2 py-1 rounded-full bg-emerald-50 flex items-center gap-1"><Check className="size-3" /> {tCommon("sent")}</span>;
+  return <span className="text-[10px] font-semibold text-rose-700 px-2 py-1 rounded-full bg-rose-50 flex items-center gap-1"><X className="size-3" /> {tCommon("failed")}</span>;
 }
 
 export default WhatsappPage;

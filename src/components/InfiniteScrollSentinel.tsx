@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type InfiniteScrollSentinelProps = {
   /** useInfiniteScroll'un döndürdüğü callback ref */
@@ -17,6 +18,8 @@ export function InfiniteScrollSentinel({
   loadingMore = false,
   className = "",
 }: InfiniteScrollSentinelProps) {
+  const t = useTranslations("common");
+
   if (!hasMore && !loadingMore) return null;
   return (
     <div
@@ -27,10 +30,10 @@ export function InfiniteScrollSentinel({
       {loadingMore ? (
         <span className="inline-flex items-center gap-2">
           <Loader2 className="size-4 animate-spin" />
-          Daha fazla yükleniyor…
+          {t("loadingMore")}
         </span>
       ) : (
-        <span className="sr-only">Daha fazla ürün için kaydırın</span>
+        <span className="sr-only">{t("scrollForMore")}</span>
       )}
     </div>
   );

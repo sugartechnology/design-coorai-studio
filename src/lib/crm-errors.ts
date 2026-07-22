@@ -6,33 +6,60 @@ export type CrmErrorBody = {
   };
 };
 
-const LICENSE_MESSAGES_TR: Record<string, string> = {
-  LICENSE_ACCESS_BLOCKED: "Lisans erişimi engellendi.",
-  PAYMENT_DUE_SOON: "Lisans ödemenizin vadesi yaklaşıyor.",
-  PAYMENT_DUE: "Lisans ödemenizin vadesi geldi. Devam etmek için ödemeyi tamamlayın.",
-  GRACE: "Lisansınız ek süre (grace) döneminde. Devam etmek için ödemeyi tamamlayın.",
-  SUSPENDED: "Lisansınız askıya alındı. Lütfen yöneticinizle iletişime geçin.",
-  ACTIVE: "Lisansınız aktif.",
+export type CrmErrorLocale = "tr" | "en";
+
+const LICENSE_MESSAGES: Record<CrmErrorLocale, Record<string, string>> = {
+  tr: {
+    LICENSE_ACCESS_BLOCKED: "Lisans erişimi engellendi.",
+    PAYMENT_DUE_SOON: "Lisans ödemenizin vadesi yaklaşıyor.",
+    PAYMENT_DUE: "Lisans ödemenizin vadesi geldi. Devam etmek için ödemeyi tamamlayın.",
+    GRACE: "Lisansınız ek süre (grace) döneminde. Devam etmek için ödemeyi tamamlayın.",
+    SUSPENDED: "Lisansınız askıya alındı. Lütfen yöneticinizle iletişime geçin.",
+    ACTIVE: "Lisansınız aktif.",
+  },
+  en: {
+    LICENSE_ACCESS_BLOCKED: "License access is blocked.",
+    PAYMENT_DUE_SOON: "Your license payment is due soon.",
+    PAYMENT_DUE: "Your license payment is due. Please complete payment to continue.",
+    GRACE: "Your license is in grace period. Please complete payment to continue.",
+    SUSPENDED: "Your license is suspended. Please contact your administrator.",
+    ACTIVE: "Your license is active.",
+  },
 };
 
-const ENGLISH_LICENSE_MESSAGES: Record<string, string> = {
-  "Your license payment is due soon.": LICENSE_MESSAGES_TR.PAYMENT_DUE_SOON,
-  "Your license payment is due. Please complete payment to continue.": LICENSE_MESSAGES_TR.PAYMENT_DUE,
-  "Your license is in grace period. Please complete payment to continue.": LICENSE_MESSAGES_TR.GRACE,
-  "Your license is suspended. Please contact your administrator.": LICENSE_MESSAGES_TR.SUSPENDED,
-  "Your license is active.": LICENSE_MESSAGES_TR.ACTIVE,
-  "License access is currently unavailable.": "Lisans erişimi şu an kullanılamıyor.",
+const ENGLISH_LICENSE_MESSAGE_KEYS: Record<string, string> = {
+  "Your license payment is due soon.": "PAYMENT_DUE_SOON",
+  "Your license payment is due. Please complete payment to continue.": "PAYMENT_DUE",
+  "Your license is in grace period. Please complete payment to continue.": "GRACE",
+  "Your license is suspended. Please contact your administrator.": "SUSPENDED",
+  "Your license is active.": "ACTIVE",
+  "License access is currently unavailable.": "LICENSE_UNAVAILABLE",
+};
+
+const LICENSE_UNAVAILABLE: Record<CrmErrorLocale, string> = {
+  tr: "Lisans erişimi şu an kullanılamıyor.",
+  en: "License access is currently unavailable.",
+};
+
+const DEFAULT_FALLBACK: Record<CrmErrorLocale, string> = {
+  tr: "İşlem şu an yapılamıyor.",
+  en: "This action is currently unavailable.",
 };
 
 /**
- * Maps CRM / monetization error payloads to Turkish UI copy.
+ * Maps CRM / monetization error payloads to localized UI copy.
+ * Defaults to Turkish; pass `locale: 'en'` for English.
  */
 export function localizeCrmError(
   body: CrmErrorBody | null | undefined,
-  fallback = "İşlem şu an yapılamıyor.",
+  fallback?: string,
+  locale: CrmErrorLocale = "tr",
 ): string {
+  const messages = LICENSE_MESSAGES[locale] ?? LICENSE_MESSAGES.tr;
+  const resolvedFallback = fallback ?? DEFAULT_FALLBACK[locale] ?? DEFAULT_FALLBACK.tr;
+
   if (!body || typeof body !== "object") {
-    return fallback;
+    return resolvedFallback;
   }
 
   const errorCode = typeof body.error === "string" ? body.error.trim() : "";
@@ -43,29 +70,37 @@ export function localizeCrmError(
       : "";
 
   if (errorCode === "LICENSE_ACCESS_BLOCKED") {
-    if (licenseStatus && LICENSE_MESSAGES_TR[licenseStatus]) {
-      return LICENSE_MESSAGES_TR[licenseStatus];
+    if (licenseStatus && messages[licenseStatus]) {
+      return messages[licenseStatus];
     }
-    if (message && ENGLISH_LICENSE_MESSAGES[message]) {
-      return ENGLISH_LICENSE_MESSAGES[message];
+    const mappedKey = message ? ENGLISH_LICENSE_MESSAGE_KEYS[message] : "";
+    if (mappedKey === "LICENSE_UNAVAILABLE") {
+      return LICENSE_UNAVAILABLE[locale];
     }
-    return LICENSE_MESSAGES_TR.LICENSE_ACCESS_BLOCKED;
+    if (mappedKey && messages[mappedKey]) {
+      return messages[mappedKey];
+    }
+    return messages.LICENSE_ACCESS_BLOCKED;
   }
 
-  if (message && ENGLISH_LICENSE_MESSAGES[message]) {
-    return ENGLISH_LICENSE_MESSAGES[message];
+  const mappedKey = message ? ENGLISH_LICENSE_MESSAGE_KEYS[message] : "";
+  if (mappedKey === "LICENSE_UNAVAILABLE") {
+    return LICENSE_UNAVAILABLE[locale];
+  }
+  if (mappedKey && messages[mappedKey]) {
+    return messages[mappedKey];
   }
 
-  if (errorCode && LICENSE_MESSAGES_TR[errorCode]) {
-    return LICENSE_MESSAGES_TR[errorCode];
+  if (errorCode && messages[errorCode]) {
+    return messages[errorCode];
   }
 
-  // Prefer Turkish/user-facing messages already returned by CRM; keep English license strings mapped above.
+  // Prefer user-facing messages already returned by CRM; keep English license strings mapped above.
   if (message) {
     return message;
   }
   if (errorCode) {
     return errorCode;
   }
-  return fallback;
+  return resolvedFallback;
 }
