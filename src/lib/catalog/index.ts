@@ -3,6 +3,7 @@ export type {
   CatalogCollection,
   CatalogProduct,
   CatalogProductBrief,
+  CatalogProductDetail,
   SearchCriteria,
   SpringPage,
 } from "./catalog-types";
@@ -10,6 +11,7 @@ export type {
 export {
   buildProductSearchCriteria,
   getCollection,
+  getProductById,
   listCollections,
   listProductFilterCategories,
   productsGroupedByCollection,
@@ -18,3 +20,4 @@ export {
 
 export { useCatalogFilters } from "./use-catalog-filters";
 export { useProductSearch } from "./use-product-search";
+export { useInfiniteScroll } from "@/lib/hooks/use-infinite-scroll";

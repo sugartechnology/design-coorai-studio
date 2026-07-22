@@ -21,7 +21,8 @@ import {
   SUGAR_PRODUCT_MIME,
   type SugarRoomDesignerElement,
 } from "@/components/RoomDesignerHost";
-import { useCatalogFilters, useProductSearch, type CatalogProduct } from "@/lib/catalog";
+import { useCatalogFilters, useInfiniteScroll, useProductSearch, type CatalogProduct } from "@/lib/catalog";
+import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 
 type TemplateKey = "kare" | "L" | "U" | "T";
 
@@ -31,6 +32,14 @@ const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   U: "U Oda",
   T: "T Oda",
 };
+
+/** Room designer Api.fetchProduct expects numeric Sugar productModalId. */
+function resolveSugarProductId(product: CatalogProduct): number | null {
+  const raw = product.productModalId?.trim();
+  if (!raw) return null;
+  const id = Number(raw);
+  return Number.isFinite(id) ? id : null;
+}
 
 function OdaPage() {
   const [designerEl, setDesignerEl] = useState<SugarRoomDesignerElement | null>(
@@ -45,8 +54,22 @@ function OdaPage() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [query, setQuery] = useState("");
+  const [productScrollEl, setProductScrollEl] = useState<HTMLDivElement | null>(null);
   const { collections, loading: filtersLoading } = useCatalogFilters();
-  const { products, loading: productsLoading } = useProductSearch({ query });
+  const {
+    products,
+    loading: productsLoading,
+    loadingMore: productsLoadingMore,
+    hasMore: productsHasMore,
+    loadMore: loadMoreProducts,
+  } = useProductSearch({ query, size: 40 });
+
+  const { sentinelRef: productSentinelRef } = useInfiniteScroll({
+    hasMore: productsHasMore,
+    loading: productsLoading || productsLoadingMore,
+    onLoadMore: loadMoreProducts,
+    root: productScrollEl,
+  });
 
   const productsByCollection = useMemo(() => {
     const map: Record<string, CatalogProduct[]> = {};
@@ -129,11 +152,14 @@ function OdaPage() {
     });
   };
 
-  const addProduct = (productId: number | string) => {
-    const id = typeof productId === "string" ? Number(productId) : productId;
-    if (!Number.isFinite(id)) return;
+  const addProduct = (product: CatalogProduct) => {
+    const sugarId = resolveSugarProductId(product);
+    if (sugarId == null) {
+      console.warn("[oda] product has no productModalId", product.id, product.name);
+      return;
+    }
     withDesigner((el) => {
-      void el.addProduct(id).catch((err) => {
+      void el.addProduct(sugarId).catch((err) => {
         console.error("[oda] addProduct failed", err);
       });
     });
@@ -141,16 +167,16 @@ function OdaPage() {
 
   const onProductDragStart = (
     event: React.DragEvent,
-    productId: number | string,
+    product: CatalogProduct,
   ) => {
-    const id = typeof productId === "string" ? Number(productId) : productId;
-    if (!Number.isFinite(id)) {
+    const sugarId = resolveSugarProductId(product);
+    if (sugarId == null) {
       event.preventDefault();
       return;
     }
-    const payload = { productId: id };
+    const payload = { productId: sugarId };
     event.dataTransfer.setData(SUGAR_PRODUCT_MIME, JSON.stringify(payload));
-    event.dataTransfer.setData("text/plain", String(id));
+    event.dataTransfer.setData("text/plain", String(sugarId));
     event.dataTransfer.effectAllowed = "copy";
     withDesigner((el) => el.beginProductDrag(payload));
   };
@@ -341,8 +367,11 @@ function OdaPage() {
                 {products.length}
               </span>
             </h3>
-            <div className="max-h-[620px] overflow-y-auto pr-1 space-y-4">
-              {(filtersLoading || productsLoading) && (
+            <div
+              ref={setProductScrollEl}
+              className="max-h-[620px] overflow-y-auto pr-1 space-y-4"
+            >
+              {(filtersLoading || (productsLoading && products.length === 0)) && (
                 <p className="text-xs text-[color:var(--istikbal-blue)]/50 text-center py-6">
                   Yükleniyor…
                 </p>
@@ -365,16 +394,24 @@ function OdaPage() {
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    {items.map((p) => (
+                    {items.map((p) => {
+                      const sugarId = resolveSugarProductId(p);
+                      const canPlace = sugarId != null;
+                      return (
                       <button
                         type="button"
                         key={p.id}
-                        title={p.name}
-                        draggable
-                        onDragStart={(e) => onProductDragStart(e, p.id)}
+                        title={
+                          canPlace
+                            ? p.name
+                            : `${p.name} (oda yerleşimi için model id yok)`
+                        }
+                        draggable={canPlace}
+                        onDragStart={(e) => onProductDragStart(e, p)}
                         onDragEnd={onProductDragEnd}
-                        onClick={() => addProduct(p.id)}
-                        className="group rounded-xl border border-black/5 hover:border-[color:var(--istikbal-blue)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing"
+                        onClick={() => addProduct(p)}
+                        disabled={!canPlace}
+                        className="group rounded-xl border border-black/5 hover:border-[color:var(--istikbal-blue)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                       >
                         <div className="aspect-square rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
                           {p.thumbnailUrl ? (
@@ -398,10 +435,16 @@ function OdaPage() {
                           <Plus className="size-3 text-[color:var(--istikbal-blue)]/40 group-hover:text-[color:var(--istikbal-blue)] shrink-0" />
                         </div>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
+              <InfiniteScrollSentinel
+                sentinelRef={productSentinelRef}
+                hasMore={productsHasMore}
+                loadingMore={productsLoadingMore}
+              />
             </div>
           </div>
         </aside>

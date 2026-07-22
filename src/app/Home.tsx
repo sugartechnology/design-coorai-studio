@@ -192,7 +192,7 @@ type Tile = {
 const tiles: Tile[] = [
   {
     title: "Kumaş Seç",
-    subtitle: "2025 koleksiyonu · 240+ doku",
+    subtitle: "Kategoriye göre ürün ve kumaş seçimi",
     icon: Sofa,
     to: "/kumas",
     className:

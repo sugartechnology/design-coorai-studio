@@ -29,8 +29,10 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import {
   useCatalogFilters,
+  useInfiniteScroll,
   useProductSearch,
   type CatalogProduct,
 } from "@/lib/catalog";
@@ -85,7 +87,7 @@ function AiStudioPage() {
   const router = useRouter();
   const { sessionId, ready: sessionReady } = useAiStudioSession();
   const {
-    collections,
+    categories,
     loading: filtersLoading,
   } = useCatalogFilters();
 
@@ -98,8 +100,9 @@ function AiStudioPage() {
     personalize: false,
     resolution: false,
   });
-  const [productTab, setProductTab] = useState<"all" | "collections" | "categories">("collections");
+  const [productTab, setProductTab] = useState<"all" | "collections" | "categories">("categories");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerCategoryId, setPickerCategoryId] = useState<string | null>(null);
   const [roomPreviewUrl, setRoomPreviewUrl] = useState<string | null>(null);
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
   const [placed, setPlaced] = useState<PlacedItem[]>([]);
@@ -134,7 +137,7 @@ function AiStudioPage() {
     mobileUploadUrl,
   )}`;
 
-  const collectionChips = useMemo(() => collections.slice(0, 4), [collections]);
+  const categoryChips = useMemo(() => categories.slice(0, 4), [categories]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -426,8 +429,8 @@ function AiStudioPage() {
               <div className="grid grid-cols-3 gap-1 mb-3 bg-[color:var(--istikbal-blue-soft)] rounded-full p-1">
                 {([
                   ["all", "Tümü"],
-                  ["collections", "Koleksiyon"],
                   ["categories", "Kategori"],
+                  ["collections", "Koleksiyon"],
                 ] as const).map(([k, label]) => (
                   <button
                     key={k}
@@ -444,7 +447,10 @@ function AiStudioPage() {
               </div>
 
               <button
-                onClick={() => setPickerOpen(true)}
+                onClick={() => {
+                  setPickerCategoryId(null);
+                  setPickerOpen(true);
+                }}
                 className="w-full h-10 rounded-full border border-dashed border-black/15 text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:border-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)] flex items-center justify-center gap-2 transition"
               >
                 <Upload className="size-4" /> Ürün Seç
@@ -452,12 +458,15 @@ function AiStudioPage() {
 
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {filtersLoading && (
-                  <div className="col-span-2 text-xs text-[color:var(--istikbal-blue)]/50 py-2">Koleksiyonlar yükleniyor…</div>
+                  <div className="col-span-2 text-xs text-[color:var(--istikbal-blue)]/50 py-2">Kategoriler yükleniyor…</div>
                 )}
-                {collectionChips.map((c) => (
+                {categoryChips.map((c) => (
                   <button
                     key={c.id}
-                    onClick={() => setPickerOpen(true)}
+                    onClick={() => {
+                      setPickerCategoryId(c.id);
+                      setPickerOpen(true);
+                    }}
                     className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--istikbal-blue)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)] transition truncate"
                   >
                     <span className="text-[color:var(--istikbal-blue)]/50">▦</span>
@@ -467,7 +476,10 @@ function AiStudioPage() {
               </div>
 
               <button
-                onClick={() => setPickerOpen(true)}
+                onClick={() => {
+                  setPickerCategoryId(null);
+                  setPickerOpen(true);
+                }}
                 className="w-full mt-3 h-9 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] transition"
               >
                 Daha fazla yükle
@@ -845,7 +857,15 @@ function AiStudioPage() {
       })()}
       </div>
 
-      {pickerOpen && <ProductPicker onClose={() => setPickerOpen(false)} />}
+      {pickerOpen && (
+        <ProductPicker
+          initialCategoryId={pickerCategoryId}
+          onClose={() => {
+            setPickerOpen(false);
+            setPickerCategoryId(null);
+          }}
+        />
+      )}
 
       {qrOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setQrOpen(false)}>
@@ -958,16 +978,42 @@ function ProductThumb({ product, size = 80 }: { product: CatalogProduct; size?: 
   );
 }
 
-function ProductPicker({ onClose }: { onClose: () => void }) {
+function ProductPicker({
+  onClose,
+  initialCategoryId = null,
+}: {
+  onClose: () => void;
+  initialCategoryId?: string | null;
+}) {
   const [q, setQ] = useState("");
   const [col, setCol] = useState<string | null>(null);
-  const [cat, setCat] = useState<string | null>(null);
+  const [cat, setCat] = useState<string | null>(initialCategoryId);
+  const [pickerScrollEl, setPickerScrollEl] = useState<HTMLDivElement | null>(null);
   const { collections, categories, loading: filtersLoading, error: filtersError } = useCatalogFilters();
-  const { products, loading, error } = useProductSearch({
+  const {
+    products,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    loadMore,
+  } = useProductSearch({
     query: q,
     collectionId: col,
     categoryId: cat,
+    size: 40,
   });
+
+  const { sentinelRef } = useInfiniteScroll({
+    hasMore,
+    loading: loading || loadingMore,
+    onLoadMore: loadMore,
+    root: pickerScrollEl,
+  });
+
+  useEffect(() => {
+    setCat(initialCategoryId);
+  }, [initialCategoryId]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-6 overflow-y-auto" onClick={onClose}>
@@ -977,7 +1023,7 @@ function ProductPicker({ onClose }: { onClose: () => void }) {
       >
         <div className="px-6 py-5 border-b border-black/5 flex items-start justify-between gap-4">
           <p className="text-sm text-[color:var(--istikbal-blue)]/80 max-w-2xl">
-            Ürün adıyla arayın veya koleksiyon ve kategori ile filtreleyin.
+            Ürün adıyla arayın veya kategori (ve isteğe bağlı koleksiyon) ile filtreleyin.
           </p>
           <button onClick={onClose} className="size-9 rounded-full border border-black/10 text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center">
             <X className="size-4" />
@@ -998,26 +1044,29 @@ function ProductPicker({ onClose }: { onClose: () => void }) {
 
         <div className="px-6 pt-5 space-y-3 text-sm">
           <FilterRow
-            label="KOLEKSİYON"
-            items={collections.map((c) => ({ id: c.id, label: c.name }))}
-            active={col}
-            onSelect={setCol}
-          />
-          <FilterRow
             label="KATEGORİ"
             items={categories.map((c) => ({ id: c.id, label: c.name }))}
             active={cat}
             onSelect={setCat}
           />
+          <FilterRow
+            label="KOLEKSİYON"
+            items={collections.map((c) => ({ id: c.id, label: c.name }))}
+            active={col}
+            onSelect={setCol}
+          />
         </div>
 
-        <div className="px-6 py-6 max-h-[60vh] overflow-y-auto">
+        <div
+          ref={setPickerScrollEl}
+          className="px-6 py-6 max-h-[60vh] overflow-y-auto"
+        >
           {(filtersError || error) && (
             <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {filtersError || error}
             </div>
           )}
-          {loading || filtersLoading ? (
+          {((loading && products.length === 0) || filtersLoading) ? (
             <div className="py-16 flex flex-col items-center gap-3 text-sm text-[color:var(--istikbal-blue)]/60">
               <Loader2 className="size-6 animate-spin" />
               Ürünler yükleniyor…
@@ -1027,11 +1076,18 @@ function ProductPicker({ onClose }: { onClose: () => void }) {
               Eşleşen ürün bulunamadı.
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map((p) => (
-                <PickerCard key={p.id} product={p} onUsed={onClose} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {products.map((p) => (
+                  <PickerCard key={p.id} product={p} onUsed={onClose} />
+                ))}
+              </div>
+              <InfiniteScrollSentinel
+                sentinelRef={sentinelRef}
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+              />
+            </>
           )}
           <p className="mt-6 text-xs text-[color:var(--istikbal-blue)]/50 text-center">
             İpucu: Bir ürünü sahneye yerleştirmek için sürükleyip bırakın.

@@ -1,6 +1,7 @@
 "use client";
 
 import { portalCrmFetch } from "@/lib/portal-crm";
+import { normalizeMediaUrlOrNull } from "@/lib/media-url";
 import type {
   AiImageContext,
   AiImageGeneration,
@@ -101,7 +102,10 @@ export async function quoteAiCredits(
 
 export function resolveGenerationImageUrl(generation: AiImageGeneration | null | undefined): string | null {
   if (!generation) return null;
-  return generation.imageUrl || generation.thumbnailUrl || null;
+  return (
+    normalizeMediaUrlOrNull(generation.imageUrl) ||
+    normalizeMediaUrlOrNull(generation.thumbnailUrl)
+  );
 }
 
 export function isGenerationTerminal(status?: string): boolean {

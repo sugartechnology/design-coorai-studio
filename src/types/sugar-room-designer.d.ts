@@ -12,6 +12,19 @@ declare module "react" {
         },
         HTMLElement
       >;
+      "sugar-model-viewer": DetailedHTMLProps<
+        HTMLAttributes<HTMLElement> & {
+          "product-id"?: string;
+          "sugar-product-id"?: number | string;
+          "company-id"?: number | string;
+          ar?: boolean;
+          quote?: boolean;
+          download?: boolean;
+          popup?: boolean;
+          preload?: boolean;
+        },
+        HTMLElement
+      >;
     }
   }
 }

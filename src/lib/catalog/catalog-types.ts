@@ -1,9 +1,17 @@
 export type SpringPage<T> = {
   content?: T[];
+  /** Bazı Spring Page serializer'ları düz alan kullanır */
   totalElements?: number;
   totalPages?: number;
   number?: number;
   size?: number;
+  /** PagedFilterable CRM yanıtı: metadata `page` altında */
+  page?: {
+    size?: number;
+    number?: number;
+    totalElements?: number;
+    totalPages?: number;
+  };
 };
 
 export type CatalogCollection = {
@@ -25,6 +33,8 @@ export type CatalogCategory = {
 export type CatalogProduct = {
   id: string;
   name: string;
+  /** Sugar numeric id (API `sugarProductId`); CRM field name `productModalId` */
+  productModalId?: string | null;
   collectionId?: string | null;
   collectionName?: string | null;
   categoryId?: string | null;
@@ -32,9 +42,34 @@ export type CatalogProduct = {
   thumbnailUrl?: string | null;
 };
 
+export type CatalogProductPrice = {
+  amount?: number | null;
+  currency?: string | { currencyCode?: string } | null;
+  taxRate?: number | null;
+};
+
+export type CatalogProductImage = {
+  id?: string;
+  url?: string | null;
+  thumbnailUrl?: string | null;
+};
+
+export type CatalogProductDetail = CatalogProduct & {
+  sku?: string | null;
+  description?: string | null;
+  productModalId?: string | null;
+  width?: number | null;
+  height?: number | null;
+  depth?: number | null;
+  stockQuantity?: number | null;
+  prices?: CatalogProductPrice[];
+  images?: CatalogProductImage[];
+};
+
 export type CatalogProductBrief = {
   id?: string;
   name?: string;
+  productModalId?: string | null;
   thumbnailUrl?: string | null;
   collection?: { id?: string; name?: string } | null;
   category?: { id?: string; name?: string } | null;

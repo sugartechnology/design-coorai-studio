@@ -32,8 +32,8 @@ const TUTORIALS: Record<string, Tutorial> = {
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
   },
   "/kumas": {
-    title: "Kumaş Koleksiyonları",
-    description: "Kumaş seçimi ve ürün eşleştirme rehberi.",
+    title: "Kumaş Kategorileri",
+    description: "Kategori seçimi ve ürün eşleştirme rehberi.",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
   },
   "/whatsapp-sms": {

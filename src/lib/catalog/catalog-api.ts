@@ -1,11 +1,15 @@
 "use client";
 
 import { portalCrmFetch } from "@/lib/portal-crm";
+import { normalizeMediaUrlOrNull } from "@/lib/media-url";
 import type {
   CatalogCategory,
   CatalogCollection,
   CatalogProduct,
   CatalogProductBrief,
+  CatalogProductDetail,
+  CatalogProductImage,
+  CatalogProductPrice,
   PagedProducts,
   SearchCriteria,
   SpringPage,
@@ -13,17 +17,55 @@ import type {
 
 type RouterLike = { replace: (href: string) => void };
 
+type CrmProductDetail = CatalogProductBrief & {
+  sku?: string | null;
+  description?: string | null;
+  productModalId?: string | null;
+  width?: number | null;
+  height?: number | null;
+  depth?: number | null;
+  stockQuantity?: number | null;
+  prices?: CatalogProductPrice[];
+  images?: CatalogProductImage[];
+};
+
+function mapImage(raw: CatalogProductImage): CatalogProductImage {
+  return {
+    ...raw,
+    url: normalizeMediaUrlOrNull(raw.url),
+    thumbnailUrl: normalizeMediaUrlOrNull(raw.thumbnailUrl),
+  };
+}
+
 function mapProduct(raw: CatalogProductBrief): CatalogProduct | null {
   if (!raw.id || !raw.name) return null;
   const category = raw.category ?? raw.categories?.[0];
   return {
     id: raw.id,
     name: raw.name,
+    productModalId: raw.productModalId ?? null,
     collectionId: raw.collection?.id ?? null,
     collectionName: raw.collection?.name ?? null,
     categoryId: category?.id ?? null,
     categoryName: category?.name ?? null,
-    thumbnailUrl: raw.thumbnailUrl ?? null,
+    thumbnailUrl: normalizeMediaUrlOrNull(raw.thumbnailUrl),
+  };
+}
+
+function mapProductDetail(raw: CrmProductDetail): CatalogProductDetail | null {
+  const base = mapProduct(raw);
+  if (!base) return null;
+  return {
+    ...base,
+    sku: raw.sku ?? null,
+    description: raw.description ?? null,
+    productModalId: raw.productModalId ?? null,
+    width: raw.width ?? null,
+    height: raw.height ?? null,
+    depth: raw.depth ?? null,
+    stockQuantity: raw.stockQuantity ?? null,
+    prices: raw.prices ?? [],
+    images: (raw.images ?? []).map(mapImage),
   };
 }
 
@@ -46,32 +88,44 @@ export async function listCollections(
       sort: "name,asc",
     },
   });
-  return page.content ?? [];
+  return (page.content ?? []).map((c) => ({
+    ...c,
+    thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
+  }));
 }
 
 export async function getCollection(
   collectionId: string,
   router?: RouterLike,
 ): Promise<CatalogCollection> {
-  return portalCrmFetch<CatalogCollection>(`collections/${encodeURIComponent(collectionId)}`, {
-    router,
-  });
+  const c = await portalCrmFetch<CatalogCollection>(
+    `collections/${encodeURIComponent(collectionId)}`,
+    { router },
+  );
+  return {
+    ...c,
+    thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
+  };
 }
 
 export async function listProductFilterCategories(
-  companyId: string,
+  _companyId: string,
   options: { size?: number; router?: RouterLike } = {},
 ): Promise<CatalogCategory[]> {
+  // companyIds gönderme: bayi session'ında sadece kendi id'si olur; parent
+  // (İstikbal) kategorileri elenir. CRM read-scope zaten görünür owner'ları çözer.
   const page = await portalCrmFetch<SpringPage<CatalogCategory>>("categories/product-filter-options", {
     router: options.router,
     searchParams: {
-      companyIds: companyId,
       size: options.size ?? 50,
       page: 0,
       sort: "name,asc",
     },
   });
-  return page.content ?? [];
+  return (page.content ?? []).map((c) => ({
+    ...c,
+    thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
+  }));
 }
 
 export async function productsGroupedByCollection(
@@ -91,7 +145,7 @@ export async function productsGroupedByCollection(
     cards.push({
       id,
       name: first.collection?.name || collectionName,
-      thumbnailUrl: first.thumbnailUrl ?? null,
+      thumbnailUrl: normalizeMediaUrlOrNull(first.thumbnailUrl),
       productCount: products.length,
     });
   }
@@ -113,7 +167,35 @@ export async function searchRootProducts(
   const products = (page.content ?? [])
     .map(mapProduct)
     .filter((p): p is CatalogProduct => p !== null);
-  return { products, totalElements: page.totalElements ?? products.length };
+  const totalElements =
+    page.page?.totalElements ??
+    page.totalElements ??
+    // Son çare: dolu sayfa geldiyse daha fazla olabilir
+    (products.length >= (criteria.size || 40)
+      ? products.length + 1
+      : products.length);
+  return { products, totalElements };
+}
+
+export async function getProductById(
+  productId: string,
+  router?: RouterLike,
+): Promise<CatalogProductDetail> {
+  const encoded = encodeURIComponent(productId);
+  const [raw, images] = await Promise.all([
+    portalCrmFetch<CrmProductDetail>(`products/${encoded}`, { router }),
+    portalCrmFetch<CatalogProductImage[]>(`products/${encoded}/images`, { router }).catch(
+      () => [] as CatalogProductImage[],
+    ),
+  ]);
+  const mapped = mapProductDetail({
+    ...raw,
+    images: (images?.length ? images : raw.images) ?? [],
+  });
+  if (!mapped) {
+    throw new Error("Ürün bulunamadı.");
+  }
+  return mapped;
 }
 
 export function buildProductSearchCriteria(input: {
