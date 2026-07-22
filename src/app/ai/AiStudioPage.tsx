@@ -74,6 +74,13 @@ type PlacedItem = {
   scale: number;
 };
 
+type SelectedProduct = {
+  uid: string;
+  product: CatalogProduct;
+};
+
+const PRODUCT_MIME = "application/x-product";
+
 const FALLBACK_THUMB = "from-stone-200 to-stone-100";
 
 const chipBase =
@@ -88,6 +95,7 @@ function AiStudioPage() {
   const { sessionId, ready: sessionReady } = useAiStudioSession();
   const {
     categories,
+    collections,
     loading: filtersLoading,
   } = useCatalogFilters();
 
@@ -103,8 +111,10 @@ function AiStudioPage() {
   const [productTab, setProductTab] = useState<"all" | "collections" | "categories">("categories");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCategoryId, setPickerCategoryId] = useState<string | null>(null);
+  const [pickerCollectionId, setPickerCollectionId] = useState<string | null>(null);
   const [roomPreviewUrl, setRoomPreviewUrl] = useState<string | null>(null);
   const [referenceImageUrl, setReferenceImageUrl] = useState<string | null>(null);
+  const [selected, setSelected] = useState<SelectedProduct[]>([]);
   const [placed, setPlaced] = useState<PlacedItem[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
@@ -137,7 +147,51 @@ function AiStudioPage() {
     mobileUploadUrl,
   )}`;
 
-  const categoryChips = useMemo(() => categories.slice(0, 4), [categories]);
+  const categoryChips = useMemo(() => categories.slice(0, 8), [categories]);
+  const collectionChips = useMemo(() => collections.slice(0, 8), [collections]);
+
+  const openPicker = useCallback(
+    (opts?: { categoryId?: string | null; collectionId?: string | null }) => {
+      setPickerCategoryId(opts?.categoryId ?? null);
+      setPickerCollectionId(opts?.collectionId ?? null);
+      setPickerOpen(true);
+    },
+    [],
+  );
+
+  const addProductToSidebar = useCallback((product: CatalogProduct) => {
+    setSelected((prev) => [
+      ...prev,
+      { uid: `${product.id}-${Date.now()}`, product },
+    ]);
+    setOpenSections((s) => ({ ...s, products: true }));
+    setMobileOpen(false);
+  }, []);
+
+  const removeSelected = useCallback((uid: string) => {
+    setSelected((prev) => prev.filter((p) => p.uid !== uid));
+    setPlaced((prev) => prev.filter((p) => p.uid !== uid));
+    setSelectedUid((cur) => (cur === uid ? null : cur));
+  }, []);
+
+  const placeProductOnCanvas = useCallback(
+    (product: CatalogProduct, x: number, y: number, uid?: string) => {
+      const itemUid = uid ?? `${product.id}-${Date.now()}`;
+      setSelected((prev) =>
+        prev.some((p) => p.uid === itemUid)
+          ? prev
+          : [...prev, { uid: itemUid, product }],
+      );
+      setPlaced((prev) => {
+        const existing = prev.find((p) => p.uid === itemUid);
+        if (existing) {
+          return prev.map((p) => (p.uid === itemUid ? { ...p, x, y } : p));
+        }
+        return [...prev, { uid: itemUid, product, x, y, scale: 1 }];
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -189,19 +243,35 @@ function AiStudioPage() {
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   };
-  const handleCanvasDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const productJson = e.dataTransfer.getData("application/x-product");
-    if (!productJson || !canvasRef.current) return;
-    const product = JSON.parse(productJson) as CatalogProduct;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPlaced((prev) => [
-      ...prev,
-      { uid: `${product.id}-${Date.now()}`, product, x, y, scale: 1 },
-    ]);
-  }, []);
+  const handleCanvasDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (mode !== "manual") return;
+      const productJson = e.dataTransfer.getData(PRODUCT_MIME);
+      if (!productJson || !canvasRef.current) return;
+      let product: CatalogProduct;
+      let uid: string | undefined;
+      try {
+        const raw = JSON.parse(productJson) as
+          | CatalogProduct
+          | { product: CatalogProduct; uid?: string };
+        if ("product" in raw && raw.product && typeof raw.product === "object") {
+          product = raw.product;
+          uid = raw.uid;
+        } else {
+          product = raw as CatalogProduct;
+        }
+      } catch {
+        return;
+      }
+      if (!product?.id) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      placeProductOnCanvas(product, x, y, uid);
+    },
+    [mode, placeProductOnCanvas],
+  );
 
   const movePlaced = (uid: string, e: React.DragEvent) => {
     if (!canvasRef.current) return;
@@ -281,7 +351,7 @@ function AiStudioPage() {
     setBusy("render");
     setStatusMessage("Sahne render ediliyor…");
     try {
-      const products = placed.map((p) => ({
+      const products = selected.map((p) => ({
         productId: p.product.id,
         name: p.product.name,
         quantity: 1,
@@ -369,6 +439,9 @@ function AiStudioPage() {
       const url = resolveGenerationImageUrl(done);
       if (!url) throw new Error("Render görseli bulunamadı.");
       setRoomPreviewUrl(url);
+      setPlaced([]);
+      setSelected([]);
+      setSelectedUid(null);
       setStatusMessage("Render tamamlandı.");
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
@@ -381,7 +454,7 @@ function AiStudioPage() {
   const toggle = (k: keyof typeof openSections) =>
     setOpenSections((s) => ({ ...s, [k]: !s[k] }));
 
-  const estimatedCost = creditCost ?? Math.max(2, placed.length + 2);
+  const estimatedCost = creditCost ?? Math.max(2, selected.length + 2);
   const isBusy = busy !== "idle";
 
   return (
@@ -405,7 +478,11 @@ function AiStudioPage() {
               <div className="grid grid-cols-2 gap-3">
                 <ModeCard
                   active={mode === "auto"}
-                  onClick={() => setMode("auto")}
+                  onClick={() => {
+                    setMode("auto");
+                    setPlaced([]);
+                    setSelectedUid(null);
+                  }}
                   icon={<Wand2 className="size-5" />}
                   title="OTOMATİK"
                   subtitle="Nesneleri AI yerleştirir"
@@ -423,6 +500,7 @@ function AiStudioPage() {
             <Section
               title="Ürünler"
               icon={<Sofa className="size-4" />}
+              badge={selected.length || undefined}
               open={openSections.products}
               onToggle={() => toggle("products")}
             >
@@ -447,39 +525,107 @@ function AiStudioPage() {
               </div>
 
               <button
-                onClick={() => {
-                  setPickerCategoryId(null);
-                  setPickerOpen(true);
-                }}
+                onClick={() => openPicker()}
                 className="w-full h-10 rounded-full border border-dashed border-black/15 text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:border-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)] flex items-center justify-center gap-2 transition"
               >
                 <Upload className="size-4" /> Ürün Seç
               </button>
 
+              {selected.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-[10px] font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]/45">
+                    SEÇİLEN ÜRÜNLER
+                    {mode === "manual" ? " · Sürükleyip sahneye bırakın" : ""}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selected.map((item) => (
+                      <div
+                        key={item.uid}
+                        draggable={mode === "manual"}
+                        onDragStart={(e) => {
+                          if (mode !== "manual") {
+                            e.preventDefault();
+                            return;
+                          }
+                          e.dataTransfer.setData(
+                            PRODUCT_MIME,
+                            JSON.stringify({ product: item.product, uid: item.uid }),
+                          );
+                          e.dataTransfer.effectAllowed = "copyMove";
+                        }}
+                        className={`relative rounded-xl border border-black/5 bg-[color:var(--istikbal-blue-soft)]/40 p-2 ${
+                          mode === "manual" ? "cursor-grab active:cursor-grabbing" : ""
+                        }`}
+                        title={
+                          mode === "manual"
+                            ? "Sahneye sürükleyip bırakın"
+                            : item.product.name
+                        }
+                      >
+                        <button
+                          type="button"
+                          onClick={() => removeSelected(item.uid)}
+                          className="absolute top-1 right-1 z-10 size-6 rounded-full bg-white/90 border border-black/10 text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)] inline-flex items-center justify-center"
+                          title="Kaldır"
+                        >
+                          <X className="size-3" />
+                        </button>
+                        <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative`}>
+                          {item.product.thumbnailUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={item.product.thumbnailUrl}
+                              alt={item.product.name}
+                              className="absolute inset-0 h-full w-full object-cover"
+                              draggable={false}
+                            />
+                          ) : null}
+                        </div>
+                        <p className="mt-1.5 text-[10px] font-bold text-[color:var(--istikbal-blue)] line-clamp-2 text-center">
+                          {item.product.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {filtersLoading && (
-                  <div className="col-span-2 text-xs text-[color:var(--istikbal-blue)]/50 py-2">Kategoriler yükleniyor…</div>
+                  <div className="col-span-2 text-xs text-[color:var(--istikbal-blue)]/50 py-2">
+                    {productTab === "collections" ? "Koleksiyonlar" : "Kategoriler"} yükleniyor…
+                  </div>
                 )}
-                {categoryChips.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => {
-                      setPickerCategoryId(c.id);
-                      setPickerOpen(true);
-                    }}
-                    className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--istikbal-blue)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)] transition truncate"
-                  >
-                    <span className="text-[color:var(--istikbal-blue)]/50">▦</span>
-                    <span className="truncate">{c.name}</span>
-                  </button>
-                ))}
+                {productTab === "collections"
+                  ? collectionChips.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => openPicker({ collectionId: c.id })}
+                        className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--istikbal-blue)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)] transition truncate"
+                      >
+                        <span className="text-[color:var(--istikbal-blue)]/50">▦</span>
+                        <span className="truncate">{c.name}</span>
+                      </button>
+                    ))
+                  : productTab === "categories"
+                    ? categoryChips.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => openPicker({ categoryId: c.id })}
+                          className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--istikbal-blue)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)] transition truncate"
+                        >
+                          <span className="text-[color:var(--istikbal-blue)]/50">▦</span>
+                          <span className="truncate">{c.name}</span>
+                        </button>
+                      ))
+                    : null}
               </div>
 
               <button
-                onClick={() => {
-                  setPickerCategoryId(null);
-                  setPickerOpen(true);
-                }}
+                type="button"
+                onClick={() => openPicker()}
                 className="w-full mt-3 h-9 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] transition"
               >
                 Daha fazla yükle
@@ -736,7 +882,11 @@ function AiStudioPage() {
               <div className="flex-1 px-3 sm:px-5 lg:px-8 pb-3 lg:pb-6 min-h-0">
                 <div
                   ref={canvasRef}
-                  onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }}
+                  onDragOver={(e) => {
+                    if (mode !== "manual") return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                  }}
                   onDrop={handleCanvasDrop}
                   onClick={(e) => { if (e.target === e.currentTarget) setSelectedUid(null); }}
                   className="relative w-full h-full min-h-[360px] lg:min-h-[520px] rounded-2xl bg-white border border-black/5 shadow-sm overflow-hidden"
@@ -782,7 +932,7 @@ function AiStudioPage() {
                     </div>
                   )}
 
-                  {placed.map((it) => (
+                  {mode === "manual" && placed.map((it) => (
                     <div
                       key={it.uid}
                       draggable
@@ -816,7 +966,14 @@ function AiStudioPage() {
 
                   {roomPreviewUrl && (
                     <button
-                      onClick={() => { setRoomPreviewUrl(null); setReferenceImageUrl(null); setPlaced([]); setSelectedUid(null); setStatusMessage(null); }}
+                      onClick={() => {
+                        setRoomPreviewUrl(null);
+                        setReferenceImageUrl(null);
+                        setPlaced([]);
+                        setSelected([]);
+                        setSelectedUid(null);
+                        setStatusMessage(null);
+                      }}
                       className="absolute top-3 right-3 h-9 px-3 rounded-full bg-white/90 backdrop-blur border border-black/10 text-xs font-bold text-[color:var(--istikbal-blue)] inline-flex items-center gap-1.5 hover:bg-white"
                     >
                       <RotateCcw className="size-3.5" /> Sıfırla
@@ -859,10 +1016,19 @@ function AiStudioPage() {
 
       {pickerOpen && (
         <ProductPicker
+          mode={productTab}
           initialCategoryId={pickerCategoryId}
+          initialCollectionId={pickerCollectionId}
+          onSelectProduct={(product) => {
+            addProductToSidebar(product);
+            setPickerOpen(false);
+            setPickerCategoryId(null);
+            setPickerCollectionId(null);
+          }}
           onClose={() => {
             setPickerOpen(false);
             setPickerCategoryId(null);
+            setPickerCollectionId(null);
           }}
         />
       )}
@@ -918,13 +1084,14 @@ function AiStudioPage() {
 }
 
 function Section({
-  title, icon, open, onToggle, children,
+  title, icon, open, onToggle, children, badge,
 }: {
   title: string;
   icon?: React.ReactNode;
   open: boolean;
   onToggle: () => void;
   children?: React.ReactNode;
+  badge?: number;
 }) {
   return (
     <div className="rounded-xl border border-black/5 bg-white">
@@ -932,7 +1099,15 @@ function Section({
         onClick={onToggle}
         className="w-full px-4 h-12 flex items-center justify-between text-sm font-bold text-[color:var(--istikbal-blue)]"
       >
-        <span className="inline-flex items-center gap-2">{icon}{title}</span>
+        <span className="inline-flex items-center gap-2">
+          {icon}
+          {title}
+          {badge != null && badge > 0 && (
+            <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-[color:var(--istikbal-blue)] text-white text-[10px] font-extrabold">
+              {badge}
+            </span>
+          )}
+        </span>
         {open ? <ChevronUp className="size-4 opacity-60" /> : <ChevronDown className="size-4 opacity-60" />}
       </button>
       {open && children && <div className="px-4 pb-4">{children}</div>}
@@ -980,16 +1155,35 @@ function ProductThumb({ product, size = 80 }: { product: CatalogProduct; size?: 
 
 function ProductPicker({
   onClose,
+  onSelectProduct,
+  mode = "all",
   initialCategoryId = null,
+  initialCollectionId = null,
 }: {
   onClose: () => void;
+  onSelectProduct: (product: CatalogProduct) => void;
+  mode?: "all" | "collections" | "categories";
   initialCategoryId?: string | null;
+  initialCollectionId?: string | null;
 }) {
   const [q, setQ] = useState("");
-  const [col, setCol] = useState<string | null>(null);
+  const [col, setCol] = useState<string | null>(initialCollectionId);
   const [cat, setCat] = useState<string | null>(initialCategoryId);
   const [pickerScrollEl, setPickerScrollEl] = useState<HTMLDivElement | null>(null);
   const { collections, categories, loading: filtersLoading, error: filtersError } = useCatalogFilters();
+
+  const entityQuery = q.trim().toLocaleLowerCase("tr");
+  const filteredCategories = useMemo(() => {
+    if (!entityQuery) return categories;
+    return categories.filter((c) => c.name.toLocaleLowerCase("tr").includes(entityQuery));
+  }, [categories, entityQuery]);
+  const filteredCollections = useMemo(() => {
+    if (!entityQuery) return collections;
+    return collections.filter((c) => c.name.toLocaleLowerCase("tr").includes(entityQuery));
+  }, [collections, entityQuery]);
+
+  /** Product name search only in "all"; category/collection tabs search entities via chips. */
+  const productQuery = mode === "all" ? q : "";
   const {
     products,
     loading,
@@ -998,9 +1192,9 @@ function ProductPicker({
     hasMore,
     loadMore,
   } = useProductSearch({
-    query: q,
-    collectionId: col,
-    categoryId: cat,
+    query: productQuery,
+    collectionId: mode === "categories" ? null : col,
+    categoryId: mode === "collections" ? null : cat,
     size: 40,
   });
 
@@ -1015,6 +1209,24 @@ function ProductPicker({
     setCat(initialCategoryId);
   }, [initialCategoryId]);
 
+  useEffect(() => {
+    setCol(initialCollectionId);
+  }, [initialCollectionId]);
+
+  const searchPlaceholder =
+    mode === "categories"
+      ? "Kategori ara…"
+      : mode === "collections"
+        ? "Koleksiyon ara…"
+        : "Ürün ara…";
+
+  const helpText =
+    mode === "categories"
+      ? "Kategori adına göre arayın, bir kategori seçin; ürünlere tıklayarak sahneye ekleyin."
+      : mode === "collections"
+        ? "Koleksiyon adına göre arayın, bir koleksiyon seçin; ürünlere tıklayarak sahneye ekleyin."
+        : "Ürün adıyla arayın. İsterseniz kategori veya koleksiyon ile daraltın; tıklayarak sahneye ekleyin.";
+
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-6 overflow-y-auto" onClick={onClose}>
       <div
@@ -1023,7 +1235,7 @@ function ProductPicker({
       >
         <div className="px-6 py-5 border-b border-black/5 flex items-start justify-between gap-4">
           <p className="text-sm text-[color:var(--istikbal-blue)]/80 max-w-2xl">
-            Ürün adıyla arayın veya kategori (ve isteğe bağlı koleksiyon) ile filtreleyin.
+            {helpText}
           </p>
           <button onClick={onClose} className="size-9 rounded-full border border-black/10 text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center">
             <X className="size-4" />
@@ -1036,25 +1248,29 @@ function ProductPicker({
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Ürün ara…"
+              placeholder={searchPlaceholder}
               className="w-full h-12 pl-11 pr-4 rounded-xl bg-[color:var(--istikbal-blue-soft)] border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/20 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
             />
           </div>
         </div>
 
         <div className="px-6 pt-5 space-y-3 text-sm">
-          <FilterRow
-            label="KATEGORİ"
-            items={categories.map((c) => ({ id: c.id, label: c.name }))}
-            active={cat}
-            onSelect={setCat}
-          />
-          <FilterRow
-            label="KOLEKSİYON"
-            items={collections.map((c) => ({ id: c.id, label: c.name }))}
-            active={col}
-            onSelect={setCol}
-          />
+          {(mode === "all" || mode === "categories") && (
+            <FilterRow
+              label="KATEGORİ"
+              items={filteredCategories.map((c) => ({ id: c.id, label: c.name }))}
+              active={cat}
+              onSelect={setCat}
+            />
+          )}
+          {(mode === "all" || mode === "collections") && (
+            <FilterRow
+              label="KOLEKSİYON"
+              items={filteredCollections.map((c) => ({ id: c.id, label: c.name }))}
+              active={col}
+              onSelect={setCol}
+            />
+          )}
         </div>
 
         <div
@@ -1079,7 +1295,11 @@ function ProductPicker({
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {products.map((p) => (
-                  <PickerCard key={p.id} product={p} onUsed={onClose} />
+                  <PickerCard
+                    key={p.id}
+                    product={p}
+                    onSelect={() => onSelectProduct(p)}
+                  />
                 ))}
               </div>
               <InfiniteScrollSentinel
@@ -1090,7 +1310,7 @@ function ProductPicker({
             </>
           )}
           <p className="mt-6 text-xs text-[color:var(--istikbal-blue)]/50 text-center">
-            İpucu: Bir ürünü sahneye yerleştirmek için sürükleyip bırakın.
+            İpucu: Ürüne tıklayarak sahneye ekleyin; dilerseniz sürükleyip bırakabilirsiniz.
           </p>
         </div>
       </div>
@@ -1110,12 +1330,14 @@ function FilterRow({
     <div className="flex items-center gap-3 flex-wrap">
       <span className="text-[10px] font-extrabold tracking-[0.18em] text-[color:var(--istikbal-blue)]/40 w-24 shrink-0">{label}:</span>
       <button
+        type="button"
         onClick={() => onSelect(null)}
         className={`text-xs font-bold px-2 py-1 rounded ${active === null ? "text-[color:var(--istikbal-blue)] underline" : "text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]"}`}
       >Tümü</button>
       {items.map((it) => (
         <button
           key={it.id}
+          type="button"
           onClick={() => onSelect(it.id === active ? null : it.id)}
           className={`text-xs font-bold px-2 py-1 rounded ${active === it.id ? "text-[color:var(--istikbal-blue)] underline" : "text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"}`}
         >{it.label}</button>
@@ -1124,17 +1346,39 @@ function FilterRow({
   );
 }
 
-function PickerCard({ product, onUsed }: { product: CatalogProduct; onUsed: () => void }) {
+function PickerCard({
+  product,
+  onSelect,
+}: {
+  product: CatalogProduct;
+  onSelect: () => void;
+}) {
+  const draggedRef = useRef(false);
+
   return (
-    <div
+    <button
+      type="button"
       draggable
+      onClick={() => {
+        if (draggedRef.current) {
+          draggedRef.current = false;
+          return;
+        }
+        onSelect();
+      }}
       onDragStart={(e) => {
-        e.dataTransfer.setData("application/x-product", JSON.stringify(product));
+        draggedRef.current = true;
+        e.dataTransfer.setData(PRODUCT_MIME, JSON.stringify(product));
         e.dataTransfer.effectAllowed = "copy";
       }}
-      onDragEnd={() => onUsed()}
-      className="group rounded-xl border border-black/5 bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-grab active:cursor-grabbing"
-      title="Sürükleyip sahneye bırakın"
+      onDragEnd={() => {
+        // Keep flag until click handler runs (or clear shortly if no click).
+        window.setTimeout(() => {
+          draggedRef.current = false;
+        }, 0);
+      }}
+      className="group rounded-xl border border-black/5 bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer text-left w-full"
+      title="Sahneye eklemek için tıklayın"
     >
       <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative flex items-center justify-center text-[color:var(--istikbal-blue)]/30 text-xs font-semibold`}>
         {product.thumbnailUrl ? (
@@ -1147,7 +1391,7 @@ function PickerCard({ product, onUsed }: { product: CatalogProduct; onUsed: () =
       <div className="mt-3 text-center text-xs font-bold text-[color:var(--istikbal-blue)] line-clamp-2 min-h-[2.5rem]">
         {product.name}
       </div>
-    </div>
+    </button>
   );
 }
 
