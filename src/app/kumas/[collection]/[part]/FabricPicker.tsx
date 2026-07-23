@@ -3,8 +3,9 @@
 import { Check, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  areaDisplayLabel,
+  isRawZoneAreaName,
   optionSwatchBackground,
+  zoneAreaNumber,
   type MaterialZoneArea,
   type MaterialZoneOption,
 } from "@/lib/material-zone";
@@ -24,9 +25,10 @@ export function FabricPicker({
 }: FabricPickerProps) {
   const t = useTranslations("kumas");
   const tCommon = useTranslations("common");
-  const options = area.options.filter(
-    (o) => o.selectable || o.selected || o.code === currentCode,
-  );
+  const options = area.options;
+  const n = zoneAreaNumber(area.name, 1);
+  const hint =
+    area.label && !isRawZoneAreaName(area.label) ? area.label : null;
 
   return (
     <div
@@ -46,7 +48,8 @@ export function FabricPicker({
         </button>
         <div className="mb-6">
           <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/45">
-            {areaDisplayLabel(area)}
+            {t("regionLabel", { n })}
+            {hint ? ` · ${hint}` : ""}
           </p>
           <h3 className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">
             {t("suitableFabricsTitle")}

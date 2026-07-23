@@ -181,6 +181,7 @@
     "gallery3d": "3D",
     "skuLabel": "SKU: {sku}",
     "fabricRegionsTitle": "FABRIC REGIONS",
+    "zoneGuideAlt": "Fabric region map",
     "regionLabel": "Region {n}",
     "regionMatchHelp": "Region match: main body + back cushions + arm + seat. Pick a suitable fabric for each region.",
     "chooseFabric": "Choose fabric",

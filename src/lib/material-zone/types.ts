@@ -13,7 +13,7 @@ export type MaterialZoneArea = {
   label?: string;
   options: MaterialZoneOption[];
   selected: MaterialZoneOption;
-  hexCode: string;
+  hexCode: string | null;
 };
 
 export type MaterialZoneResponse = {
@@ -23,8 +23,9 @@ export type MaterialZoneResponse = {
   sku: string;
 };
 
-/** @deprecated Payload is built inside sugar-model-viewer; kept for typing only. */
+/** @deprecated Payload is built inside sugar-model-viewer. */
 export type ZoneSelectionPayload = {
-  stockCode: string;
   companyId: string;
-} & Record<string, string | undefined>;
+  productId?: number | string;
+  stockCode?: string;
+} & Record<string, string | number | undefined>;

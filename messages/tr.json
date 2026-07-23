@@ -181,6 +181,7 @@
     "gallery3d": "3D",
     "skuLabel": "SKU: {sku}",
     "fabricRegionsTitle": "KUMAŞ BÖLGELERİ",
+    "zoneGuideAlt": "Kumaş bölge haritası",
     "regionLabel": "{n}. Bölge",
     "regionMatchHelp": "Bölge eşleşmesi: Ana gövde + sırt yastıkları + kol + minder. Her bölge için uygun kumaşı seçin.",
     "chooseFabric": "Kumaş Seç",

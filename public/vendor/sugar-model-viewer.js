@@ -120293,6 +120293,9 @@ const ModelViewerPublicEvents = {
     zonesError(target, detail) {
         emitPublic(target, "sugar-model-viewer-zones-error", { detail });
     },
+    zoneGuide(target, detail) {
+        emitPublic(target, "sugar-model-viewer-zone-guide", { detail });
+    },
 };
 
 /**
@@ -123904,77 +123907,414 @@ async function fetchProductZones(payload) {
 }
 
 /** API alan adı önek uzunluğu (color1 → grup soneki "1") */
-/** Ardışık dolu önek — ilk boş alanda durur */
-function buildPrefixPayload(areaNames, selected) {
-    const payload = {
-        stockCode: selected.stockCode,
+const MATERIAL_ZONE_AREA_NAME_PREFIX_LENGTH = 5;
+function sortAreasByName(areas) {
+    return [...areas].sort((a, b) => {
+        var _a, _b, _c, _d;
+        const na = parseInt((_b = (_a = a.name.match(/\d+/)) === null || _a === void 0 ? void 0 : _a[0]) !== null && _b !== void 0 ? _b : "0", 10);
+        const nb = parseInt((_d = (_c = b.name.match(/\d+/)) === null || _c === void 0 ? void 0 : _c[0]) !== null && _d !== void 0 ? _d : "0", 10);
+        return na - nb;
+    });
+}
+function copyIdentity(selected) {
+    const base = {
         companyId: selected.companyId,
     };
+    if (selected.productId != null && selected.productId !== "") {
+        base.productId = selected.productId;
+    }
+    else if (selected.stockCode) {
+        base.stockCode = selected.stockCode;
+    }
+    return base;
+}
+/** Ardışık dolu önek — ilk boş alanda durur */
+function buildPrefixPayload(areaNames, selected) {
+    const payload = Object.assign({}, copyIdentity(selected));
     for (const name of areaNames) {
         const val = selected[name];
-        if (!val)
+        if (val === undefined || val === null || val === "")
             break;
         payload[name] = val;
     }
     return payload;
 }
+function filledPrefixCount(names, payload) {
+    let count = 0;
+    for (const name of names) {
+        if (payload[name] !== undefined && payload[name] !== "")
+            count++;
+        else
+            break;
+    }
+    return count;
+}
+/**
+ * filled === 0 → tüm alan options (ilk katalog).
+ * filled === k → önceki cache + names[k] options; sonrası silinir.
+ */
+function mergeAreaOptions(prev, res, names, filled) {
+    var _a, _b;
+    if (filled === 0) {
+        const next = new Map();
+        for (const area of res.areas) {
+            next.set(area.name, (_a = area.options) !== null && _a !== void 0 ? _a : []);
+        }
+        return next;
+    }
+    const next = new Map(prev);
+    if (filled < names.length) {
+        const areaAtFilled = res.areas.find((a) => a.name === names[filled]);
+        if (areaAtFilled)
+            next.set(names[filled], (_b = areaAtFilled.options) !== null && _b !== void 0 ? _b : []);
+    }
+    for (let i = filled + 1; i < names.length; i++) {
+        next.delete(names[i]);
+    }
+    return next;
+}
+/** Katalog satırları sabit; options/selected cascade ile birleşir */
+function mergeZonesForUi(catalog, last, optionsByArea) {
+    var _a, _b, _c;
+    const areas = sortAreasByName(catalog.areas).map((catalogArea) => {
+        var _a, _b, _c, _d, _e;
+        const lastArea = last.areas.find((a) => a.name === catalogArea.name);
+        const options = (_c = (_b = (_a = optionsByArea.get(catalogArea.name)) !== null && _a !== void 0 ? _a : lastArea === null || lastArea === void 0 ? void 0 : lastArea.options) !== null && _b !== void 0 ? _b : catalogArea.options) !== null && _c !== void 0 ? _c : [];
+        return Object.assign(Object.assign({}, catalogArea), { options, selected: (_d = lastArea === null || lastArea === void 0 ? void 0 : lastArea.selected) !== null && _d !== void 0 ? _d : catalogArea.selected, hexCode: (_e = lastArea === null || lastArea === void 0 ? void 0 : lastArea.hexCode) !== null && _e !== void 0 ? _e : catalogArea.hexCode });
+    });
+    return {
+        productId: (_a = last.productId) !== null && _a !== void 0 ? _a : catalog.productId,
+        sku: (_b = last.sku) !== null && _b !== void 0 ? _b : catalog.sku,
+        image: (_c = last.image) !== null && _c !== void 0 ? _c : catalog.image,
+        areas,
+    };
+}
+
+/** Company 43 — İstikbal bölge/sıra renkleri */
+const ZONE_COLORS_43 = {
+    1: "#C5230F",
+    2: "#0044CC",
+    3: "#531D1D",
+    4: "#267041",
+    5: "#8330B5",
+    6: "#C08A0E",
+    7: "#11928B",
+    8: "#767417",
+    9: "#C46251",
+    10: "#43464B",
+};
+/** Company 42 — legacy bölge renkleri */
+const ZONE_COLORS_42 = {
+    1: "#538DD5",
+    2: "#948A54",
+    3: "#963634",
+    4: "#92CDDC",
+    5: "#FF3300",
+    6: "#E6B8B7",
+    7: "#E26B0A",
+    8: "#0F243E",
+    9: "#76933C",
+    10: "#FFFF00",
+    11: "#FF66CC",
+    12: "#66FF66",
+    13: "#60497A",
+    14: "#57DC28",
+    15: "#F2A636",
+};
+const ZONE_COLORS_DEFAULT = Object.assign({}, ZONE_COLORS_42);
+function resolveZoneColors(companyId) {
+    switch (String(companyId !== null && companyId !== void 0 ? companyId : "")) {
+        case "43":
+            return ZONE_COLORS_43;
+        case "42":
+            return ZONE_COLORS_42;
+        default:
+            return ZONE_COLORS_DEFAULT;
+    }
+}
 
 /**
- * Host-driven material-zone fetch for `<sugar-model-viewer material-ui="host">`.
+ * Kamerayı bounding box'ın sol üst çaprazına yerleştirir (eski viewer ile aynı).
+ */
+function fitCameraToLeftDiagonal(object, camera, rate = 1.0) {
+    let center = new Vector3();
+    let radius = 1;
+    if (object instanceof Object3D) {
+        const box = new Box3().setFromObject(object);
+        const sphere = box.getBoundingSphere(new Sphere());
+        center = sphere.center;
+        radius = sphere.radius;
+    }
+    else {
+        center = object.center;
+        radius = object.radius;
+    }
+    const fov = (camera.aspect > 1.0 ? 1.0 : camera.aspect) *
+        camera.fov *
+        (Math.PI / 180);
+    const distance = (rate * radius) / Math.sin(fov * 0.5);
+    const dir = new Vector3(-1, 0.6, 1).normalize();
+    const newPosition = center.clone().add(dir.multiplyScalar(distance));
+    camera.position.copy(newPosition);
+    camera.lookAt(center);
+    camera.updateProjectionMatrix();
+    return { position: newPosition, target: center };
+}
+/** Zone API group suffix → mesh material name → hex */
+function resolvePartNamesByGroupSuffix(model, zoneColorMap) {
+    var _a, _b;
+    const result = new Map();
+    const parts = (_a = model.parts) !== null && _a !== void 0 ? _a : [];
+    const groups = (_b = model.partMaterialGroups) !== null && _b !== void 0 ? _b : [];
+    for (const [groupSuffix, hex] of Object.entries(zoneColorMap)) {
+        for (const part of parts) {
+            if (part.code === groupSuffix) {
+                if (part.name)
+                    result.set(part.name, hex);
+                continue;
+            }
+            const pmg = groups.find((g) => {
+                var _a, _b;
+                const partIds = (_b = (_a = g.data) === null || _a === void 0 ? void 0 : _a.parts) !== null && _b !== void 0 ? _b : [];
+                return g.code === groupSuffix && partIds.includes(part.data.id);
+            });
+            if (pmg && part.name)
+                result.set(part.name, hex);
+        }
+    }
+    return result;
+}
+/**
+ * Bounding box sol çaprazından zone legend snapshot (eski takeZoneGuideSnapshot).
+ */
+function takeZoneGuideSnapshot(args) {
+    const { renderer: r, scene: s, model, zoneColorMap, width: w = 512, height: h = 512, fov = 45, bgColor = "#FFFFFF", alpha = 0, } = args;
+    if (!model)
+        return null;
+    const saved = [];
+    if (Object.keys(zoneColorMap).length > 0) {
+        const partColorMap = resolvePartNamesByGroupSuffix(model, zoneColorMap);
+        model.traverse((obj) => {
+            if (obj.isMesh !== true)
+                return;
+            const mesh = obj;
+            const mat = mesh.material;
+            const mats = Array.isArray(mat) ? mat : [mat];
+            let legendColor;
+            for (const m of mats) {
+                if (!(m === null || m === void 0 ? void 0 : m.name))
+                    continue;
+                legendColor = partColorMap.get(m.name);
+                if (legendColor)
+                    break;
+            }
+            if (!legendColor)
+                return;
+            saved.push({ mesh, originalMaterial: mesh.material });
+            mesh.material = new MeshBasicMaterial({ color: legendColor });
+        });
+    }
+    const c = new PerspectiveCamera(fov, w / h, 0.001, 1000);
+    fitCameraToLeftDiagonal(model, c, 0.9);
+    const oldSize = new Vector2();
+    r.getSize(oldSize);
+    const oldClearColor = new Color();
+    r.getClearColor(oldClearColor);
+    const oldClearAlpha = r.getClearAlpha();
+    const oldPixelRatio = r.getPixelRatio();
+    const oldToneMapping = r.toneMapping;
+    const oldToneMappingExposure = r.toneMappingExposure;
+    const oldOutputColorSpace = r.outputColorSpace;
+    try {
+        r.setSize(w, h, false);
+        r.setPixelRatio(1);
+        r.setClearColor(bgColor, alpha);
+        r.toneMapping = NoToneMapping;
+        r.toneMappingExposure = 1;
+        r.outputColorSpace = LinearSRGBColorSpace;
+        r.render(s, c);
+        return r.domElement.toDataURL("image/png", 1);
+    }
+    catch (_a) {
+        return null;
+    }
+    finally {
+        r.toneMapping = oldToneMapping;
+        r.toneMappingExposure = oldToneMappingExposure;
+        r.outputColorSpace = oldOutputColorSpace !== null && oldOutputColorSpace !== void 0 ? oldOutputColorSpace : SRGBColorSpace;
+        r.setSize(oldSize.x, oldSize.y, false);
+        r.setPixelRatio(oldPixelRatio);
+        r.setClearColor(oldClearColor, oldClearAlpha);
+        for (const entry of saved) {
+            const temp = entry.mesh.material;
+            entry.mesh.material = entry.originalMaterial;
+            if (Array.isArray(temp)) {
+                temp.forEach((m) => m.dispose());
+            }
+            else {
+                temp.dispose();
+            }
+        }
+    }
+}
+
+/**
+ * Host-driven material-zone fetch + zone-guide snapshot for
+ * `<sugar-model-viewer material-ui="host">`.
  *
- * Inbound:  `sugar-model-viewer-fetch-zones`
- *   detail: { codes?: Record<string, string>, areaNames?: string[] }
- * Outbound: `sugar-model-viewer-zones`
- *   detail: { zones: MaterialZoneResponse }
- * Outbound: `sugar-model-viewer-zones-error`
- *   detail: { error: string }
+ * Inbound:  sugar-model-viewer-fetch-zones
+ * Outbound: sugar-model-viewer-zones / zones-error
+ * Inbound:  sugar-model-viewer-request-zone-guide
+ * Outbound: sugar-model-viewer-zone-guide { dataUrl }
  */
 const FETCH_ZONES_EVENT = "sugar-model-viewer-fetch-zones";
+const REQUEST_ZONE_GUIDE_EVENT = "sugar-model-viewer-request-zone-guide";
 class MaterialZoneHostController {
-    constructor(getStockCode, getCompanyId) {
-        this.getStockCode = getStockCode;
+    constructor(getSugarProductId, getProductId, getCompanyId, getCaptureContext) {
+        this.getSugarProductId = getSugarProductId;
+        this.getProductId = getProductId;
         this.getCompanyId = getCompanyId;
+        this.getCaptureContext = getCaptureContext;
         this.hostEl = null;
         this.requestGen = 0;
+        this.catalog = null;
+        this.sortedNames = [];
+        this.optionsByArea = new Map();
+        this.lastIdentityKey = "";
         this.onFetch = (event) => {
             void this.handleFetch(event);
         };
+        this.onRequestGuide = () => {
+            this.handleRequestGuide();
+        };
+    }
+    get areaNames() {
+        return this.sortedNames.slice();
     }
     bind(hostEl) {
         this.unbind();
         this.hostEl = hostEl;
         hostEl.addEventListener(FETCH_ZONES_EVENT, this.onFetch);
+        hostEl.addEventListener(REQUEST_ZONE_GUIDE_EVENT, this.onRequestGuide);
     }
     unbind() {
         if (!this.hostEl)
             return;
         this.hostEl.removeEventListener(FETCH_ZONES_EVENT, this.onFetch);
+        this.hostEl.removeEventListener(REQUEST_ZONE_GUIDE_EVENT, this.onRequestGuide);
         this.hostEl = null;
+        this.resetCatalog();
+    }
+    resetCatalog() {
+        this.catalog = null;
+        this.sortedNames = [];
+        this.optionsByArea.clear();
+        this.lastIdentityKey = "";
+    }
+    resolveIdentity() {
+        var _a;
+        const companyId = this.getCompanyId().trim();
+        if (!companyId)
+            return null;
+        const sugarProductId = this.getSugarProductId();
+        if (sugarProductId != null && sugarProductId > 0) {
+            return { companyId, productId: sugarProductId };
+        }
+        const productId = ((_a = this.getProductId()) !== null && _a !== void 0 ? _a : "").trim();
+        if (productId) {
+            return { companyId, stockCode: productId };
+        }
+        return null;
+    }
+    identityKey(identity) {
+        var _a, _b;
+        return `${identity.companyId}|${(_a = identity.productId) !== null && _a !== void 0 ? _a : ""}|${(_b = identity.stockCode) !== null && _b !== void 0 ? _b : ""}`;
+    }
+    handleRequestGuide() {
+        var _a, _b, _c, _d, _e, _f;
+        const hostEl = this.hostEl;
+        if (!hostEl)
+            return;
+        const ctx = this.getCaptureContext();
+        if (!((_b = (_a = ctx === null || ctx === void 0 ? void 0 : ctx.engine) === null || _a === void 0 ? void 0 : _a.renderer) === null || _b === void 0 ? void 0 : _b.instance) ||
+            !ctx.model ||
+            !ctx.engine.activeScene) {
+            ModelViewerPublicEvents.zoneGuide(hostEl, { dataUrl: null });
+            return;
+        }
+        const areaNames = this.sortedNames.length > 0
+            ? this.sortedNames
+            : ((_d = (_c = this.catalog) === null || _c === void 0 ? void 0 : _c.areas) !== null && _d !== void 0 ? _d : []).map((a) => a.name);
+        const zoneColorMap = {};
+        const colors = resolveZoneColors(ctx.companyId);
+        for (const areaName of areaNames) {
+            if (areaName.length <= MATERIAL_ZONE_AREA_NAME_PREFIX_LENGTH)
+                continue;
+            const groupSuffix = areaName.slice(MATERIAL_ZONE_AREA_NAME_PREFIX_LENGTH);
+            const n = parseInt((_f = (_e = areaName.match(/\d+/)) === null || _e === void 0 ? void 0 : _e[0]) !== null && _f !== void 0 ? _f : "0", 10);
+            const hex = colors[n];
+            if (hex)
+                zoneColorMap[groupSuffix] = hex;
+        }
+        try {
+            const dataUrl = takeZoneGuideSnapshot({
+                renderer: ctx.engine.renderer.instance,
+                scene: ctx.engine.activeScene,
+                model: ctx.model,
+                zoneColorMap,
+            });
+            ModelViewerPublicEvents.zoneGuide(hostEl, { dataUrl });
+        }
+        catch (_g) {
+            ModelViewerPublicEvents.zoneGuide(hostEl, { dataUrl: null });
+        }
     }
     async handleFetch(event) {
         var _a, _b, _c, _d;
         const hostEl = this.hostEl;
         if (!hostEl)
             return;
-        const stockCode = this.getStockCode().trim();
-        const companyId = this.getCompanyId().trim();
-        if (!stockCode || !companyId) {
+        const identity = this.resolveIdentity();
+        if (!identity) {
             ModelViewerPublicEvents.zonesError(hostEl, {
-                error: "missing sugar-product-id or company-id",
+                error: "missing sugar-product-id / product-id or company-id",
             });
             return;
         }
+        const key = this.identityKey(identity);
+        if (key !== this.lastIdentityKey) {
+            this.resetCatalog();
+            this.lastIdentityKey = key;
+        }
         const codes = (_b = (_a = event.detail) === null || _a === void 0 ? void 0 : _a.codes) !== null && _b !== void 0 ? _b : {};
-        const areaNames = (_d = (_c = event.detail) === null || _c === void 0 ? void 0 : _c.areaNames) !== null && _d !== void 0 ? _d : [];
-        const base = Object.assign({ stockCode, companyId }, codes);
-        const payload = areaNames.length === 0
-            ? { stockCode, companyId }
+        const hasCodes = Object.keys(codes).length > 0;
+        const areaNames = ((_d = (_c = event.detail) === null || _c === void 0 ? void 0 : _c.areaNames) === null || _d === void 0 ? void 0 : _d.length)
+            ? event.detail.areaNames
+            : this.sortedNames;
+        const base = Object.assign(Object.assign({}, identity), codes);
+        const payload = !hasCodes || areaNames.length === 0
+            ? identity
             : buildPrefixPayload(areaNames, base);
         const gen = ++this.requestGen;
         try {
-            const zones = await fetchProductZones(payload);
+            const res = await fetchProductZones(payload);
             if (gen !== this.requestGen || this.hostEl !== hostEl)
                 return;
+            const namesForMerge = this.sortedNames.length > 0
+                ? this.sortedNames
+                : sortAreasByName(res.areas).map((a) => a.name);
+            const filled = hasCodes
+                ? filledPrefixCount(namesForMerge, payload)
+                : 0;
+            if (!this.catalog || !hasCodes) {
+                this.catalog = res;
+                this.sortedNames = sortAreasByName(res.areas).map((a) => a.name);
+                this.optionsByArea = mergeAreaOptions(new Map(), res, this.sortedNames, 0);
+            }
+            else {
+                this.optionsByArea = mergeAreaOptions(this.optionsByArea, res, this.sortedNames, filled);
+            }
+            const zones = mergeZonesForUi(this.catalog, res, this.optionsByArea);
             ModelViewerPublicEvents.zones(hostEl, { zones });
         }
         catch (err) {
@@ -124015,7 +124355,15 @@ class SugarModelViewerController {
         this.commercial = new SugarModelViewerCommercialController(() => this.panel.syncGroups(), update);
         this.pathTrace = new SugarModelViewerPathTraceController(() => this.pathTracer, update);
         this.materialUi = new MaterialUiHostController(() => { var _a, _b, _c, _d; return (_d = (_c = (_b = (_a = this.productViewer) === null || _a === void 0 ? void 0 : _a.viewer) === null || _b === void 0 ? void 0 : _b.model) === null || _c === void 0 ? void 0 : _c.partMaterialGroups) !== null && _d !== void 0 ? _d : []; }, update);
-        this.materialZone = new MaterialZoneHostController(() => { var _a, _b; return String((_b = (_a = this.product.sugarProductId) !== null && _a !== void 0 ? _a : this.product.productId) !== null && _b !== void 0 ? _b : ""); }, () => { var _a; return String((_a = this.product.companyId) !== null && _a !== void 0 ? _a : ""); });
+        this.materialZone = new MaterialZoneHostController(() => this.product.sugarProductId, () => this.product.productId, () => { var _a; return String((_a = this.product.companyId) !== null && _a !== void 0 ? _a : ""); }, () => {
+            var _a, _b, _c;
+            const engine = this.boundEngine;
+            const model = (_b = (_a = this.productViewer) === null || _a === void 0 ? void 0 : _a.viewer) === null || _b === void 0 ? void 0 : _b.model;
+            const companyId = String((_c = this.product.companyId) !== null && _c !== void 0 ? _c : "");
+            if (!engine || !model)
+                return null;
+            return { engine, model, companyId };
+        });
     }
     get productData() { return this.product.productData; }
     get panelOpen() { return this.panel.panelOpen; }

@@ -11,6 +11,10 @@ export const APPLY_MATERIAL_EVENT = "sugar-model-viewer-apply-material";
 export const FETCH_ZONES_EVENT = "sugar-model-viewer-fetch-zones";
 export const ZONES_EVENT = "sugar-model-viewer-zones";
 export const ZONES_ERROR_EVENT = "sugar-model-viewer-zones-error";
+export const REQUEST_ZONE_GUIDE_EVENT =
+  "sugar-model-viewer-request-zone-guide";
+export const ZONE_GUIDE_EVENT = "sugar-model-viewer-zone-guide";
+export const PRODUCT_READY_EVENT = "sugar-model-viewer-product-ready";
 
 export type ApplyMaterialDetail = {
   groupCode: string;
@@ -44,7 +48,7 @@ export type MaterialZoneResponse = {
       selected: boolean;
       type: string;
     };
-    hexCode: string;
+    hexCode: string | null;
   }>;
   image?: string;
   productId: number;
@@ -145,6 +149,28 @@ export function fetchViewerZones(
     el.dispatchEvent(
       new CustomEvent(FETCH_ZONES_EVENT, {
         detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  });
+}
+
+/** Ask viewer for zone-legend screenshot (dataUrl may be null if model not ready). */
+export function requestViewerZoneGuide(
+  el: EventTarget,
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const onGuide = (event: Event) => {
+      el.removeEventListener(ZONE_GUIDE_EVENT, onGuide);
+      const dataUrl =
+        (event as CustomEvent<{ dataUrl: string | null }>).detail?.dataUrl ??
+        null;
+      resolve(dataUrl);
+    };
+    el.addEventListener(ZONE_GUIDE_EVENT, onGuide);
+    el.dispatchEvent(
+      new CustomEvent(REQUEST_ZONE_GUIDE_EVENT, {
         bubbles: true,
         composed: true,
       }),

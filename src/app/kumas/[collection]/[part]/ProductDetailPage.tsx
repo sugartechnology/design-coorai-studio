@@ -75,6 +75,8 @@ function ProductDetailPage() {
     setPickerAreaName,
     onViewerReady,
     pickOption,
+    sku: zoneSku,
+    guideImage,
   } = useProductZones({
     sugarProductId,
     fallbackError: t("zonesError"),
@@ -311,9 +313,9 @@ function ProductDetailPage() {
             <h2 className="mt-1 text-xl font-extrabold text-[color:var(--istikbal-blue)] leading-tight">
               {productTitle}
             </h2>
-            {product?.sku && (
+            {(zoneSku || product?.sku) && (
               <p className="mt-1 text-xs text-[color:var(--istikbal-blue)]/50">
-                {t("skuLabel", { sku: product.sku })}
+                {t("skuLabel", { sku: zoneSku || product?.sku || "" })}
               </p>
             )}
           </div>
@@ -324,6 +326,9 @@ function ProductDetailPage() {
             loading={zonesLoading}
             error={zonesError}
             allSelected={allSelected}
+            sku={zoneSku}
+            guideImage={guideImage}
+            companyId={SUGAR_MODEL_VIEWER_COMPANY_ID}
             onOpenPicker={setPickerAreaName}
           />
         </aside>
