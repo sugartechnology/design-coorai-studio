@@ -120,7 +120,7 @@ function CollectionsPage() {
 
   return (
     <>
-      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
             {t("categoriesTitle")}
@@ -164,12 +164,12 @@ function CollectionsPage() {
       )}
 
       {loading ? (
-        <div className="rounded-2xl bg-white border border-black/5 py-20 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
           <Loader2 className="size-8 animate-spin" />
           <p className="text-sm font-semibold">{t("categoriesLoading")}</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-20 text-center text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--istikbal-blue)]/60">
           {t("emptyCategories")}
         </div>
       ) : (
@@ -182,7 +182,7 @@ function CollectionsPage() {
                 href={`/kumas/kategori/${c.id}`}
                 className="group rounded-2xl bg-white shadow-sm hover:shadow-xl overflow-hidden transition-all hover:-translate-y-1 border border-black/5"
               >
-                <div className={`relative h-64 bg-gradient-to-br ${gradient} overflow-hidden`}>
+                <div className={`relative h-44 md:h-52 bg-gradient-to-br ${gradient} overflow-hidden`}>
                   {c.thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

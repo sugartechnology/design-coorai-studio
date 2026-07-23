@@ -179,7 +179,7 @@ function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-white border border-black/5 py-20 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+      <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
         <Loader2 className="size-8 animate-spin" />
         <p className="text-sm font-semibold">{t("productsLoading")}</p>
       </div>
@@ -227,8 +227,8 @@ function ProductDetailPage() {
   };
 
   return (
-    <>
-      <div className="mb-6">
+    <div className="flex min-h-full flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
+      <div className="mb-4 shrink-0">
         <Link
           href={backHref}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)] hover:opacity-80"
@@ -237,9 +237,11 @@ function ProductDetailPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
-        <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden">
-          <div className={`relative aspect-[4/3] bg-gradient-to-br ${DETAIL_GRADIENT} grid place-items-center`}>
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-[1fr_400px] lg:overflow-hidden">
+        <div className="flex min-h-[360px] flex-col overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm lg:h-full lg:min-h-0">
+          <div
+            className={`relative min-h-[280px] flex-1 bg-gradient-to-br ${DETAIL_GRADIENT} grid place-items-center`}
+          >
             {sugarProductId && viewerMounted && (
               <ModelViewerHost
                 key={sugarProductId}
@@ -292,13 +294,13 @@ function ProductDetailPage() {
           </div>
 
           {galleryItems.length > 0 && (
-            <div className="flex gap-3 p-4 border-t border-black/5 overflow-x-auto">
+            <div className="flex shrink-0 gap-3 overflow-x-auto border-t border-black/5 p-4">
               {galleryItems.map((item, i) => (
                 <button
                   key={item.key}
                   type="button"
                   onClick={() => setActiveGalleryIndex(i)}
-                  className={`relative h-20 w-24 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
+                  className={`relative h-16 w-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
                     safeGalleryIndex === i
                       ? "border-[color:var(--istikbal-yellow)] ring-2 ring-[color:var(--istikbal-yellow)]/30"
                       : "border-transparent hover:border-[color:var(--istikbal-blue)]/20"
@@ -319,8 +321,8 @@ function ProductDetailPage() {
           )}
         </div>
 
-        <aside className="bg-white rounded-3xl border border-black/5 shadow-sm p-6 flex flex-col">
-          <div className="mb-4">
+        <aside className="flex flex-col rounded-3xl border border-black/5 bg-white p-6 shadow-sm lg:h-full lg:overflow-y-auto">
+          <div className="mb-4 shrink-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/45">
               {[product?.categoryName, collectionName].filter(Boolean).join(" · ") || collectionName}
             </p>
@@ -332,7 +334,7 @@ function ProductDetailPage() {
             )}
           </div>
 
-          <div className="mb-5 rounded-2xl bg-[color:var(--istikbal-blue)]/5 p-4">
+          <div className="mb-5 shrink-0 rounded-2xl bg-[color:var(--istikbal-blue)]/5 p-4">
             <p className="text-xs font-bold text-[color:var(--istikbal-blue)] mb-2">{t("fabricRegionsTitle")}</p>
             <div className="flex items-center gap-1.5 mb-2">
               {regionLabels.map((r, i) => (
@@ -352,7 +354,7 @@ function ProductDetailPage() {
             </p>
           </div>
 
-          <div className="space-y-2 flex-1">
+          <div className="min-h-0 flex-1 space-y-2">
             {regionLabels.map((r) => {
               const f = selection[r];
               return (
@@ -385,7 +387,7 @@ function ProductDetailPage() {
             })}
           </div>
 
-          <div className="mt-6 space-y-2">
+          <div className="mt-6 shrink-0 space-y-2">
             <button
               disabled={!allSelected}
               className="w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] disabled:bg-[color:var(--istikbal-blue)]/15 disabled:text-[color:var(--istikbal-blue)]/40 disabled:cursor-not-allowed transition-all shadow-md"
@@ -412,7 +414,7 @@ function ProductDetailPage() {
           />
         )}
       </div>
-    </>
+    </div>
   );
 }
 

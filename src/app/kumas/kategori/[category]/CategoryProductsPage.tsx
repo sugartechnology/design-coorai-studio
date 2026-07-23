@@ -88,7 +88,7 @@ function CategoryProductsPage() {
         </Link>
       </div>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">
             {t("categoryEyebrow")}
@@ -117,12 +117,12 @@ function CategoryProductsPage() {
       )}
 
       {loading && products.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-black/5 py-20 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
           <Loader2 className="size-8 animate-spin" />
           <p className="text-sm font-semibold">{t("productsLoading")}</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-20 text-center text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--istikbal-blue)]/60">
           {t("emptyCategoryProducts")}
         </div>
       ) : (
@@ -136,7 +136,7 @@ function CategoryProductsPage() {
                   href={`/kumas/${collectionSeg}/${p.id}?kategori=${encodeURIComponent(categoryId)}`}
                   className="group rounded-2xl bg-white shadow-sm hover:shadow-xl border border-black/5 overflow-hidden transition-all hover:-translate-y-1"
                 >
-                  <div className="relative aspect-square bg-stone-100">
+                  <div className="relative aspect-[4/5] bg-stone-100">
                     {p.thumbnailUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img

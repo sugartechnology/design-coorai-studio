@@ -42,7 +42,10 @@ type PortalCrmFetchOptions = {
   method?: string;
   /** JSON-serializable body, or FormData for multipart uploads */
   body?: unknown;
-  searchParams?: Record<string, string | number | undefined | null>;
+  searchParams?: Record<
+    string,
+    string | number | undefined | null | ReadonlyArray<string | number>
+  >;
   router?: { replace: (href: string) => void };
 };
 
@@ -65,6 +68,13 @@ export async function portalCrmFetch<T>(
   if (searchParams) {
     for (const [key, value] of Object.entries(searchParams)) {
       if (value === undefined || value === null || value === "") continue;
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item === undefined || item === null || item === "") continue;
+          params.append(key, String(item));
+        }
+        continue;
+      }
       params.set(key, String(value));
     }
   }

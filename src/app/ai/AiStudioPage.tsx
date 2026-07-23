@@ -7,6 +7,7 @@ import {
   ArrowUp,
   ChevronDown,
   ChevronUp,
+  Eye,
   Hand,
   Image as ImageIcon,
   Lightbulb,
@@ -26,6 +27,8 @@ import {
   X,
   Trash2,
   RotateCcw,
+  Download,
+  Coins,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -53,7 +56,10 @@ import {
   pollGenerationUntilDone,
   quoteAiCredits,
   resolveGenerationImageUrl,
+  useAiGalleryHistory,
   useAiStudioSession,
+  useCreditBalance,
+  type AiGalleryItem,
   type AspectRatioKey,
   type ImageSizeKey,
   type LightingModeKey,
@@ -90,11 +96,107 @@ const chipActive =
 const chipIdle =
   "bg-white text-[color:var(--istikbal-blue)] border-black/10 hover:border-[color:var(--istikbal-blue)]/30";
 
+function formatGalleryTimestamp(item: AiGalleryItem, fallback: string) {
+  if (!item.createdAt) return fallback;
+  try {
+    return new Date(item.createdAt).toLocaleString();
+  } catch {
+    return fallback;
+  }
+}
+
 function AiStudioPage() {
   const t = useTranslations("aiStudio");
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { sessionId, ready: sessionReady } = useAiStudioSession();
+  const {
+    availableCredit,
+    depleted: creditsDepleted,
+    lowCredit,
+    loading: creditsLoading,
+    refresh: refreshCredits,
+  } = useCreditBalance(sessionReady);
+  const {
+    items: galleryItems,
+    loading: galleryLoading,
+    loadingMore: galleryLoadingMore,
+    hasMore: galleryHasMore,
+    loadMore: galleryLoadMore,
+    refresh: refreshGallery,
+    mergeItems: mergeGalleryItems,
+    kickPoll: kickGalleryPoll,
+    error: galleryError,
+  } = useAiGalleryHistory({
+    contextTypes: ["AI_STUDIO_ROOM"],
+    enabled: sessionReady,
+    pageSize: 12,
+  });
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [pendingHistoryItem, setPendingHistoryItem] = useState<AiGalleryItem | null>(null);
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false);
+  const [galleryScrollEl, setGalleryScrollEl] = useState<HTMLDivElement | null>(null);
+  const { sentinelRef: gallerySentinelRef } = useInfiniteScroll({
+    hasMore: galleryHasMore,
+    loading: galleryLoading || galleryLoadingMore,
+    onLoadMore: galleryLoadMore,
+    root: galleryScrollEl,
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktopViewport(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  const historyPanelItems = useMemo(() => {
+    if (!pendingHistoryItem) return galleryItems;
+    const exists = galleryItems.some(
+      (item) =>
+        item.id === pendingHistoryItem.id ||
+        Boolean(pendingHistoryItem.jobId && item.jobId === pendingHistoryItem.jobId),
+    );
+    if (exists) return galleryItems;
+    return [pendingHistoryItem, ...galleryItems];
+  }, [galleryItems, pendingHistoryItem]);
+
+  useEffect(() => {
+    if (!pendingHistoryItem) return;
+    const matched = galleryItems.some(
+      (item) =>
+        item.id === pendingHistoryItem.id ||
+        Boolean(pendingHistoryItem.jobId && item.jobId === pendingHistoryItem.jobId),
+    );
+    if (matched) {
+      setPendingHistoryItem(null);
+      return;
+    }
+    const pendingCreatedAt = pendingHistoryItem.createdAt
+      ? new Date(pendingHistoryItem.createdAt).getTime()
+      : 0;
+    if (!pendingCreatedAt) return;
+    const hasNewerCompleted = galleryItems.some((item) => {
+      if (!item?.createdAt) return false;
+      if ((item.status ?? "").toUpperCase() !== "COMPLETED") return false;
+      if (!item.imageUrl && !item.thumbnailUrl) return false;
+      return new Date(item.createdAt).getTime() >= pendingCreatedAt;
+    });
+    if (hasNewerCompleted) setPendingHistoryItem(null);
+  }, [galleryItems, pendingHistoryItem]);
+
+  const showRenderGallery = isDesktopViewport
+    ? isGalleryOpen
+    : historyPanelItems.length > 0 || Boolean(pendingHistoryItem) || galleryLoadingMore;
+
+  const latestGalleryThumbnail = useMemo(() => {
+    const latest = historyPanelItems.find((item) => {
+      const status = (item.status ?? "").toUpperCase();
+      return status === "COMPLETED" && Boolean(item.imageUrl || item.thumbnailUrl);
+    });
+    return latest ? resolveGenerationImageUrl(latest) || latest.thumbnailUrl || null : null;
+  }, [historyPanelItems]);
   const {
     categories,
     collections,
@@ -335,8 +437,10 @@ function AiStudioPage() {
       setRoomPreviewUrl(url);
       setReferenceImageUrl(url);
       setStatusMessage(t("statusReferenceReady"));
+      void refreshCredits();
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
+      void refreshCredits();
       setError(err instanceof Error ? err.message : t("errorRoomGenerate"));
     } finally {
       setBusy("idle");
@@ -352,6 +456,18 @@ function AiStudioPage() {
     setError(null);
     setBusy("render");
     setStatusMessage(t("statusRendering"));
+    setIsGalleryOpen(true);
+
+    const optimisticItem: AiGalleryItem = {
+      id: `pending-${sessionId}-${Date.now()}`,
+      prompt: promptNotes || undefined,
+      status: "PROCESSING",
+      createdAt: new Date().toISOString(),
+      contextType: "AI_STUDIO_ROOM",
+    };
+    kickGalleryPoll();
+    setPendingHistoryItem(optimisticItem);
+
     try {
       const products = selected.map((p) => ({
         productId: p.product.id,
@@ -426,6 +542,23 @@ function AiStudioPage() {
         router,
       );
 
+      const normalized: AiGalleryItem = {
+        ...optimisticItem,
+        ...generation,
+        prompt: generation.prompt || optimisticItem.prompt,
+        status: generation.status || optimisticItem.status,
+        createdAt: generation.createdAt || optimisticItem.createdAt,
+      };
+      setPendingHistoryItem(
+        (normalized.status ?? "").toUpperCase() === "COMPLETED" &&
+          Boolean(normalized.imageUrl || normalized.thumbnailUrl)
+          ? null
+          : normalized,
+      );
+      mergeGalleryItems([normalized]);
+      void refreshCredits();
+      void refreshGallery();
+
       const done = isGenerationSuccessful(generation.status)
         ? generation
         : await pollGenerationUntilDone({
@@ -445,8 +578,14 @@ function AiStudioPage() {
       setSelected([]);
       setSelectedUid(null);
       setStatusMessage(t("statusRenderDone"));
+      setPendingHistoryItem(null);
+      mergeGalleryItems([{ ...normalized, ...done, status: done.status }]);
+      void refreshCredits();
+      void refreshGallery();
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
+      setPendingHistoryItem(null);
+      void refreshCredits();
       setError(err instanceof Error ? err.message : t("errorRenderStart"));
     } finally {
       setBusy("idle");
@@ -458,6 +597,21 @@ function AiStudioPage() {
 
   const estimatedCost = creditCost ?? Math.max(2, selected.length + 2);
   const isBusy = busy !== "idle";
+  const balanceDisplay =
+    creditsLoading && availableCredit == null
+      ? "—"
+      : availableCredit != null
+        ? String(availableCredit)
+        : "—";
+  const renderDisabled = isBusy || !sessionReady || creditsDepleted;
+
+  const applyGalleryItem = (item: AiGalleryItem) => {
+    const url = resolveGenerationImageUrl(item);
+    if (!url) return;
+    const status = (item.status ?? "").toUpperCase();
+    if (status && status !== "COMPLETED") return;
+    setRoomPreviewUrl(url);
+  };
 
   return (
     <div className="min-h-screen bg-[color:var(--istikbal-bg)] flex flex-col">
@@ -864,6 +1018,7 @@ function AiStudioPage() {
               </div>
             )}
 
+            <div className="flex-1 flex flex-col lg:flex-row min-w-0 min-h-0">
             <main className="flex-1 flex flex-col min-w-0">
               <div className="px-3 sm:px-5 lg:px-8 pt-3 lg:pt-8 pb-2 lg:pb-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -872,6 +1027,13 @@ function AiStudioPage() {
                     {t("pageSubtitle")}
                   </p>
                 </div>
+                {/*<button
+                  type="button"
+                  onClick={() => setIsGalleryOpen((prev) => !prev)}
+                  className="hidden lg:inline-flex shrink-0 h-10 px-4 rounded-full border border-black/10 bg-white text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue-soft)]"
+                >
+                  {isGalleryOpen ? t("galleryHide") : t("galleryShow")}
+                </button>*/}
               </div>
 
               {(error || statusMessage) && (
@@ -928,7 +1090,7 @@ function AiStudioPage() {
                           <QrCode className="size-4" /> {t("uploadViaQr")}
                         </button>
                         <button
-                          disabled={isBusy || !sessionReady}
+                          disabled={isBusy || !sessionReady || creditsDepleted}
                           onClick={() => void handleGenerateReference()}
                           className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)] disabled:opacity-60"
                         >
@@ -991,6 +1153,17 @@ function AiStudioPage() {
               </div>
 
               <div className="px-3 sm:px-5 lg:px-8 pb-3 lg:pb-6">
+                {(lowCredit || creditsDepleted) && (
+                  <div
+                    className={`mb-2 rounded-xl px-3 py-2 text-xs font-semibold ${
+                      creditsDepleted
+                        ? "border border-red-200 bg-red-50 text-red-700"
+                        : "border border-amber-200 bg-amber-50 text-amber-800"
+                    }`}
+                  >
+                    {creditsDepleted ? t("creditsDepleted") : t("creditsLow")}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 lg:gap-3">
                   <div className="flex-1 relative min-w-0">
                     <Wand2 className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
@@ -1002,12 +1175,38 @@ function AiStudioPage() {
                     />
                   </div>
                   <div className="hidden md:inline-flex h-11 lg:h-12 px-3 lg:px-4 rounded-full bg-white border border-black/5 items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)]">
-                    <Sparkles className="size-4 text-[color:var(--istikbal-yellow)]" />
+                    <Coins className="size-4 text-[color:var(--istikbal-yellow)]" />
+                    <span className="text-[color:var(--istikbal-blue)]/50">{t("balanceLabel")}</span>
+                    <span className="text-base">{balanceDisplay}</span>
+                    <span className="text-[color:var(--istikbal-blue)]/25">·</span>
                     <span className="text-[color:var(--istikbal-blue)]/50">{t("costLabel")}</span>
                     <span className="text-base">{estimatedCost}</span>
                   </div>
                   <button
-                    disabled={isBusy || !sessionReady}
+                    type="button"
+                    onClick={() => setIsGalleryOpen(true)}
+                    className="hidden lg:flex shrink-0 items-center gap-2.5 h-11 lg:h-12 px-2 rounded-full bg-white border border-black/5 hover:bg-[color:var(--istikbal-blue-soft)] transition"
+                  >
+                    <div className="size-10 overflow-hidden rounded-xl border border-black/5 bg-[color:var(--istikbal-blue-soft)]">
+                      {latestGalleryThumbnail ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={latestGalleryThumbnail}
+                          alt={t("galleryLatestAlt")}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <ImageIcon className="size-4 text-[color:var(--istikbal-blue)]/40" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="pr-2 text-left text-[10px] font-bold uppercase leading-tight tracking-[0.14em] text-[color:var(--istikbal-blue)]/60">
+                      {t("galleryButton")}
+                    </span>
+                  </button>
+                  <button
+                    disabled={renderDisabled}
                     onClick={() => void handleRender()}
                     className="h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue)]/90 shrink-0 disabled:opacity-60"
                   >
@@ -1017,6 +1216,159 @@ function AiStudioPage() {
                 </div>
               </div>
             </main>
+
+            {showRenderGallery ? (
+              <aside className="mt-2 mx-3 sm:mx-5 lg:mx-0 lg:mt-0 mb-3 lg:mb-0 flex max-h-[min(360px,52vh)] w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm lg:h-full lg:max-h-none lg:w-[280px] lg:rounded-none lg:border-0 lg:border-l lg:shadow-none">
+                <div className="flex items-center justify-between px-4 py-4">
+                  <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[color:var(--istikbal-blue)]">
+                    {t("galleryTitle")}
+                  </h2>
+                  {isDesktopViewport ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsGalleryOpen(false)}
+                      className="rounded-lg p-1 transition-colors hover:bg-[color:var(--istikbal-blue-soft)]"
+                    >
+                      <X className="size-4 text-[color:var(--istikbal-blue)]/50" />
+                    </button>
+                  ) : null}
+                </div>
+
+                {galleryError && (
+                  <div className="mx-3 mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                    {galleryError}
+                  </div>
+                )}
+
+                <div
+                  ref={setGalleryScrollEl}
+                  className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-4"
+                >
+                  {galleryLoading && historyPanelItems.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--istikbal-blue)]/50">
+                      <Loader2 className="mb-2 size-6 animate-spin opacity-60" />
+                      <p className="text-xs">{t("galleryLoading")}</p>
+                    </div>
+                  ) : historyPanelItems.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--istikbal-blue)]/50">
+                      <Eye className="mb-2 size-8 opacity-40" />
+                      <p className="text-xs">{t("galleryEmpty")}</p>
+                    </div>
+                  ) : (
+                    historyPanelItems.map((item, index) => {
+                      const previewUrl =
+                        resolveGenerationImageUrl(item) || item.thumbnailUrl || "";
+                      const status = (item.status ?? "").toUpperCase();
+                      const isDone = status === "COMPLETED" && Boolean(previewUrl);
+                      const isProcessing =
+                        status === "PENDING" || status === "PROCESSING";
+
+                      return (
+                        <div
+                          key={item.id || `${previewUrl}-${index}`}
+                          className={`group relative overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-all ${
+                            isDone ? "cursor-pointer hover:border-[color:var(--istikbal-blue)]/30" : ""
+                          }`}
+                          onClick={() => {
+                            if (isDone) applyGalleryItem(item);
+                          }}
+                        >
+                          {isDone ? (
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={previewUrl}
+                                alt={item.caption || t("galleryTitle")}
+                                className="aspect-[4/3] w-full object-cover"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
+                                <div className="rounded-full bg-white/95 p-2 shadow-lg">
+                                  <Eye className="size-4 text-[color:var(--istikbal-blue)]" />
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="relative flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-[color:var(--istikbal-blue-soft)] px-4 text-center">
+                              <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-[color:var(--istikbal-blue)]/10 via-transparent to-transparent" />
+                              <div className="relative flex size-14 items-center justify-center rounded-2xl bg-[color:var(--istikbal-blue)]/10">
+                                <Sparkles className="size-7 text-[color:var(--istikbal-blue)]" />
+                                {isProcessing ? (
+                                  <Loader2 className="absolute -right-1 -top-1 size-4 animate-spin text-[color:var(--istikbal-blue)]" />
+                                ) : null}
+                              </div>
+                              <div className="relative">
+                                <p className="text-xs font-bold text-[color:var(--istikbal-blue)]">
+                                  {isProcessing
+                                    ? t("galleryProcessing")
+                                    : t("galleryFailed")}
+                                </p>
+                                <p className="mt-0.5 text-[10px] text-[color:var(--istikbal-blue)]/55">
+                                  {status === "PENDING"
+                                    ? t("galleryQueued")
+                                    : status === "FAILED" ||
+                                        status === "ERROR" ||
+                                        status === "CANCELLED"
+                                      ? t("galleryFailedHint")
+                                      : t("galleryProcessingHint")}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                            <div className="min-w-0">
+                              <div className="truncate text-[11px] font-semibold text-[color:var(--istikbal-blue)]">
+                                {item.prompt || t("galleryUntitled")}
+                              </div>
+                              <div className="text-[10px] text-[color:var(--istikbal-blue)]/50">
+                                {formatGalleryTimestamp(item, t("galleryJustNow"))}
+                              </div>
+                            </div>
+                            {isDone && previewUrl ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  title={t("galleryOpen")}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    applyGalleryItem(item);
+                                  }}
+                                  className="rounded-lg p-2 transition-colors hover:bg-[color:var(--istikbal-blue-soft)]"
+                                >
+                                  <Eye className="size-4 text-[color:var(--istikbal-blue)]/50" />
+                                </button>
+                                <a
+                                  href={previewUrl}
+                                  download
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={t("galleryDownload")}
+                                  className="rounded-lg p-2 transition-colors hover:bg-[color:var(--istikbal-blue-soft)]"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Download className="size-4 text-[color:var(--istikbal-blue)]/50" />
+                                </a>
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <div className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full border border-black/10 bg-white/85 text-[10px] font-bold text-[color:var(--istikbal-blue)]/60 backdrop-blur-sm">
+                            {index + 1}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  <InfiniteScrollSentinel
+                    sentinelRef={gallerySentinelRef}
+                    hasMore={galleryHasMore}
+                    loadingMore={galleryLoadingMore}
+                  />
+                </div>
+              </aside>
+            ) : null}
+            </div>
           </>
         );
       })()}

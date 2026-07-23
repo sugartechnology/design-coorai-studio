@@ -3,11 +3,14 @@
 import { portalCrmFetch } from "@/lib/portal-crm";
 import { normalizeMediaUrlOrNull } from "@/lib/media-url";
 import type {
+  AiGalleryItem,
+  AiGalleryPage,
   AiImageContext,
   AiImageGeneration,
   AiStudioCreditQuote,
   AiStudioRoomDesignRequest,
   AiStudioRoomReferenceRequest,
+  CreditBalanceResponse,
 } from "./types";
 
 type RouterLike = { replace: (href: string) => void };
@@ -98,6 +101,61 @@ export async function quoteAiCredits(
       aspectRatio: options.aspectRatio,
     },
   });
+}
+
+export async function getCreditBalance(
+  router?: RouterLike,
+): Promise<CreditBalanceResponse> {
+  return portalCrmFetch<CreditBalanceResponse>("credits/current", { router });
+}
+
+export async function listAiGallery(
+  options: {
+    contextTypes?: string[];
+    statuses?: string[];
+    sources?: string[];
+    page?: number;
+    size?: number;
+    router?: RouterLike;
+  } = {},
+): Promise<{ items: AiGalleryItem[]; page: number; totalPages: number }> {
+  const pageIndex = options.page ?? 0;
+  const size = options.size ?? 12;
+  const raw = await portalCrmFetch<AiGalleryPage>("ai/image-generation/gallery", {
+    router: options.router,
+    searchParams: {
+      page: pageIndex,
+      size,
+      contextTypes: options.contextTypes?.length
+        ? options.contextTypes
+        : ["AI_STUDIO_ROOM"],
+      statuses: options.statuses?.length
+        ? options.statuses
+        : ["PENDING", "PROCESSING", "COMPLETED"],
+      sources: options.sources,
+    },
+  });
+
+  const items = (raw.content ?? [])
+    .filter(Boolean)
+    .map((item) => ({
+      ...item,
+      imageUrl: normalizeMediaUrlOrNull(item.imageUrl) || item.imageUrl,
+      thumbnailUrl: normalizeMediaUrlOrNull(item.thumbnailUrl) || item.thumbnailUrl,
+    }));
+
+  const pageNumber = raw.page?.number ?? raw.number ?? pageIndex;
+  const totalPagesFromPayload = raw.page?.totalPages ?? raw.totalPages;
+  const isLast =
+    typeof raw.last === "boolean" ? raw.last : items.length < size;
+  const totalPages =
+    totalPagesFromPayload ?? (isLast ? pageNumber + 1 : pageNumber + 2);
+
+  return {
+    items,
+    page: pageNumber,
+    totalPages: Math.max(totalPages, 1),
+  };
 }
 
 export function resolveGenerationImageUrl(generation: AiImageGeneration | null | undefined): string | null {

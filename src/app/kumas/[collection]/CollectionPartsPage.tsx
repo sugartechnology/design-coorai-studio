@@ -31,7 +31,7 @@ function CollectionPartsPage() {
 
   return (
     <>
-      <div className="mb-8">
+      <div className="mb-5">
         <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">{t("collectionEyebrow")}</p>
         <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
           {collectionName}
@@ -48,7 +48,7 @@ function CollectionPartsPage() {
             href={`/kumas/${collectionId}/${p.slug}`}
             className="group rounded-2xl bg-white shadow-sm hover:shadow-xl overflow-hidden transition-all hover:-translate-y-1 border border-black/5"
           >
-            <div className="relative h-44 bg-gradient-to-br from-stone-200 via-stone-100 to-emerald-100 grid place-items-center overflow-hidden">
+            <div className="relative h-36 md:h-40 bg-gradient-to-br from-stone-200 via-stone-100 to-emerald-100 grid place-items-center overflow-hidden">
               <PartSilhouette type={p.silhouette} />
             </div>
             <div className="px-4 py-4 text-center">

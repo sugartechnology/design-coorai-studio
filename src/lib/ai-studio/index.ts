@@ -1,19 +1,24 @@
 export type {
+  AiGalleryItem,
+  AiGalleryPage,
   AiImageContext,
   AiImageGeneration,
   AiStudioCreditQuote,
   AiStudioProductRequest,
   AiStudioRoomDesignRequest,
   AiStudioRoomReferenceRequest,
+  CreditBalanceResponse,
 } from "./types";
 
 export {
   createAiStudioSessionId,
   generateRoomDesign,
   generateRoomReference,
+  getCreditBalance,
   getOrCreateAiStudioSessionId,
   isGenerationSuccessful,
   isGenerationTerminal,
+  listAiGallery,
   listReferenceGenerations,
   listRoomGenerations,
   pollGenerationUntilDone,
@@ -22,6 +27,8 @@ export {
 } from "./ai-studio-api";
 
 export { useAiStudioSession } from "./use-ai-studio-session";
+export { useCreditBalance } from "./use-credit-balance";
+export { useAiGalleryHistory } from "./use-ai-gallery-history";
 
 export type {
   AspectRatioKey,

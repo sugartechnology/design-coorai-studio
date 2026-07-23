@@ -196,8 +196,8 @@ function OdaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)] flex flex-col">
-      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
+    <div className="h-dvh bg-[color:var(--istikbal-bg)] flex flex-col overflow-hidden">
+      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 z-30">
         <Link
           href="/"
           className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]"
@@ -210,8 +210,8 @@ function OdaPage() {
         <div className="flex-1" />
       </header>
 
-      <main className="flex-1 min-h-0 px-4 lg:px-8 py-6 grid grid-cols-12 gap-4">
-        <aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto max-h-[calc(100dvh-5.5rem)]">
+      <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 grid grid-cols-12 gap-4 overflow-y-auto lg:overflow-hidden">
+        <aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto min-h-0 lg:h-full">
           <div className="bg-white rounded-2xl p-2 shadow-sm">
             <div className="relative flex rounded-xl bg-[color:var(--istikbal-bg)] p-1">
               <div
@@ -350,8 +350,8 @@ function OdaPage() {
           </div>
         </aside>
 
-        <section className="col-span-12 lg:col-span-7 min-h-[520px] lg:min-h-0 lg:h-[calc(100dvh-5.5rem)]">
-          <div className="bg-white rounded-3xl shadow-sm overflow-hidden relative h-full min-h-[520px]">
+        <section className="col-span-12 lg:col-span-7 min-h-[520px] lg:min-h-0 lg:h-full">
+          <div className="bg-white rounded-3xl shadow-sm overflow-hidden relative h-full min-h-[520px] lg:min-h-0">
             <RoomDesignerHost
               className="absolute inset-0 h-full w-full"
               ui="none"
@@ -360,9 +360,9 @@ function OdaPage() {
           </div>
         </section>
 
-        <aside className="col-span-12 lg:col-span-3 space-y-3 overflow-y-auto max-h-[calc(100dvh-5.5rem)]">
-          <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <div className="relative mb-3">
+        <aside className="col-span-12 lg:col-span-3 flex flex-col min-h-0 lg:h-full">
+          <div className="bg-white rounded-2xl p-3 shadow-sm flex flex-col min-h-0 flex-1">
+            <div className="relative mb-3 shrink-0">
               <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
               <input
                 value={query}
@@ -371,7 +371,7 @@ function OdaPage() {
                 className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
               />
             </div>
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0">
               <span>{t("productsByCollection")}</span>
               <span className="text-[color:var(--istikbal-blue)]/40 normal-case font-medium">
                 {products.length}
@@ -379,7 +379,7 @@ function OdaPage() {
             </h3>
             <div
               ref={setProductScrollEl}
-              className="max-h-[620px] overflow-y-auto pr-1 space-y-4"
+              className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4"
             >
               {(filtersLoading || (productsLoading && products.length === 0)) && (
                 <p className="text-xs text-[color:var(--istikbal-blue)]/50 text-center py-6">

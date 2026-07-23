@@ -47,10 +47,45 @@ export type AiImageGeneration = {
   referenceImageUrl?: string;
   imageUrl?: string;
   thumbnailUrl?: string;
+  caption?: string;
+  altText?: string;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
   contextType?: string;
+  source?: string;
+};
+
+/** Alias used by global AI gallery listing (CRM OfferAIImageGenerationResponse). */
+export type AiGalleryItem = AiImageGeneration;
+
+export type AiGalleryPage = {
+  content?: AiGalleryItem[];
+  totalElements?: number;
+  totalPages?: number;
+  number?: number;
+  size?: number;
+  last?: boolean;
+  page?: {
+    size?: number;
+    number?: number;
+    totalElements?: number;
+    totalPages?: number;
+  };
+};
+
+export type CreditBalanceResponse = {
+  organizationId?: string | null;
+  totalCredit?: number;
+  availableCredit?: number;
+  walletBalance?: number;
+  lowCreditThreshold?: number;
+  lowCredit?: boolean;
+  depleted?: boolean;
+  currency?: string;
+  evaluatedAt?: string;
+  available?: boolean;
+  messageCode?: string | null;
 };
 
 export type AiStudioCreditQuote = {
