@@ -7,6 +7,50 @@ const SCRIPT_SRC = "/vendor/sugar-model-viewer.js";
 /** İstikbal / Sugar catalog company for model fetch */
 export const SUGAR_MODEL_VIEWER_COMPANY_ID = 42;
 
+export const APPLY_MATERIAL_EVENT = "sugar-model-viewer-apply-material";
+export const FETCH_ZONES_EVENT = "sugar-model-viewer-fetch-zones";
+export const ZONES_EVENT = "sugar-model-viewer-zones";
+export const ZONES_ERROR_EVENT = "sugar-model-viewer-zones-error";
+
+export type ApplyMaterialDetail = {
+  groupCode: string;
+  materialCode: string;
+};
+
+export type FetchZonesDetail = {
+  codes?: Record<string, string>;
+  areaNames?: string[];
+};
+
+export type MaterialZoneResponse = {
+  areas: Array<{
+    name: string;
+    label?: string;
+    options: Array<{
+      code: string;
+      image?: string;
+      materialId: number;
+      materialName?: string;
+      selectable: boolean;
+      selected: boolean;
+      type: string;
+    }>;
+    selected: {
+      code: string;
+      image?: string;
+      materialId: number;
+      materialName?: string;
+      selectable: boolean;
+      selected: boolean;
+      type: string;
+    };
+    hexCode: string;
+  }>;
+  image?: string;
+  productId: number;
+  sku: string;
+};
+
 export type SugarModelViewerElement = HTMLElement & {
   sugarProductId?: number;
   productId?: string;
@@ -21,6 +65,13 @@ type ModelViewerHostProps = {
   className?: string;
   /** Enables built-in AR action inside the viewer. */
   ar?: boolean;
+  /**
+   * `panel` — built-in material panel (default).
+   * `host` — panel hidden; host applies via CustomEvent.
+   */
+  materialUi?: "panel" | "host";
+  /** Called when the custom element is in the DOM and defined. */
+  onElementReady?: (el: SugarModelViewerElement) => void;
 };
 
 declare global {
@@ -44,11 +95,70 @@ function loadModelViewerBundle(): Promise<void> {
   return window.__sugarModelViewerLoading;
 }
 
+/** Dispatch apply-material to the viewer element (no class methods). */
+export function applyViewerMaterial(
+  el: EventTarget | null | undefined,
+  detail: ApplyMaterialDetail,
+): void {
+  if (!el) return;
+  el.dispatchEvent(
+    new CustomEvent(APPLY_MATERIAL_EVENT, {
+      detail,
+      bubbles: true,
+      composed: true,
+    }),
+  );
+}
+
+/**
+ * Ask the viewer (MaterialZoneApi inside the bundle) to fetch zones.
+ * stockCode/companyId come from the element's attributes.
+ */
+export function fetchViewerZones(
+  el: EventTarget,
+  detail: FetchZonesDetail = {},
+): Promise<MaterialZoneResponse> {
+  return new Promise((resolve, reject) => {
+    const onOk = (event: Event) => {
+      cleanup();
+      const zones = (event as CustomEvent<{ zones: MaterialZoneResponse }>)
+        .detail?.zones;
+      if (!zones) {
+        reject(new Error("empty zones response"));
+        return;
+      }
+      resolve(zones);
+    };
+    const onErr = (event: Event) => {
+      cleanup();
+      const message =
+        (event as CustomEvent<{ error: string }>).detail?.error ||
+        "material-zone fetch failed";
+      reject(new Error(message));
+    };
+    const cleanup = () => {
+      el.removeEventListener(ZONES_EVENT, onOk);
+      el.removeEventListener(ZONES_ERROR_EVENT, onErr);
+    };
+    el.addEventListener(ZONES_EVENT, onOk);
+    el.addEventListener(ZONES_ERROR_EVENT, onErr);
+    el.dispatchEvent(
+      new CustomEvent(FETCH_ZONES_EVENT, {
+        detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  });
+}
+
 export function ModelViewerHost({
   sugarProductId,
   companyId = SUGAR_MODEL_VIEWER_COMPANY_ID,
   className,
   ar = true,
+  materialUi = "panel",
+  onElementReady,
 }: ModelViewerHostProps) {
   const t = useTranslations("hosts");
   const [ready, setReady] = useState(false);
@@ -71,6 +181,11 @@ export function ModelViewerHost({
     };
   }, []);
 
+  useEffect(() => {
+    if (!ready || !elRef.current) return;
+    onElementReady?.(elRef.current);
+  }, [ready, sugarProductId, materialUi, onElementReady]);
+
   return (
     <div className={className} style={{ position: "relative", minHeight: 0 }}>
       {!ready && !failed && (
@@ -92,6 +207,7 @@ export function ModelViewerHost({
           }}
           sugar-product-id={String(sugarProductId)}
           company-id={String(companyId)}
+          material-ui={materialUi}
           {...(ar ? { ar: true } : {})}
           style={{ display: "block", width: "100%", height: "100%" }}
         />

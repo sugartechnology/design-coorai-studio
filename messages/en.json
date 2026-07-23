@@ -184,10 +184,14 @@
     "regionLabel": "Region {n}",
     "regionMatchHelp": "Region match: main body + back cushions + arm + seat. Pick a suitable fabric for each region.",
     "chooseFabric": "Choose fabric",
+    "zonesLoading": "Loading fabric regions…",
+    "zonesEmpty": "No fabric regions for this product.",
+    "zonesError": "Could not load fabric regions.",
+    "zonesNeedSku": "sugar-product-id is required for fabric selection.",
     "addToCart": "Add to cart",
     "selectAllRegionsHint": "Please select a fabric for every region",
     "suitableFabricsTitle": "Matching fabrics",
-    "suitableFabricsHint": "Fabrics with a yellow icon need special application for this region."
+    "suitableFabricsHint": "Selectable fabrics are listed; your choice is applied to the 3D model."
   },
   "oda": {
     "headerTitle": "PLAN ROOM",

@@ -184,10 +184,14 @@
     "regionLabel": "{n}. Bölge",
     "regionMatchHelp": "Bölge eşleşmesi: Ana gövde + sırt yastıkları + kol + minder. Her bölge için uygun kumaşı seçin.",
     "chooseFabric": "Kumaş Seç",
+    "zonesLoading": "Kumaş bölgeleri yükleniyor…",
+    "zonesEmpty": "Bu ürün için kumaş bölgesi bulunamadı.",
+    "zonesError": "Kumaş bölgeleri yüklenemedi.",
+    "zonesNeedSku": "Kumaş seçimi için sugar-product-id gerekli.",
     "addToCart": "Sepete Ekle",
     "selectAllRegionsHint": "Lütfen her bölge için bir kumaş seçiniz",
     "suitableFabricsTitle": "Uygun Kumaşlar",
-    "suitableFabricsHint": "Sarı ikonlu kumaşlar bu bölge için özel uygulama gerektirir."
+    "suitableFabricsHint": "Seçilebilir kumaşlar listelenir; seçim 3D modele uygulanır."
   },
   "oda": {
     "headerTitle": "ODA PLANLA",
