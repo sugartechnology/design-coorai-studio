@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Box, RotateCw, Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { parts, type Part } from "@/lib/kumas-data";
 import {
   getCollection,
@@ -17,6 +17,13 @@ import {
   SUGAR_MODEL_VIEWER_COMPANY_ID,
 } from "@/components/ModelViewerHost";
 import { useProductZones } from "@/lib/material-zone";
+import {
+  lineFromCatalogProduct,
+  zoneSelectionsToConfig,
+  type QuoteDraft,
+} from "@/lib/offers";
+import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
+import { defaultLocale, isAppLocale } from "@/i18n/config";
 import { FabricPicker } from "./FabricPicker";
 import { FabricRegionsPanel } from "./FabricRegionsPanel";
 import { ProductHero } from "./ProductHero";
@@ -40,8 +47,11 @@ function ProductDetailPage() {
   const params = useParams<{ collection: string; part: string }>();
   const searchParams = useSearchParams();
   const t = useTranslations("kumas");
+  const tOffers = useTranslations("offers");
   const tCommon = useTranslations("common");
   const tCatalog = useTranslations("catalog");
+  const locale = useLocale();
+  const language = isAppLocale(locale) ? locale : defaultLocale;
   const collectionId = params.collection;
   const partParam = params.part;
   const fromCategory = searchParams.get("kategori");
@@ -54,6 +64,8 @@ function ProductDetailPage() {
   const [loading, setLoading] = useState(isProductId);
   const [error, setError] = useState<string | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
 
   const part: Part | null =
     mockPart ??
@@ -330,6 +342,36 @@ function ProductDetailPage() {
             guideImage={guideImage}
             companyId={SUGAR_MODEL_VIEWER_COMPANY_ID}
             onOpenPicker={setPickerAreaName}
+            addToQuoteLabel={tOffers("addToQuote")}
+            onAddToQuote={() => {
+              if (!product) return;
+              const { variantSelections, note } = zoneSelectionsToConfig(
+                areas,
+                selectionByArea,
+                (n) => t("regionLabel", { n }),
+              );
+              const line = lineFromCatalogProduct(product, {
+                currency: "TRY",
+                note,
+                variantSelections,
+              });
+              if (guideImage) {
+                // zone guide stays on section images
+              }
+              setQuoteDraft({
+                title: product.name,
+                currency: line.currency,
+                language,
+                section: {
+                  name: product.name,
+                  images: guideImage
+                    ? [{ imageUrl: guideImage, imageOrder: 0, altText: t("zoneGuideAlt") }]
+                    : [],
+                },
+                lines: [line],
+              });
+              setQuoteOpen(true);
+            }}
           />
         </aside>
 
@@ -341,6 +383,13 @@ function ProductDetailPage() {
             onPick={(option) => void pickOption(pickerArea, option)}
           />
         )}
+
+        <QuoteOfferSheet
+          open={quoteOpen}
+          onOpenChange={setQuoteOpen}
+          draft={quoteDraft}
+          onDraftChange={setQuoteDraft}
+        />
       </div>
     </div>
   );

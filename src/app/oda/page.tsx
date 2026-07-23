@@ -13,20 +13,55 @@ import {
   Plus,
   Layers,
   Box,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 import {
   RoomDesignerHost,
   SUGAR_PRODUCT_MIME,
   type SugarRoomDesignerElement,
 } from "@/components/RoomDesignerHost";
-import { useCatalogFilters, useInfiniteScroll, useProductSearch, type CatalogProduct } from "@/lib/catalog";
+import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
+import {
+  useCatalogFilters,
+  useInfiniteScroll,
+  useProductSearch,
+  getProductById,
+  type CatalogProduct,
+  type CatalogProductDetail,
+} from "@/lib/catalog";
+import {
+  lineFromCatalogProduct,
+  formatConfigNote,
+  type QuoteDraft,
+  type QuoteLineItem,
+  type QuoteVariantSelection,
+} from "@/lib/offers";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 type TemplateKey = "kare" | "L" | "U" | "T";
+
+type SceneExport = {
+  products?: Array<{ id?: number; name?: string }>;
+  productInstances?: Array<{
+    model?: number;
+    stateUuid?: string;
+  }>;
+  stateSlices?: Record<
+    string,
+    {
+      kind?: string;
+      value?: {
+        partMaterials?: Array<{ code?: string; materialId?: string | number }>;
+      };
+    }
+  >;
+};
 
 /** Room designer Api.fetchProduct expects numeric Sugar productModalId. */
 function resolveSugarProductId(product: CatalogProduct): number | null {
@@ -36,15 +71,39 @@ function resolveSugarProductId(product: CatalogProduct): number | null {
   return Number.isFinite(id) ? id : null;
 }
 
+function configSignature(selections: QuoteVariantSelection[]): string {
+  return selections
+    .map((s) => `${s.optionName}=${s.valuePathName || s.valueName}`)
+    .join("|");
+}
+
+function partMaterialsToSelections(
+  partMaterials: Array<{ code?: string; materialId?: string | number }> | undefined,
+): QuoteVariantSelection[] {
+  if (!partMaterials?.length) return [];
+  return partMaterials
+    .filter((pm) => pm.code || pm.materialId != null)
+    .map((pm, index) => ({
+      optionName: pm.code || `Part ${index + 1}`,
+      valueName: String(pm.materialId ?? ""),
+      valuePathName: pm.code,
+      displayOrder: index + 1,
+    }));
+}
+
 function OdaPage() {
   const t = useTranslations("oda");
+  const tOffers = useTranslations("offers");
   const tCommon = useTranslations("common");
   const locale = useLocale();
-  const bcp47 = toBcp47(isAppLocale(locale) ? locale : defaultLocale);
+  const language = isAppLocale(locale) ? locale : defaultLocale;
+  const bcp47 = toBcp47(language);
+  const router = useRouter();
   const [designerEl, setDesignerEl] = useState<SugarRoomDesignerElement | null>(
     null,
   );
   const designerRef = useRef<SugarRoomDesignerElement | null>(null);
+  const catalogBySugarIdRef = useRef<Map<number, CatalogProduct>>(new Map());
   const [mode, setMode] = useState<"2D" | "3D">("2D");
   const [template, setTemplate] = useState<TemplateKey>("kare");
   const [addingOpening, setAddingOpening] = useState<null | "kapi" | "pencere">(
@@ -54,6 +113,9 @@ function OdaPage() {
   const [canRedo, setCanRedo] = useState(false);
   const [query, setQuery] = useState("");
   const [productScrollEl, setProductScrollEl] = useState<HTMLDivElement | null>(null);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
+  const [quoteBusy, setQuoteBusy] = useState(false);
   const { collections, loading: filtersLoading } = useCatalogFilters();
   const {
     products,
@@ -168,6 +230,7 @@ function OdaPage() {
       console.warn("[oda] product has no productModalId", product.id, product.name);
       return;
     }
+    catalogBySugarIdRef.current.set(sugarId, product);
     withDesigner((el) => {
       void el.addProduct(sugarId).catch((err) => {
         console.error("[oda] addProduct failed", err);
@@ -184,6 +247,7 @@ function OdaPage() {
       event.preventDefault();
       return;
     }
+    catalogBySugarIdRef.current.set(sugarId, product);
     const payload = { productId: sugarId };
     event.dataTransfer.setData(SUGAR_PRODUCT_MIME, JSON.stringify(payload));
     event.dataTransfer.setData("text/plain", String(sugarId));
@@ -194,6 +258,110 @@ function OdaPage() {
   const onProductDragEnd = () => {
     withDesigner((el) => el.cancelProductDrag());
   };
+
+  const openQuoteFromScene = useCallback(async () => {
+    const el = designerRef.current;
+    if (!el?.api) return;
+    setQuoteBusy(true);
+    try {
+      const scene = el.api.execute("scene.export", undefined) as SceneExport;
+      const instances = scene.productInstances ?? [];
+      if (instances.length === 0) {
+        setQuoteBusy(false);
+        return;
+      }
+
+      type Acc = {
+        sugarId: number;
+        name: string;
+        quantity: number;
+        variantSelections: QuoteVariantSelection[];
+      };
+      const grouped = new Map<string, Acc>();
+
+      for (const inst of instances) {
+        const sugarId = Number(inst.model);
+        if (!Number.isFinite(sugarId)) continue;
+        const productMeta = scene.products?.find((p) => p.id === sugarId);
+        const slice = inst.stateUuid ? scene.stateSlices?.[inst.stateUuid] : undefined;
+        const variantSelections = partMaterialsToSelections(
+          slice?.kind === "sugarModel" ? slice.value?.partMaterials : undefined,
+        );
+        const key = `${sugarId}::${configSignature(variantSelections)}`;
+        const existing = grouped.get(key);
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          grouped.set(key, {
+            sugarId,
+            name: productMeta?.name || `Product ${sugarId}`,
+            quantity: 1,
+            variantSelections,
+          });
+        }
+      }
+
+      const lines: QuoteLineItem[] = [];
+      for (const row of grouped.values()) {
+        const cached = catalogBySugarIdRef.current.get(row.sugarId);
+        let catalogId = cached?.id;
+        let detailName = cached?.name || row.name;
+        let prices: CatalogProductDetail["prices"] = [];
+        let sku: string | null = null;
+        let thumbnailUrl: string | null = cached?.thumbnailUrl ?? null;
+
+        if (catalogId) {
+          try {
+            const detail = await getProductById(catalogId, router);
+            detailName = detail.name;
+            prices = detail.prices;
+            sku = detail.sku ?? null;
+            thumbnailUrl = detail.thumbnailUrl ?? thumbnailUrl;
+          } catch {
+            // keep cached / scene name
+          }
+        } else {
+          console.warn("[oda] missing CRM product for sugar id", row.sugarId);
+          continue;
+        }
+
+        const note = formatConfigNote(row.variantSelections);
+        lines.push(
+          lineFromCatalogProduct(
+            {
+              id: catalogId,
+              name: detailName,
+              sku,
+              thumbnailUrl,
+              prices: prices ?? [],
+            },
+            {
+              quantity: row.quantity,
+              currency: "TRY",
+              note: note || null,
+              variantSelections: row.variantSelections,
+            },
+          ),
+        );
+      }
+
+      if (lines.length === 0) {
+        setQuoteBusy(false);
+        return;
+      }
+
+      setQuoteDraft({
+        title: t("headerTitle"),
+        currency: "TRY",
+        language,
+        section: { name: "Oda" },
+        lines,
+      });
+      setQuoteOpen(true);
+    } finally {
+      setQuoteBusy(false);
+    }
+  }, [language, router, t]);
 
   return (
     <div className="h-dvh bg-[color:var(--istikbal-bg)] flex flex-col overflow-hidden">
@@ -208,6 +376,19 @@ function OdaPage() {
           {t("headerTitle")}
         </div>
         <div className="flex-1" />
+        <button
+          type="button"
+          disabled={quoteBusy || !designerEl}
+          onClick={() => void openQuoteFromScene()}
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold hover:bg-[color:var(--istikbal-navy)] disabled:opacity-40"
+        >
+          {quoteBusy ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <FileText className="size-3.5" />
+          )}
+          {tOffers("createQuote")}
+        </button>
       </header>
 
       <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 grid grid-cols-12 gap-4 overflow-y-auto lg:overflow-hidden">
@@ -459,6 +640,13 @@ function OdaPage() {
           </div>
         </aside>
       </main>
+
+      <QuoteOfferSheet
+        open={quoteOpen}
+        onOpenChange={setQuoteOpen}
+        draft={quoteDraft}
+        onDraftChange={setQuoteDraft}
+      />
     </div>
   );
 }

@@ -21,6 +21,8 @@ type FabricRegionsPanelProps = {
   guideImage?: string | null;
   companyId?: number | string;
   onOpenPicker: (areaName: string) => void;
+  onAddToQuote?: () => void;
+  addToQuoteLabel?: string;
 };
 
 export function FabricRegionsPanel({
@@ -33,6 +35,8 @@ export function FabricRegionsPanel({
   guideImage,
   companyId = 42,
   onOpenPicker,
+  onAddToQuote,
+  addToQuoteLabel,
 }: FabricRegionsPanelProps) {
   const t = useTranslations("kumas");
   const progressSlots: Array<MaterialZoneArea | null> =
@@ -193,10 +197,12 @@ export function FabricRegionsPanel({
 
       <div className="mt-6 shrink-0 space-y-2">
         <button
+          type="button"
           disabled={!allSelected}
+          onClick={onAddToQuote}
           className="w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] disabled:bg-[color:var(--istikbal-blue)]/15 disabled:text-[color:var(--istikbal-blue)]/40 disabled:cursor-not-allowed transition-all shadow-md"
         >
-          <ShoppingCart className="size-4" /> {t("addToCart")}
+          <ShoppingCart className="size-4" /> {addToQuoteLabel || t("addToCart")}
         </button>
         {!allSelected && areas.length > 0 && (
           <p className="text-center text-xs font-semibold text-[#f0a400] bg-[color:var(--istikbal-yellow)]/15 py-2 rounded-xl">

@@ -29,17 +29,25 @@ import {
   RotateCcw,
   Download,
   Coins,
+  FileText,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import {
   useCatalogFilters,
   useInfiniteScroll,
   useProductSearch,
+  getProductById,
   type CatalogProduct,
 } from "@/lib/catalog";
+import {
+  lineFromCatalogProduct,
+  type QuoteDraft,
+} from "@/lib/offers";
+import { defaultLocale, isAppLocale } from "@/i18n/config";
 import {
   ASPECT_RATIO_OPTIONS,
   DEFAULT_ASPECT_RATIO,
@@ -107,7 +115,10 @@ function formatGalleryTimestamp(item: AiGalleryItem, fallback: string) {
 
 function AiStudioPage() {
   const t = useTranslations("aiStudio");
+  const tOffers = useTranslations("offers");
   const tCommon = useTranslations("common");
+  const locale = useLocale();
+  const language = isAppLocale(locale) ? locale : defaultLocale;
   const router = useRouter();
   const { sessionId, ready: sessionReady } = useAiStudioSession();
   const {
@@ -238,6 +249,9 @@ function AiStudioPage() {
   const [personalizeOptions, setPersonalizeOptions] = useState<PersonalizeOptionKey[]>([]);
   const [imageSize, setImageSize] = useState<ImageSizeKey>(DEFAULT_IMAGE_SIZE);
   const [aspectRatio, setAspectRatio] = useState<AspectRatioKey>(DEFAULT_ASPECT_RATIO);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
+  const [quoteBusy, setQuoteBusy] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
@@ -277,6 +291,72 @@ function AiStudioPage() {
     setPlaced((prev) => prev.filter((p) => p.uid !== uid));
     setSelectedUid((cur) => (cur === uid ? null : cur));
   }, []);
+
+  const openQuoteFromSelected = useCallback(async () => {
+    if (selected.length === 0) return;
+    setQuoteBusy(true);
+    setError(null);
+    try {
+      const qtyById = new Map<string, { product: CatalogProduct; quantity: number }>();
+      for (const item of selected) {
+        const existing = qtyById.get(item.product.id);
+        if (existing) existing.quantity += 1;
+        else qtyById.set(item.product.id, { product: item.product, quantity: 1 });
+      }
+
+      const lines = await Promise.all(
+        [...qtyById.values()].map(async ({ product, quantity }) => {
+          try {
+            const detail = await getProductById(product.id, router);
+            return lineFromCatalogProduct(detail, {
+              quantity,
+              currency: "TRY",
+              variantSelections: [],
+            });
+          } catch {
+            return lineFromCatalogProduct(
+              {
+                id: product.id,
+                name: product.name,
+                sku: null,
+                thumbnailUrl: product.thumbnailUrl,
+                prices: [],
+              },
+              { quantity, currency: "TRY", variantSelections: [] },
+            );
+          }
+        }),
+      );
+
+      const renderUrl = roomPreviewUrl || latestGalleryThumbnail;
+      setQuoteDraft({
+        title: tOffers("createQuote"),
+        currency: "TRY",
+        language,
+        notes: promptNotes || undefined,
+        section: {
+          name: "AI Studio",
+          roomType: "living-room",
+          promptNotes: promptNotes || null,
+          images: renderUrl
+            ? [{ imageUrl: renderUrl, imageOrder: 0, altText: "AI render" }]
+            : [],
+        },
+        lines,
+      });
+      setQuoteOpen(true);
+    } finally {
+      setQuoteBusy(false);
+    }
+  }, [
+    selected,
+    router,
+    roomPreviewUrl,
+    latestGalleryThumbnail,
+    promptNotes,
+    language,
+    tOffers,
+  ]);
 
   const placeProductOnCanvas = useCallback(
     (product: CatalogProduct, x: number, y: number, uid?: string) => {
@@ -742,6 +822,19 @@ function AiStudioPage() {
                       </div>
                     ))}
                   </div>
+                  <button
+                    type="button"
+                    disabled={quoteBusy}
+                    onClick={() => void openQuoteFromSelected()}
+                    className="mt-3 w-full h-10 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] disabled:opacity-50"
+                  >
+                    {quoteBusy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <FileText className="size-4" />
+                    )}
+                    {tOffers("createQuote")}
+                  </button>
                 </div>
               )}
 
@@ -1439,6 +1532,13 @@ function AiStudioPage() {
           </div>
         </div>
       )}
+
+      <QuoteOfferSheet
+        open={quoteOpen}
+        onOpenChange={setQuoteOpen}
+        draft={quoteDraft}
+        onDraftChange={setQuoteDraft}
+      />
     </div>
   );
 }
