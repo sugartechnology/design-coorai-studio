@@ -10,8 +10,10 @@ export type {
 
 export {
   buildProductSearchCriteria,
+  getCategoryById,
   getCollection,
   getProductById,
+  listChildCategories,
   listCollections,
   listProductFilterCategories,
   productsGroupedByCollection,

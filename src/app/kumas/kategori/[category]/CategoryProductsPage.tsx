@@ -2,17 +2,32 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Search } from "lucide-react";
+import { ArrowLeft, FolderOpen, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import {
-  listProductFilterCategories,
+  getCategoryById,
+  listChildCategories,
   useInfiniteScroll,
   useProductSearch,
+  type CatalogCategory,
 } from "@/lib/catalog";
-import { PortalCrmError, getPortalSessionView } from "@/lib/portal-crm";
+import { PortalCrmError } from "@/lib/portal-crm";
+
+const GRADIENTS = [
+  "from-stone-200 via-stone-100 to-emerald-100",
+  "from-slate-200 via-slate-100 to-zinc-200",
+  "from-amber-100 via-stone-100 to-blue-100",
+  "from-rose-100 via-stone-100 to-amber-100",
+];
+
+function gradientFor(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
+}
 
 function CategoryProductsPage() {
   const router = useRouter();
@@ -21,70 +36,116 @@ function CategoryProductsPage() {
   const t = useTranslations("kumas");
   const tCommon = useTranslations("common");
   const tCatalog = useTranslations("catalog");
-  const [categoryName, setCategoryName] = useState(tCommon("categoryFallback"));
+
+  const [category, setCategory] = useState<CatalogCategory | null>(null);
+  const [children, setChildren] = useState<CatalogCategory[]>([]);
+  const [metaLoading, setMetaLoading] = useState(true);
+  const [metaError, setMetaError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [nameError, setNameError] = useState<string | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const {
-    products,
-    loading,
-    loadingMore,
-    error,
-    totalElements,
-    hasMore,
-    loadMore,
-  } = useProductSearch({
-    query,
-    categoryId,
-    size: 40,
-  });
-
-  const { sentinelRef } = useInfiniteScroll({
-    hasMore,
-    loading: loading || loadingMore,
-    onLoadMore: loadMore,
-  });
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      setMetaLoading(true);
+      setMetaError(null);
       try {
-        const session = await getPortalSessionView();
-        if (!session) {
-          router.replace("/login");
-          return;
+        const cat = await getCategoryById(categoryId, router);
+        if (cancelled) return;
+        setCategory(cat);
+
+        if (cat.hasChildren) {
+          const kids = await listChildCategories(categoryId, {
+            router,
+            size: 200,
+            search: debouncedQuery || undefined,
+          });
+          if (!cancelled) setChildren(kids);
+        } else {
+          setChildren([]);
         }
-        const cats = await listProductFilterCategories(session.companyId, {
-          router,
-          size: 100,
-        });
-        const found = cats.find((c) => c.id === categoryId);
-        if (!cancelled && found?.name) setCategoryName(found.name);
       } catch (err) {
         if (err instanceof PortalCrmError && err.status === 401) return;
         if (!cancelled) {
-          setNameError(err instanceof Error ? err.message : tCatalog("categoryLoadError"));
+          setMetaError(err instanceof Error ? err.message : tCatalog("categoryLoadError"));
+          setCategory(null);
+          setChildren([]);
         }
+      } finally {
+        if (!cancelled) setMetaLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [categoryId, router, tCatalog]);
+  }, [categoryId, router, tCatalog, debouncedQuery]);
+
+  const showChildren = Boolean(category?.hasChildren);
+  const {
+    products,
+    loading: productsLoading,
+    loadingMore,
+    error: productsError,
+    totalElements,
+    hasMore,
+    loadMore,
+  } = useProductSearch({
+    query: showChildren ? "" : query,
+    categoryId: showChildren ? null : categoryId,
+    size: 40,
+    // skip product search while drilling into child categories
+    enabled: !showChildren && !metaLoading,
+  });
+
+  const { sentinelRef } = useInfiniteScroll({
+    hasMore: showChildren ? false : hasMore,
+    loading: productsLoading || loadingMore,
+    onLoadMore: loadMore,
+  });
+
+  const backHref = category?.parentId
+    ? `/kumas/kategori/${category.parentId}`
+    : "/kumas";
 
   const subtitle = useMemo(() => {
-    if (loading && products.length === 0) return t("productsLoading");
+    if (metaLoading) return t("categoriesLoading");
+    if (showChildren) {
+      return t("categoriesCountHint", { count: children.length });
+    }
+    if (productsLoading && products.length === 0) return t("productsLoading");
     return t("productsCountHint", { count: totalElements });
-  }, [loading, products.length, totalElements, t]);
+  }, [
+    metaLoading,
+    showChildren,
+    children.length,
+    productsLoading,
+    products.length,
+    totalElements,
+    t,
+  ]);
+
+  const filteredChildren = useMemo(() => {
+    if (!debouncedQuery || showChildren) {
+      // server already searched when showChildren + debouncedQuery
+      return children;
+    }
+    return children;
+  }, [children, debouncedQuery, showChildren]);
 
   return (
     <>
       <div className="mb-6">
         <Link
-          href="/kumas"
+          href={backHref}
           className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)] hover:opacity-80"
         >
-          <ArrowLeft className="size-4" /> {t("backToCategories")}
+          <ArrowLeft className="size-4" />{" "}
+          {category?.parentId ? t("backToCategories") : t("backToCategories")}
         </Link>
       </div>
 
@@ -94,7 +155,7 @@ function CategoryProductsPage() {
             {t("categoryEyebrow")}
           </p>
           <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
-            {categoryName}
+            {category?.name || tCommon("categoryFallback")}
           </h1>
           <p className="mt-1.5 text-[color:var(--istikbal-blue)]/60">{subtitle}</p>
         </div>
@@ -104,19 +165,71 @@ function CategoryProductsPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("searchInCategoryPlaceholder")}
+            placeholder={
+              showChildren
+                ? t("searchCategoryPlaceholder")
+                : t("searchInCategoryPlaceholder")
+            }
             className="w-full h-11 pl-11 pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
           />
         </div>
       </div>
 
-      {(nameError || error) && (
+      {(metaError || productsError) && (
         <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {nameError || error}
+          {metaError || productsError}
         </div>
       )}
 
-      {loading && products.length === 0 ? (
+      {metaLoading ? (
+        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+          <Loader2 className="size-8 animate-spin" />
+          <p className="text-sm font-semibold">{t("categoriesLoading")}</p>
+        </div>
+      ) : showChildren ? (
+        filteredChildren.length === 0 ? (
+          <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--istikbal-blue)]/60">
+            {t("emptyCategories")}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredChildren.map((c) => (
+              <Link
+                key={c.id}
+                href={`/kumas/kategori/${c.id}`}
+                className="group rounded-2xl bg-white shadow-sm hover:shadow-xl overflow-hidden transition-all hover:-translate-y-1 border border-black/5"
+              >
+                <div
+                  className={`relative h-40 bg-gradient-to-br ${gradientFor(c.id)} overflow-hidden`}
+                >
+                  {c.thumbnailUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={c.thumbnailUrl}
+                      alt={c.name}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <FolderOpen className="size-14 text-white/50" strokeWidth={1.25} />
+                    </div>
+                  )}
+                </div>
+                <div className="px-5 py-4 text-center">
+                  <h3 className="text-base font-bold text-[color:var(--istikbal-blue)]">
+                    {c.name}
+                  </h3>
+                  {c.productCount != null && (
+                    <p className="mt-1 text-xs text-[color:var(--istikbal-blue)]/55">
+                      {tCatalog("productCount", { count: c.productCount })}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )
+      ) : productsLoading && products.length === 0 ? (
         <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
           <Loader2 className="size-8 animate-spin" />
           <p className="text-sm font-semibold">{t("productsLoading")}</p>

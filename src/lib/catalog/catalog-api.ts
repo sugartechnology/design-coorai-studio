@@ -110,22 +110,75 @@ export async function getCollection(
 
 export async function listProductFilterCategories(
   _companyId: string,
-  options: { size?: number; router?: RouterLike } = {},
+  options: {
+    size?: number;
+    page?: number;
+    search?: string;
+    /** Only categories with no parent (hierarchy roots). Default true. */
+    rootsOnly?: boolean;
+    router?: RouterLike;
+  } = {},
 ): Promise<CatalogCategory[]> {
   // companyIds gönderme: bayi session'ında sadece kendi id'si olur; parent
   // (İstikbal) kategorileri elenir. CRM read-scope zaten görünür owner'ları çözer.
+  const rootsOnly = options.rootsOnly !== false;
   const page = await portalCrmFetch<SpringPage<CatalogCategory>>("categories/product-filter-options", {
     router: options.router,
     searchParams: {
-      size: options.size ?? 50,
-      page: 0,
+      size: options.size ?? 200,
+      page: options.page ?? 0,
       sort: "name,asc",
+      search: options.search?.trim() || undefined,
     },
   });
-  return (page.content ?? []).map((c) => ({
+  const mapped = (page.content ?? []).map((c) => ({
     ...c,
+    parentId: c.parentId ?? null,
+    hasChildren: c.hasChildren ?? false,
     thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
   }));
+  if (!rootsOnly) return mapped;
+  return mapped.filter((c) => !c.parentId);
+}
+
+export async function getCategoryById(
+  categoryId: string,
+  router?: RouterLike,
+): Promise<CatalogCategory> {
+  const c = await portalCrmFetch<CatalogCategory>(
+    `categories/${encodeURIComponent(categoryId)}`,
+    { router },
+  );
+  return {
+    ...c,
+    parentId: c.parentId ?? null,
+    hasChildren: c.hasChildren ?? false,
+    thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
+  };
+}
+
+/** Child categories of a parent (from product-filter-options). */
+export async function listChildCategories(
+  parentId: string,
+  options: { size?: number; search?: string; router?: RouterLike } = {},
+): Promise<CatalogCategory[]> {
+  const page = await portalCrmFetch<SpringPage<CatalogCategory>>("categories/product-filter-options", {
+    router: options.router,
+    searchParams: {
+      size: options.size ?? 200,
+      page: 0,
+      sort: "name,asc",
+      search: options.search?.trim() || undefined,
+    },
+  });
+  return (page.content ?? [])
+    .map((c) => ({
+      ...c,
+      parentId: c.parentId ?? null,
+      hasChildren: c.hasChildren ?? false,
+      thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
+    }))
+    .filter((c) => c.parentId === parentId);
 }
 
 export async function productsGroupedByCollection(

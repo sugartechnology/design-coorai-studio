@@ -79,9 +79,12 @@ function CollectionsPage() {
           router.replace("/login");
           return;
         }
+        // İlk seviye: yalnızca parent'ı olmayan kök kategoriler (+ API search)
         const cats = await listProductFilterCategories(session.companyId, {
           router,
-          size: 100,
+          size: 200,
+          search: debouncedQuery || undefined,
+          rootsOnly: true,
         });
         if (!cancelled) setCategories(cats);
       } catch (err) {
@@ -97,14 +100,10 @@ function CollectionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, tCatalog]);
+  }, [router, tCatalog, debouncedQuery]);
 
   const filtered = useMemo(() => {
-    let list = [...categories];
-    if (debouncedQuery) {
-      const q = debouncedQuery.toLowerCase();
-      list = list.filter((c) => c.name.toLowerCase().includes(q));
-    }
+    const list = [...categories];
     switch (sort) {
       case "name-asc":
         list.sort((a, b) => a.name.localeCompare(b.name, bcp47));
@@ -116,7 +115,7 @@ function CollectionsPage() {
         break;
     }
     return list;
-  }, [categories, debouncedQuery, sort, bcp47]);
+  }, [categories, sort, bcp47]);
 
   return (
     <>

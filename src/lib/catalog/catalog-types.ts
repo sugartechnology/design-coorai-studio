@@ -28,6 +28,9 @@ export type CatalogCategory = {
   name: string;
   thumbnailUrl?: string | null;
   productCount?: number | null;
+  /** Null/undefined = kök kategori */
+  parentId?: string | null;
+  hasChildren?: boolean | null;
 };
 
 export type CatalogProduct = {
