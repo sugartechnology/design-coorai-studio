@@ -82,10 +82,13 @@ export type CatalogProductBrief = {
 export type SearchFilterOption = {
   value: string;
   label?: string;
+  count?: number;
+  selected?: boolean;
 };
 
 export type SearchFilter = {
   field: string;
+  type?: "STRING" | "RANGE" | "BOOLEAN" | string;
   options?: SearchFilterOption[];
   query?: string;
   min?: string | number;
@@ -99,6 +102,19 @@ export type SearchCriteria = {
   sort?: Array<{ field: string; order: "ASC" | "DESC" }>;
   filters?: SearchFilter[];
   includeImages?: boolean;
+  groupBy?: string | null;
 };
 
-export type PagedProducts = SpringPage<CatalogProductBrief>;
+export type CatalogChannel = "CRM" | "RAPID_RENDER";
+
+export type PagedProducts = SpringPage<CatalogProductBrief> & {
+  query?: string | null;
+  sort?: SearchCriteria["sort"];
+  filters?: SearchFilter[];
+};
+
+export type CatalogProductSearchResult = {
+  products: CatalogProduct[];
+  totalElements: number;
+  filters: SearchFilter[];
+};

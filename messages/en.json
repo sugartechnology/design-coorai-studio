@@ -217,6 +217,11 @@
     "clickWallHint": "Click a wall to place.",
     "searchProductsPlaceholder": "Search products...",
     "productsByCollection": "Products · By collection",
+    "productsTitle": "Products",
+    "facetCatalogs": "Catalogs",
+    "facetCategories": "Categories",
+    "facetCollections": "Collections",
+    "clearFacets": "Clear filters",
     "noModelIdTitle": "{name} (no model id for room placement)"
   },
   "aiStudio": {

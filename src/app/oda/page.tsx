@@ -27,9 +27,8 @@ import {
 } from "@/components/RoomDesignerHost";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import {
-  useCatalogFilters,
+  useCatalogProductSearch,
   useInfiniteScroll,
-  useProductSearch,
   getProductById,
   type CatalogProduct,
   type CatalogProductDetail,
@@ -116,14 +115,18 @@ function OdaPage() {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
-  const { collections, loading: filtersLoading } = useCatalogFilters();
   const {
     products,
     loading: productsLoading,
     loadingMore: productsLoadingMore,
     hasMore: productsHasMore,
     loadMore: loadMoreProducts,
-  } = useProductSearch({ query, size: 40 });
+    facetFilters,
+    hasActiveFacets,
+    toggleFacetOption,
+    clearFacets,
+    isOptionSelected,
+  } = useCatalogProductSearch({ query, size: 40 });
 
   const { sentinelRef: productSentinelRef } = useInfiniteScroll({
     hasMore: productsHasMore,
@@ -146,14 +149,21 @@ function OdaPage() {
     const otherLabel = tCommon("other");
     const map: Record<string, CatalogProduct[]> = {};
     for (const p of products) {
-      const key =
-        p.collectionName ||
-        collections.find((c) => c.id === p.collectionId)?.name ||
-        otherLabel;
+      const key = p.collectionName || otherLabel;
       (map[key] ||= []).push(p);
     }
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b, bcp47));
-  }, [products, collections, tCommon, bcp47]);
+  }, [products, tCommon, bcp47]);
+
+  const facetLabel = useCallback(
+    (field: string) => {
+      if (field === "catalogs") return t("facetCatalogs");
+      if (field === "categories") return t("facetCategories");
+      if (field === "collections") return t("facetCollections");
+      return field;
+    },
+    [t],
+  );
 
   const onDesignerReady = useCallback((el: SugarRoomDesignerElement) => {
     designerRef.current = el;
@@ -552,8 +562,53 @@ function OdaPage() {
                 className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
               />
             </div>
+            {facetFilters.length > 0 && (
+              <div className="mb-3 shrink-0 space-y-2 max-h-40 overflow-y-auto pr-1">
+                {facetFilters.map((facet) => (
+                  <div key={facet.field}>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1">
+                      {facetLabel(facet.field)}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(facet.options ?? []).map((option) => {
+                        const active = isOptionSelected(facet.field, option);
+                        const label = option.label || option.value;
+                        return (
+                          <button
+                            key={`${facet.field}:${option.value}`}
+                            type="button"
+                            onClick={() => toggleFacetOption(facet.field, option)}
+                            className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold border transition ${
+                              active
+                                ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)]"
+                                : "bg-white text-[color:var(--istikbal-blue)] border-black/10 hover:border-[color:var(--istikbal-blue)]/40"
+                            }`}
+                          >
+                            <span className="max-w-[9rem] truncate">{label}</span>
+                            {typeof option.count === "number" && (
+                              <span className={active ? "text-white/70" : "text-[color:var(--istikbal-blue)]/40"}>
+                                {option.count}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {hasActiveFacets && (
+                  <button
+                    type="button"
+                    onClick={clearFacets}
+                    className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+                  >
+                    {t("clearFacets")}
+                  </button>
+                )}
+              </div>
+            )}
             <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0">
-              <span>{t("productsByCollection")}</span>
+              <span>{t("productsTitle")}</span>
               <span className="text-[color:var(--istikbal-blue)]/40 normal-case font-medium">
                 {products.length}
               </span>
@@ -562,14 +617,12 @@ function OdaPage() {
               ref={setProductScrollEl}
               className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4"
             >
-              {(filtersLoading || (productsLoading && products.length === 0)) && (
+              {productsLoading && products.length === 0 && (
                 <p className="text-xs text-[color:var(--istikbal-blue)]/50 text-center py-6">
                   {tCommon("loading")}
                 </p>
               )}
-              {!filtersLoading &&
-                !productsLoading &&
-                productsByCollection.length === 0 && (
+              {!productsLoading && productsByCollection.length === 0 && (
                   <div className="text-sm text-[color:var(--istikbal-blue)]/40 text-center py-6">
                     {tCommon("noResults")}
                   </div>

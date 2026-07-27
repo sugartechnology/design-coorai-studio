@@ -217,6 +217,11 @@
     "clickWallHint": "Duvara tıklayarak ekleyin.",
     "searchProductsPlaceholder": "Ürün ara...",
     "productsByCollection": "Ürünler · Koleksiyona Göre",
+    "productsTitle": "Ürünler",
+    "facetCatalogs": "Kataloglar",
+    "facetCategories": "Kategoriler",
+    "facetCollections": "Koleksiyonlar",
+    "clearFacets": "Filtreleri temizle",
     "noModelIdTitle": "{name} (oda yerleşimi için model id yok)"
   },
   "aiStudio": {

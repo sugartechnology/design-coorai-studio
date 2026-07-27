@@ -4,14 +4,17 @@ import { portalCrmFetch } from "@/lib/portal-crm";
 import { normalizeMediaUrlOrNull } from "@/lib/media-url";
 import type {
   CatalogCategory,
+  CatalogChannel,
   CatalogCollection,
   CatalogProduct,
   CatalogProductBrief,
   CatalogProductDetail,
   CatalogProductImage,
   CatalogProductPrice,
+  CatalogProductSearchResult,
   PagedProducts,
   SearchCriteria,
+  SearchFilter,
   SpringPage,
 } from "./catalog-types";
 
@@ -228,6 +231,104 @@ export async function searchRootProducts(
       ? products.length + 1
       : products.length);
   return { products, totalElements };
+}
+
+/**
+ * Catalog-scoped product search with aggregations
+ * (`POST /api/catalog/products/search`).
+ */
+export async function searchCatalogProducts(
+  input: {
+    companyId: string;
+    channel?: CatalogChannel;
+    currency?: string;
+    pricingDate?: string;
+    criteria: SearchCriteria;
+  },
+  router?: RouterLike,
+): Promise<CatalogProductSearchResult> {
+  const page = await portalCrmFetch<PagedProducts>("catalog/products/search", {
+    method: "POST",
+    router,
+    searchParams: {
+      companyId: input.companyId,
+      channel: input.channel ?? "RAPID_RENDER",
+      currency: input.currency,
+      pricingDate: input.pricingDate,
+    },
+    body: {
+      ...input.criteria,
+      includeImages: input.criteria.includeImages ?? true,
+      groupBy: input.criteria.groupBy ?? null,
+    },
+  });
+  const products = (page.content ?? [])
+    .map(mapProduct)
+    .filter((p): p is CatalogProduct => p !== null);
+  const totalElements =
+    page.page?.totalElements ??
+    page.totalElements ??
+    (products.length >= (input.criteria.size || 40)
+      ? products.length + 1
+      : products.length);
+  return {
+    products,
+    totalElements,
+    filters: page.filters ?? [],
+  };
+}
+
+/** Build request filters for catalog product search (same field OR, different fields AND). */
+export function buildCatalogProductSearchCriteria(input: {
+  query?: string;
+  catalogIds?: string[];
+  categoryIds?: string[];
+  collectionIds?: string[];
+  /** Name-based facet values from response aggregations (`categories` / `collections`). */
+  categoryNames?: string[];
+  collectionNames?: string[];
+  page?: number;
+  size?: number;
+}): SearchCriteria {
+  const filters: SearchFilter[] = [];
+  if (input.catalogIds?.length) {
+    filters.push({
+      field: "catalogs",
+      options: input.catalogIds.map((value) => ({ value })),
+    });
+  }
+  if (input.categoryIds?.length) {
+    filters.push({
+      field: "categoryId",
+      options: input.categoryIds.map((value) => ({ value })),
+    });
+  } else if (input.categoryNames?.length) {
+    // Aggregation facet values are category names (`categories.name.keyword`).
+    filters.push({
+      field: "category",
+      options: input.categoryNames.map((value) => ({ value, label: value })),
+    });
+  }
+  if (input.collectionIds?.length) {
+    filters.push({
+      field: "collectionId",
+      options: input.collectionIds.map((value) => ({ value })),
+    });
+  } else if (input.collectionNames?.length) {
+    filters.push({
+      field: "collection",
+      options: input.collectionNames.map((value) => ({ value, label: value })),
+    });
+  }
+  return {
+    query: input.query?.trim() || undefined,
+    page: input.page ?? 0,
+    size: Math.min(input.size ?? 40, 100),
+    sort: [{ field: "name.keyword", order: "ASC" }],
+    filters: filters.length ? filters : undefined,
+    includeImages: true,
+    groupBy: null,
+  };
 }
 
 export async function getProductById(
