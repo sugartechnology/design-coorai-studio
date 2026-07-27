@@ -1,0 +1,33 @@
+# Dependencies & build outputs
+node_modules
+.next
+out
+dist
+coverage
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Git / IDE
+.git
+.gitignore
+.cursor
+.vscode
+.idea
+.lovable
+*.md
+!README.md
+
+# Logs & OS
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+
+# Local tooling
+.prettierignore
+.prettierrc
+eslint.config.mjs
