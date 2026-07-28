@@ -274,7 +274,13 @@ export async function searchCatalogProducts(
   return {
     products,
     totalElements,
-    filters: page.filters ?? [],
+    filters: (page.filters ?? []).map((filter) => ({
+      ...filter,
+      options: filter.options?.map((option) => ({
+        ...option,
+        thumbnailUrl: normalizeMediaUrlOrNull(option.thumbnailUrl),
+      })),
+    })),
   };
 }
 
@@ -282,6 +288,8 @@ export async function searchCatalogProducts(
 export function buildCatalogProductSearchCriteria(input: {
   query?: string;
   catalogIds?: string[];
+  /** Hierarchical type-category facet (`typeCategories` / `typeCategoryId`). */
+  typeCategoryIds?: string[];
   categoryIds?: string[];
   collectionIds?: string[];
   /** Name-based facet values from response aggregations (`categories` / `collections`). */
@@ -295,6 +303,12 @@ export function buildCatalogProductSearchCriteria(input: {
     filters.push({
       field: "catalogs",
       options: input.catalogIds.map((value) => ({ value })),
+    });
+  }
+  if (input.typeCategoryIds?.length) {
+    filters.push({
+      field: "typeCategoryId",
+      options: input.typeCategoryIds.map((value) => ({ value })),
     });
   }
   if (input.categoryIds?.length) {

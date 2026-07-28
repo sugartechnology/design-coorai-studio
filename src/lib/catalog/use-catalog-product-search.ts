@@ -29,6 +29,7 @@ function toggleValue(list: string[], value: string): string[] {
 
 export type CatalogFacetSelection = {
   catalogIds: string[];
+  typeCategoryIds: string[];
   /** UUID category filters (request field `categoryId`). */
   categoryIds: string[];
   /** Name category filters from aggregation (request field `category`). */
@@ -39,6 +40,7 @@ export type CatalogFacetSelection = {
 
 const EMPTY_SELECTION: CatalogFacetSelection = {
   catalogIds: [],
+  typeCategoryIds: [],
   categoryIds: [],
   categoryNames: [],
   collectionIds: [],
@@ -111,11 +113,12 @@ export function useCatalogProductSearch(input: {
         const result = await searchCatalogProducts(
           {
             companyId,
-            channel: input.channel ?? "RAPID_RENDER",
+            channel: input.channel ?? "CRM",
             currency: input.currency,
             criteria: buildCatalogProductSearchCriteria({
               query: debouncedQuery,
               catalogIds: selection.catalogIds,
+              typeCategoryIds: selection.typeCategoryIds,
               categoryIds: selection.categoryIds,
               categoryNames: selection.categoryNames,
               collectionIds: selection.collectionIds,
@@ -232,18 +235,33 @@ export function useCatalogProductSearch(input: {
       if (field === "catalogs") {
         return { ...prev, catalogIds: toggleValue(prev.catalogIds, value) };
       }
+      if (
+        field === "typeCategories" ||
+        field === "typeCategoryId" ||
+        field === "typeCategoryIds"
+      ) {
+        return {
+          ...prev,
+          typeCategoryIds: toggleValue(prev.typeCategoryIds, value),
+          // Prefer hierarchical type categories over flat product categories.
+          categoryIds: [],
+          categoryNames: [],
+        };
+      }
       if (field === "categories" || field === "categoryId" || field === "category") {
         if (isUuid(value)) {
           return {
             ...prev,
             categoryIds: toggleValue(prev.categoryIds, value),
             categoryNames: [],
+            typeCategoryIds: [],
           };
         }
         return {
           ...prev,
           categoryNames: toggleValue(prev.categoryNames, value),
           categoryIds: [],
+          typeCategoryIds: [],
         };
       }
       if (field === "collections" || field === "collectionId" || field === "collection") {
@@ -273,6 +291,13 @@ export function useCatalogProductSearch(input: {
       const value = option.value?.trim();
       if (!value) return Boolean(option.selected);
       if (field === "catalogs") return selection.catalogIds.includes(value);
+      if (
+        field === "typeCategories" ||
+        field === "typeCategoryId" ||
+        field === "typeCategoryIds"
+      ) {
+        return selection.typeCategoryIds.includes(value);
+      }
       if (field === "categories" || field === "categoryId" || field === "category") {
         return (
           selection.categoryIds.includes(value) ||
@@ -291,18 +316,29 @@ export function useCatalogProductSearch(input: {
   );
 
   const facetFilters = useMemo(() => {
-    const allowed = new Set(["catalogs", "categories", "collections"]);
+    const hasTypeCategories = aggregations.some(
+      (f) => f.field === "typeCategories" && (f.options?.length ?? 0) > 0,
+    );
+    // Hierarchical typeCategories replaces flat product-name categories when present.
+    const allowed = new Set(
+      hasTypeCategories
+        ? ["catalogs", "typeCategories", "collections"]
+        : ["catalogs", "categories", "collections"],
+    );
     return aggregations.filter(
       (f) => f.field && allowed.has(f.field) && (f.options?.length ?? 0) > 0,
     );
   }, [aggregations]);
 
-  const hasActiveFacets =
-    selection.catalogIds.length > 0 ||
-    selection.categoryIds.length > 0 ||
-    selection.categoryNames.length > 0 ||
-    selection.collectionIds.length > 0 ||
-    selection.collectionNames.length > 0;
+  const activeFacetCount =
+    selection.catalogIds.length +
+    selection.typeCategoryIds.length +
+    selection.categoryIds.length +
+    selection.categoryNames.length +
+    selection.collectionIds.length +
+    selection.collectionNames.length;
+
+  const hasActiveFacets = activeFacetCount > 0;
 
   return {
     companyId,
@@ -318,6 +354,7 @@ export function useCatalogProductSearch(input: {
     facetFilters,
     selection,
     hasActiveFacets,
+    activeFacetCount,
     toggleFacetOption,
     clearFacets,
     isOptionSelected,

@@ -84,6 +84,10 @@ export type SearchFilterOption = {
   label?: string;
   count?: number;
   selected?: boolean;
+  parentValue?: string | null;
+  path?: string[] | null;
+  depth?: number | null;
+  thumbnailUrl?: string | null;
 };
 
 export type SearchFilter = {

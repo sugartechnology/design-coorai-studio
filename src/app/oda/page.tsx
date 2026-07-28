@@ -41,6 +41,7 @@ import {
   type QuoteVariantSelection,
 } from "@/lib/offers";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import { ProductSearchFilterMenu } from "@/components/catalog/ProductSearchFilterMenu";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 type TemplateKey = "kare" | "L" | "U" | "T";
@@ -111,6 +112,7 @@ function OdaPage() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [query, setQuery] = useState("");
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [productScrollEl, setProductScrollEl] = useState<HTMLDivElement | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
@@ -123,6 +125,7 @@ function OdaPage() {
     loadMore: loadMoreProducts,
     facetFilters,
     hasActiveFacets,
+    activeFacetCount,
     toggleFacetOption,
     clearFacets,
     isOptionSelected,
@@ -158,7 +161,7 @@ function OdaPage() {
   const facetLabel = useCallback(
     (field: string) => {
       if (field === "catalogs") return t("facetCatalogs");
-      if (field === "categories") return t("facetCategories");
+      if (field === "typeCategories" || field === "categories") return t("facetCategories");
       if (field === "collections") return t("facetCollections");
       return field;
     },
@@ -553,60 +556,30 @@ function OdaPage() {
 
         <aside className="col-span-12 lg:col-span-3 flex flex-col min-h-0 lg:h-full">
           <div className="bg-white rounded-2xl p-3 shadow-sm flex flex-col min-h-0 flex-1">
-            <div className="relative mb-3 shrink-0">
-              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("searchProductsPlaceholder")}
-                className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
+            <div className="relative mb-3 shrink-0 flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t("searchProductsPlaceholder")}
+                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
+                />
+              </div>
+              <ProductSearchFilterMenu
+                open={filterMenuOpen}
+                onOpenChange={setFilterMenuOpen}
+                facetFilters={facetFilters}
+                hasActiveFacets={hasActiveFacets}
+                activeFacetCount={activeFacetCount}
+                facetLabel={facetLabel}
+                isOptionSelected={isOptionSelected}
+                onToggleOption={toggleFacetOption}
+                onClear={clearFacets}
+                clearLabel={t("clearFacets")}
+                filterAriaLabel={t("filters")}
               />
             </div>
-            {facetFilters.length > 0 && (
-              <div className="mb-3 shrink-0 space-y-2 max-h-40 overflow-y-auto pr-1">
-                {facetFilters.map((facet) => (
-                  <div key={facet.field}>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1">
-                      {facetLabel(facet.field)}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(facet.options ?? []).map((option) => {
-                        const active = isOptionSelected(facet.field, option);
-                        const label = option.label || option.value;
-                        return (
-                          <button
-                            key={`${facet.field}:${option.value}`}
-                            type="button"
-                            onClick={() => toggleFacetOption(facet.field, option)}
-                            className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold border transition ${
-                              active
-                                ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)]"
-                                : "bg-white text-[color:var(--istikbal-blue)] border-black/10 hover:border-[color:var(--istikbal-blue)]/40"
-                            }`}
-                          >
-                            <span className="max-w-[9rem] truncate">{label}</span>
-                            {typeof option.count === "number" && (
-                              <span className={active ? "text-white/70" : "text-[color:var(--istikbal-blue)]/40"}>
-                                {option.count}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {hasActiveFacets && (
-                  <button
-                    type="button"
-                    onClick={clearFacets}
-                    className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
-                  >
-                    {t("clearFacets")}
-                  </button>
-                )}
-              </div>
-            )}
             <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0">
               <span>{t("productsTitle")}</span>
               <span className="text-[color:var(--istikbal-blue)]/40 normal-case font-medium">

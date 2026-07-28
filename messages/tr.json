@@ -222,6 +222,7 @@
     "facetCategories": "Kategoriler",
     "facetCollections": "Koleksiyonlar",
     "clearFacets": "Filtreleri temizle",
+    "filters": "Filtreler",
     "noModelIdTitle": "{name} (oda yerleşimi için model id yok)"
   },
   "aiStudio": {

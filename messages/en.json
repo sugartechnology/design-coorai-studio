@@ -222,6 +222,7 @@
     "facetCategories": "Categories",
     "facetCollections": "Collections",
     "clearFacets": "Clear filters",
+    "filters": "Filters",
     "noModelIdTitle": "{name} (no model id for room placement)"
   },
   "aiStudio": {
