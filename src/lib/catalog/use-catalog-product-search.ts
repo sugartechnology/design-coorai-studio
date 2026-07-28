@@ -113,7 +113,7 @@ export function useCatalogProductSearch(input: {
         const result = await searchCatalogProducts(
           {
             companyId,
-            channel: input.channel ?? "CRM",
+            channel: input.channel ?? "RAPID_RENDER",
             currency: input.currency,
             criteria: buildCatalogProductSearchCriteria({
               query: debouncedQuery,
