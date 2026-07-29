@@ -12,9 +12,12 @@ import {
   ShieldCheck,
   KeyRound,
   Info,
+  UserRound,
+  Lock,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+type AuthTab = "credentials" | "dealer";
 type Step = "code" | "phone" | "pin";
 
 type PhoneOption = {
@@ -35,6 +38,9 @@ type LookupResult = {
 function LoginPage() {
   const router = useRouter();
   const t = useTranslations("login");
+  const [tab, setTab] = useState<AuthTab>("credentials");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [step, setStep] = useState<Step>("code");
   const [dealerCode, setDealerCode] = useState("");
   const [lookup, setLookup] = useState<LookupResult | null>(null);
@@ -44,6 +50,48 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
+
+  const switchTab = (next: AuthTab) => {
+    if (next === tab || busy) return;
+    setTab(next);
+    setError(null);
+    setBusy(false);
+    if (next === "dealer") {
+      setStep("code");
+    }
+  };
+
+  const submitCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim() || !password || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username.trim(),
+          password,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(
+          typeof data.error === "string"
+            ? data.error
+            : t("errorCredentialsInvalid"),
+        );
+        return;
+      }
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError(t("errorLoginUnreachable"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submitCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,6 +195,17 @@ function LoginPage() {
     }
   };
 
+  const hint =
+    tab === "credentials"
+      ? t("credentialsHint")
+      : step === "code"
+        ? t("stepCodeHint")
+        : step === "phone" && lookup?.status === "NEEDS_PROVISION"
+          ? t("stepPhoneProvisionHint")
+          : step === "phone"
+            ? t("stepPhoneReadyHint")
+            : t("stepPinHint");
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-[color:var(--istikbal-bg)]">
       <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[color:var(--istikbal-yellow)] via-[#f6c200] to-[#f0a400] text-[color:var(--istikbal-blue)]">
@@ -187,38 +246,59 @@ function LoginPage() {
 
           <div className="mb-6">
             <h2 className="text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">{t("title")}</h2>
-            <p className="mt-2 text-[color:var(--istikbal-blue)]/60">
-              {step === "code" && t("stepCodeHint")}
-              {step === "phone" && lookup?.status === "NEEDS_PROVISION" &&
-                t("stepPhoneProvisionHint")}
-              {step === "phone" && lookup?.status === "READY" &&
-                t("stepPhoneReadyHint")}
-              {step === "pin" && t("stepPinHint")}
-            </p>
+            <p className="mt-2 text-[color:var(--istikbal-blue)]/60">{hint}</p>
           </div>
 
-          <div className="flex items-center gap-2 mb-6">
-            {(["code", "phone", "pin"] as const).map((s, i) => {
-              const active = step === s;
-              const done = ["code", "phone", "pin"].indexOf(step) > i;
+          <div className="mb-6 p-1 rounded-2xl bg-[color:var(--istikbal-blue)]/5 flex gap-1">
+            {(
+              [
+                { id: "credentials" as const, label: t("tabCredentials") },
+                { id: "dealer" as const, label: t("tabDealer") },
+              ] as const
+            ).map((item) => {
+              const active = tab === item.id;
               return (
-                <div key={s} className="flex-1 flex items-center gap-2">
-                  <div
-                    className={`size-7 rounded-full grid place-items-center text-xs font-bold transition-all ${
-                      done
-                        ? "bg-[color:var(--istikbal-blue)] text-white"
-                        : active
-                        ? "bg-[color:var(--istikbal-yellow)] text-[color:var(--istikbal-blue)]"
-                        : "bg-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)]/50"
-                    }`}
-                  >
-                    {done ? <CheckCircle2 className="size-4" /> : i + 1}
-                  </div>
-                  {i < 2 && <div className={`flex-1 h-0.5 ${done ? "bg-[color:var(--istikbal-blue)]" : "bg-[color:var(--istikbal-blue)]/10"}`} />}
-                </div>
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => switchTab(item.id)}
+                  className={`flex-1 h-11 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-60 ${
+                    active
+                      ? "bg-white text-[color:var(--istikbal-blue)] shadow-sm"
+                      : "text-[color:var(--istikbal-blue)]/55 hover:text-[color:var(--istikbal-blue)]"
+                  }`}
+                >
+                  {item.label}
+                </button>
               );
             })}
           </div>
+
+          {tab === "dealer" && (
+            <div className="flex items-center gap-2 mb-6">
+              {(["code", "phone", "pin"] as const).map((s, i) => {
+                const active = step === s;
+                const done = ["code", "phone", "pin"].indexOf(step) > i;
+                return (
+                  <div key={s} className="flex-1 flex items-center gap-2">
+                    <div
+                      className={`size-7 rounded-full grid place-items-center text-xs font-bold transition-all ${
+                        done
+                          ? "bg-[color:var(--istikbal-blue)] text-white"
+                          : active
+                          ? "bg-[color:var(--istikbal-yellow)] text-[color:var(--istikbal-blue)]"
+                          : "bg-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)]/50"
+                      }`}
+                    >
+                      {done ? <CheckCircle2 className="size-4" /> : i + 1}
+                    </div>
+                    {i < 2 && <div className={`flex-1 h-0.5 ${done ? "bg-[color:var(--istikbal-blue)]" : "bg-[color:var(--istikbal-blue)]/10"}`} />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-100 text-sm text-red-700">
@@ -226,7 +306,69 @@ function LoginPage() {
             </div>
           )}
 
-          {step === "code" && (
+          {tab === "credentials" && (
+            <form onSubmit={submitCredentials} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
+                  {t("usernameLabel")}
+                </label>
+                <div className="relative">
+                  <UserRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
+                  <input
+                    autoFocus
+                    type="text"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder={t("usernamePlaceholder")}
+                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
+                  {t("passwordLabel")}
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={t("passwordPlaceholder")}
+                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all font-semibold"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={busy || !username.trim() || !password}
+                className="group w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] active:scale-[0.99] shadow-lg shadow-[color:var(--istikbal-blue)]/25 transition-all disabled:opacity-60"
+              >
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <>
+                    {t("submitLogin")}{" "}
+                    <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setForgotOpen(true)}
+                className="w-full text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:underline"
+              >
+                {t("forgotPassword")}
+              </button>
+            </form>
+          )}
+
+          {tab === "dealer" && step === "code" && (
             <form onSubmit={submitCode} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
@@ -275,7 +417,7 @@ function LoginPage() {
             </form>
           )}
 
-          {step === "phone" && lookup && (
+          {tab === "dealer" && step === "phone" && lookup && (
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-[color:var(--istikbal-blue)]/5">
                 <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">{t("dealerLabel")}</p>
@@ -324,7 +466,7 @@ function LoginPage() {
             </div>
           )}
 
-          {step === "pin" && selectedPhone && (
+          {tab === "dealer" && step === "pin" && selectedPhone && (
             <form onSubmit={submitPin} className="space-y-4">
               <div className="p-4 rounded-2xl bg-[color:var(--istikbal-yellow)]/25 border border-[color:var(--istikbal-yellow)]/40 flex gap-2.5">
                 <CheckCircle2 className="size-4.5 shrink-0 text-[color:var(--istikbal-blue)] mt-0.5" />

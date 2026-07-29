@@ -70,12 +70,31 @@ async function proxy(request: NextRequest, context: RouteContext) {
 
   const method = request.method.toUpperCase();
   const hasBody = method !== "GET" && method !== "HEAD";
+  const requestBody = hasBody ? await request.arrayBuffer() : undefined;
+
+  const isCatalogProductSearch =
+    method === "POST" && suffix === "catalog/products/search";
+  if (isCatalogProductSearch) {
+    let bodyJson: unknown = null;
+    if (requestBody && requestBody.byteLength > 0) {
+      try {
+        bodyJson = JSON.parse(new TextDecoder().decode(requestBody));
+      } catch {
+        bodyJson = "[unparseable body]";
+      }
+    }
+    console.log("[crm-proxy] catalog/products/search", {
+      url: upstreamUrl.toString(),
+      searchParams: Object.fromEntries(upstreamUrl.searchParams.entries()),
+      body: bodyJson,
+    });
+  }
 
   try {
     const upstream = await fetch(upstreamUrl, {
       method,
       headers,
-      body: hasBody ? await request.arrayBuffer() : undefined,
+      body: requestBody,
       cache: "no-store",
     });
 

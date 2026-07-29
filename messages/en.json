@@ -95,12 +95,21 @@
   },
   "login": {
     "asideTitle": "Welcome to the\nDealer Panel",
-    "asideBody": "Sign in with your dealer code, then enter the SMS PIN sent to the store’s authorized phone.",
+    "asideBody": "Sign in with your username and password, or use your dealer code and SMS PIN.",
     "featureDealerCode": "Dealer code",
     "featureSmsPin": "SMS PIN",
     "featureSecure": "Secure",
     "footerCopyright": "© {year} İstikbal · 3D Design Studio",
     "title": "Sign in",
+    "tabCredentials": "Username",
+    "tabDealer": "Dealer code",
+    "credentialsHint": "Sign in with your username (or email) and password.",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "user@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "errorCredentialsInvalid": "Invalid credentials.",
+    "errorLoginUnreachable": "Login service unreachable.",
     "stepCodeHint": "Start with your dealer code.",
     "stepPhoneProvisionHint": "Select the admin phone to register the dealer.",
     "stepPhoneReadyHint": "Choose the number to receive the SMS PIN.",
@@ -128,7 +137,7 @@
     "errorPinInvalid": "PIN could not be verified.",
     "errorVerifyUnreachable": "Verification service unreachable.",
     "forgotTitle": "Forgot password",
-    "forgotBody": "This portal signs in with an SMS PIN. Retry with your dealer code and registered phone. Contact support if you need account help."
+    "forgotBody": "For username sign-in, ask your admin to reset your password. With dealer code sign-in, an SMS PIN is sent to your registered phone. Contact support if you need account help."
   },
   "tutorial": {
     "buttonLabel": "Tutorial",

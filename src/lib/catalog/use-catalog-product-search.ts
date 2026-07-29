@@ -27,24 +27,98 @@ function toggleValue(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
+function emptySelection(): CatalogFacetSelection {
+  return {
+    catalogIds: [],
+    typeCategoryIds: [],
+    categoryIds: [],
+    categoryNames: [],
+    collectionIds: [],
+    collectionNames: [],
+  };
+}
+
+function collectAncestors(
+  id: string,
+  parentById: Map<string, string | null>,
+): string[] {
+  const ancestors: string[] = [];
+  const visited = new Set<string>();
+  let current = parentById.get(id) ?? null;
+  while (current && visited.add(current)) {
+    ancestors.push(current);
+    current = parentById.get(current) ?? null;
+  }
+  return ancestors;
+}
+
+function collectDescendants(
+  id: string,
+  childrenByParent: Map<string, string[]>,
+): string[] {
+  const out: string[] = [];
+  const stack = [...(childrenByParent.get(id) ?? [])];
+  const visited = new Set<string>();
+  while (stack.length) {
+    const next = stack.pop()!;
+    if (!visited.add(next)) continue;
+    out.push(next);
+    for (const child of childrenByParent.get(next) ?? []) stack.push(child);
+  }
+  return out;
+}
+
+function buildTypeCategoryIndex(options: SearchFilterOption[]) {
+  const parentById = new Map<string, string | null>();
+  const childrenByParent = new Map<string, string[]>();
+  for (const option of options) {
+    const id = option.value?.trim();
+    if (!id) continue;
+    const parent = option.parentValue?.trim() || null;
+    parentById.set(id, parent);
+    if (parent) {
+      const list = childrenByParent.get(parent) ?? [];
+      list.push(id);
+      childrenByParent.set(parent, list);
+    }
+  }
+  return { parentById, childrenByParent };
+}
+
+function pruneAfterTypeCategoryToggle(
+  ids: string[],
+  toggledId: string,
+  options: SearchFilterOption[],
+): string[] {
+  const { parentById, childrenByParent } = buildTypeCategoryIndex(options);
+  const ancestors = new Set(collectAncestors(toggledId, parentById));
+  const descendants = new Set(collectDescendants(toggledId, childrenByParent));
+  return ids.filter(
+    (id) => id === toggledId || (!ancestors.has(id) && !descendants.has(id)),
+  );
+}
+
+function stripAncestorTypeCategories(
+  ids: string[],
+  options: SearchFilterOption[],
+): string[] {
+  if (ids.length <= 1) return ids;
+  const { parentById } = buildTypeCategoryIndex(options);
+  return ids.filter(
+    (id) =>
+      !ids.some(
+        (other) => other !== id && collectAncestors(other, parentById).includes(id),
+      ),
+  );
+}
+
 export type CatalogFacetSelection = {
   catalogIds: string[];
   typeCategoryIds: string[];
-  /** UUID category filters (request field `categoryId`). */
   categoryIds: string[];
-  /** Name category filters from aggregation (request field `category`). */
   categoryNames: string[];
   collectionIds: string[];
   collectionNames: string[];
-};
-
-const EMPTY_SELECTION: CatalogFacetSelection = {
-  catalogIds: [],
-  typeCategoryIds: [],
-  categoryIds: [],
-  categoryNames: [],
-  collectionIds: [],
-  collectionNames: [],
 };
 
 export function useCatalogProductSearch(input: {
@@ -57,22 +131,35 @@ export function useCatalogProductSearch(input: {
   const router = useRouter();
   const t = useTranslations("catalog");
   const pageSize = Math.min(input.size ?? 40, 100);
+  const channel = input.channel ?? "RAPID_RENDER";
+  const currency = input.currency;
+  const enabled = input.enabled !== false;
+
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [aggregations, setAggregations] = useState<SearchFilter[]>([]);
-  const [selection, setSelection] = useState<CatalogFacetSelection>(EMPTY_SELECTION);
+  const [selection, setSelection] = useState<CatalogFacetSelection>(emptySelection);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debouncedQuery, setDebouncedQuery] = useState(input.query.trim());
+
   const requestIdRef = useRef(0);
   const pageRef = useRef(0);
   const loadingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const totalRef = useRef(0);
   const productsLenRef = useRef(0);
+  const typeCategoryOptionsRef = useRef<SearchFilterOption[]>([]);
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+
+  useEffect(() => {
+    const facet = aggregations.find((filter) => filter.field === "typeCategories");
+    typeCategoryOptionsRef.current = facet?.options ?? [];
+  }, [aggregations]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedQuery(input.query.trim()), 300);
@@ -97,7 +184,7 @@ export function useCatalogProductSearch(input: {
 
   const fetchPage = useCallback(
     async (pageToLoad: number, append: boolean) => {
-      if (input.enabled === false) return;
+      if (!enabled) return;
       if (!companyId) return;
       if (append) {
         if (loadingMoreRef.current || loadingRef.current) return;
@@ -108,21 +195,26 @@ export function useCatalogProductSearch(input: {
         setLoading(true);
       }
       const requestId = ++requestIdRef.current;
+      const currentSelection = selectionRef.current;
       setError(null);
       try {
+        const typeCategoryIds = stripAncestorTypeCategories(
+          currentSelection.typeCategoryIds,
+          typeCategoryOptionsRef.current,
+        );
         const result = await searchCatalogProducts(
           {
             companyId,
-            channel: input.channel ?? "RAPID_RENDER",
-            currency: input.currency,
+            channel,
+            currency,
             criteria: buildCatalogProductSearchCriteria({
               query: debouncedQuery,
-              catalogIds: selection.catalogIds,
-              typeCategoryIds: selection.typeCategoryIds,
-              categoryIds: selection.categoryIds,
-              categoryNames: selection.categoryNames,
-              collectionIds: selection.collectionIds,
-              collectionNames: selection.collectionNames,
+              catalogIds: currentSelection.catalogIds,
+              typeCategoryIds,
+              categoryIds: currentSelection.categoryIds,
+              categoryNames: currentSelection.categoryNames,
+              collectionIds: currentSelection.collectionIds,
+              collectionNames: currentSelection.collectionNames,
               page: pageToLoad,
               size: pageSize,
             }),
@@ -176,31 +268,32 @@ export function useCatalogProductSearch(input: {
         }
       }
     },
-    [
-      companyId,
-      debouncedQuery,
-      input.channel,
-      input.currency,
-      input.enabled,
-      pageSize,
-      router,
-      selection,
-      t,
-    ],
+    [channel, companyId, currency, debouncedQuery, enabled, pageSize, router, t],
   );
 
+  // Reset + fetch only when search inputs change — not when aggregations update.
   useEffect(() => {
-    setProducts([]);
+    if (!enabled || !companyId) return;
     productsLenRef.current = 0;
-    setTotalElements(0);
     totalRef.current = 0;
     setPage(0);
     pageRef.current = 0;
     void fetchPage(0, false);
-  }, [fetchPage]);
+  }, [
+    companyId,
+    debouncedQuery,
+    enabled,
+    fetchPage,
+    selection.catalogIds,
+    selection.typeCategoryIds,
+    selection.categoryIds,
+    selection.categoryNames,
+    selection.collectionIds,
+    selection.collectionNames,
+  ]);
 
   useEffect(() => {
-    if (input.enabled === false) return;
+    if (!enabled) return;
     if (!companyId) return;
     if (loading || loadingMore || error) return;
     if (products.length === 0) return;
@@ -209,9 +302,9 @@ export function useCatalogProductSearch(input: {
     void fetchPage(page + 1, true);
   }, [
     companyId,
+    enabled,
     error,
     fetchPage,
-    input.enabled,
     loading,
     loadingMore,
     page,
@@ -222,11 +315,11 @@ export function useCatalogProductSearch(input: {
   const hasMore = products.length < totalElements;
 
   const loadMore = useCallback(() => {
-    if (input.enabled === false) return;
+    if (!enabled) return;
     if (loadingRef.current || loadingMoreRef.current) return;
     if (productsLenRef.current >= totalRef.current) return;
     void fetchPage(pageRef.current + 1, true);
-  }, [fetchPage, input.enabled]);
+  }, [enabled, fetchPage]);
 
   const toggleFacetOption = useCallback((field: string, option: SearchFilterOption) => {
     const value = option.value?.trim();
@@ -240,10 +333,18 @@ export function useCatalogProductSearch(input: {
         field === "typeCategoryId" ||
         field === "typeCategoryIds"
       ) {
+        const adding = !prev.typeCategoryIds.includes(value);
+        let nextIds = toggleValue(prev.typeCategoryIds, value);
+        if (adding) {
+          nextIds = pruneAfterTypeCategoryToggle(
+            nextIds,
+            value,
+            typeCategoryOptionsRef.current,
+          );
+        }
         return {
           ...prev,
-          typeCategoryIds: toggleValue(prev.typeCategoryIds, value),
-          // Prefer hierarchical type categories over flat product categories.
+          typeCategoryIds: nextIds,
           categoryIds: [],
           categoryNames: [],
         };
@@ -283,13 +384,13 @@ export function useCatalogProductSearch(input: {
   }, []);
 
   const clearFacets = useCallback(() => {
-    setSelection(EMPTY_SELECTION);
+    setSelection(emptySelection());
   }, []);
 
   const isOptionSelected = useCallback(
     (field: string, option: SearchFilterOption) => {
       const value = option.value?.trim();
-      if (!value) return Boolean(option.selected);
+      if (!value) return false;
       if (field === "catalogs") return selection.catalogIds.includes(value);
       if (
         field === "typeCategories" ||
@@ -310,7 +411,7 @@ export function useCatalogProductSearch(input: {
           selection.collectionNames.includes(value)
         );
       }
-      return Boolean(option.selected);
+      return false;
     },
     [selection],
   );
@@ -319,7 +420,6 @@ export function useCatalogProductSearch(input: {
     const hasTypeCategories = aggregations.some(
       (f) => f.field === "typeCategories" && (f.options?.length ?? 0) > 0,
     );
-    // Hierarchical typeCategories replaces flat product-name categories when present.
     const allowed = new Set(
       hasTypeCategories
         ? ["catalogs", "typeCategories", "collections"]
@@ -338,8 +438,6 @@ export function useCatalogProductSearch(input: {
     selection.collectionIds.length +
     selection.collectionNames.length;
 
-  const hasActiveFacets = activeFacetCount > 0;
-
   return {
     companyId,
     products,
@@ -347,13 +445,13 @@ export function useCatalogProductSearch(input: {
     page,
     pageSize,
     hasMore,
-    loading: loading || (!companyId && input.enabled !== false),
+    loading: loading || (!companyId && enabled),
     loadingMore,
     error,
     loadMore,
     facetFilters,
     selection,
-    hasActiveFacets,
+    hasActiveFacets: activeFacetCount > 0,
     activeFacetCount,
     toggleFacetOption,
     clearFacets,

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Check, ListFilter, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, ListFilter, X } from "lucide-react";
 import type { SearchFilter, SearchFilterOption } from "@/lib/catalog";
 
 type Props = {
@@ -24,6 +24,13 @@ function optionDepth(option: SearchFilterOption): number {
   return 0;
 }
 
+function selectedCountInFacet(
+  facet: SearchFilter,
+  isOptionSelected: (field: string, option: SearchFilterOption) => boolean,
+) {
+  return (facet.options ?? []).filter((option) => isOptionSelected(facet.field, option)).length;
+}
+
 export function ProductSearchFilterMenu({
   open,
   onOpenChange,
@@ -38,6 +45,27 @@ export function ProductSearchFilterMenu({
   filterAriaLabel,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+
+  const sectionKeys = useMemo(
+    () => facetFilters.map((facet) => facet.field).filter(Boolean),
+    [facetFilters],
+  );
+
+  useEffect(() => {
+    setExpandedSections((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const key of sectionKeys) {
+        if (next[key] === undefined) {
+          next[key] = key === "typeCategories" || key === "categories" || key === "catalogs";
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [sectionKeys]);
 
   useEffect(() => {
     if (!open) return;
@@ -58,6 +86,14 @@ export function ProductSearchFilterMenu({
     };
   }, [open, onOpenChange]);
 
+  const toggleSection = (field: string) => {
+    setExpandedSections((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const toggleNode = (value: string) => {
+    setExpandedNodes((prev) => ({ ...prev, [value]: !prev[value] }));
+  };
+
   return (
     <div ref={rootRef} className="relative shrink-0">
       <button
@@ -67,7 +103,7 @@ export function ProductSearchFilterMenu({
         onClick={() => onOpenChange(!open)}
         className={`relative size-10 rounded-xl border inline-flex items-center justify-center transition ${
           open || hasActiveFacets
-            ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)]"
+            ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)] shadow-sm"
             : "bg-black/5 text-[color:var(--istikbal-blue)] border-transparent hover:border-black/10"
         }`}
       >
@@ -80,136 +116,283 @@ export function ProductSearchFilterMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-[min(20rem,calc(100vw-2rem))] max-h-[min(28rem,70vh)] overflow-hidden rounded-2xl border border-black/10 bg-white shadow-xl">
-          <div className="px-3 py-2.5 border-b border-black/5 flex items-center justify-between gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-[min(22rem,calc(100vw-2rem))] max-h-[min(32rem,75vh)] overflow-hidden rounded-2xl border border-black/8 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_-24px_rgba(15,23,42,0.45)]">
+          <div className="px-3.5 py-3 border-b border-black/5 flex items-center justify-between gap-2 bg-gradient-to-b from-black/[0.02] to-transparent">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--istikbal-blue)]/55">
               {filterAriaLabel}
             </span>
             <div className="flex items-center gap-1">
-              {hasActiveFacets && (
-                <button
-                  type="button"
-                  onClick={onClear}
-                  className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)] px-2 py-1"
-                >
-                  {clearLabel}
-                </button>
-              )}
+              <button
+                type="button"
+                disabled={!hasActiveFacets}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (!hasActiveFacets) return;
+                  onClear();
+                }}
+                className="h-7 px-2.5 rounded-lg text-[10px] font-semibold transition disabled:opacity-35 disabled:pointer-events-none text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/5"
+              >
+                {clearLabel}
+              </button>
               <button
                 type="button"
                 aria-label="Close"
                 onClick={() => onOpenChange(false)}
-                className="size-7 rounded-lg hover:bg-black/5 inline-flex items-center justify-center text-[color:var(--istikbal-blue)]/50"
+                className="size-7 rounded-lg hover:bg-black/5 inline-flex items-center justify-center text-[color:var(--istikbal-blue)]/45"
               >
                 <X className="size-3.5" />
               </button>
             </div>
           </div>
 
-          <div className="overflow-y-auto max-h-[min(24rem,60vh)] p-3 space-y-4">
+          <div className="overflow-y-auto max-h-[min(28rem,65vh)] p-2.5 space-y-2">
             {facetFilters.length === 0 && (
-              <p className="text-xs text-[color:var(--istikbal-blue)]/45 text-center py-6">—</p>
+              <p className="text-xs text-[color:var(--istikbal-blue)]/45 text-center py-8">—</p>
             )}
-            {facetFilters.map((facet) => (
-              <div key={facet.field}>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-2">
-                  {facetLabel(facet.field)}
-                </div>
-                {facet.field === "catalogs" ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {(facet.options ?? []).map((option) => {
-                      const active = isOptionSelected(facet.field, option);
-                      const label = option.label || option.value;
-                      return (
-                        <button
-                          key={`${facet.field}:${option.value}`}
-                          type="button"
-                          onClick={() => onToggleOption(facet.field, option)}
-                          className={`rounded-xl border p-2 text-left transition ${
-                            active
-                              ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue-soft)]"
-                              : "border-black/8 hover:border-[color:var(--istikbal-blue)]/35"
-                          }`}
-                        >
-                          <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
-                            {option.thumbnailUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={option.thumbnailUrl}
-                                alt={label}
-                                loading="lazy"
-                                className="absolute inset-0 h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center text-[color:var(--istikbal-blue)]/20 text-[10px]">
-                                {label.slice(0, 1)}
-                              </div>
-                            )}
-                            {active && (
-                              <span className="absolute top-1 right-1 size-5 rounded-full bg-[color:var(--istikbal-blue)] text-white inline-flex items-center justify-center">
-                                <Check className="size-3" />
-                              </span>
-                            )}
+            {facetFilters.map((facet) => {
+              const sectionOpen = expandedSections[facet.field] ?? true;
+              const count = selectedCountInFacet(facet, isOptionSelected);
+              return (
+                <section
+                  key={facet.field}
+                  className="rounded-xl border border-black/6 bg-white overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(facet.field)}
+                    className="w-full px-3 h-10 flex items-center justify-between gap-2 text-left hover:bg-black/[0.02] transition"
+                  >
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--istikbal-blue)]">
+                        {facetLabel(facet.field)}
+                      </span>
+                      {count > 0 && (
+                        <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-[color:var(--istikbal-blue)] text-white text-[10px] font-extrabold">
+                          {count}
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown
+                      className={`size-4 text-[color:var(--istikbal-blue)]/40 transition-transform duration-200 ${
+                        sectionOpen ? "rotate-0" : "-rotate-90"
+                      }`}
+                    />
+                  </button>
+
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                      sectionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <div className="px-2.5 pb-2.5 pt-0.5">
+                        {facet.field === "catalogs" ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            {(facet.options ?? []).map((option) => {
+                              const active = isOptionSelected(facet.field, option);
+                              const label = option.label || option.value;
+                              return (
+                                <button
+                                  key={`${facet.field}:${option.value}`}
+                                  type="button"
+                                  onClick={() => onToggleOption(facet.field, option)}
+                                  className={`rounded-xl border p-2 text-left transition ${
+                                    active
+                                      ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue-soft)] shadow-sm"
+                                      : "border-black/8 hover:border-[color:var(--istikbal-blue)]/30"
+                                  }`}
+                                >
+                                  <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
+                                    {option.thumbnailUrl ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img
+                                        src={option.thumbnailUrl}
+                                        alt={label}
+                                        loading="lazy"
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="absolute inset-0 flex items-center justify-center text-[color:var(--istikbal-blue)]/20 text-[10px] font-bold">
+                                        {label.slice(0, 1)}
+                                      </div>
+                                    )}
+                                    {active && (
+                                      <span className="absolute top-1 right-1 size-5 rounded-full bg-[color:var(--istikbal-blue)] text-white inline-flex items-center justify-center">
+                                        <Check className="size-3" />
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] leading-tight line-clamp-2">
+                                    {label}
+                                  </div>
+                                  {typeof option.count === "number" && (
+                                    <div className="mt-0.5 text-[10px] text-[color:var(--istikbal-blue)]/45">
+                                      {option.count}
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
-                          <div className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] leading-tight line-clamp-2">
-                            {label}
+                        ) : facet.field === "typeCategories" ? (
+                          <TypeCategoryTree
+                            options={facet.options ?? []}
+                            isOptionSelected={(option) => isOptionSelected(facet.field, option)}
+                            onToggleOption={(option) => onToggleOption(facet.field, option)}
+                            expandedNodes={expandedNodes}
+                            onToggleNode={toggleNode}
+                          />
+                        ) : (
+                          <div className="space-y-0.5">
+                            {(facet.options ?? []).map((option) => {
+                              const active = isOptionSelected(facet.field, option);
+                              const label = option.label || option.value;
+                              const depth = optionDepth(option);
+                              return (
+                                <button
+                                  key={`${facet.field}:${option.value}`}
+                                  type="button"
+                                  onClick={() => onToggleOption(facet.field, option)}
+                                  style={{ paddingLeft: `${0.5 + depth * 0.75}rem` }}
+                                  className={`w-full pr-2 py-1.5 rounded-lg text-left text-[12px] font-medium transition flex items-center gap-2 ${
+                                    active
+                                      ? "bg-[color:var(--istikbal-blue)] text-white"
+                                      : "text-[color:var(--istikbal-blue)] hover:bg-black/[0.04]"
+                                  }`}
+                                >
+                                  <span
+                                    className={`size-3.5 rounded border shrink-0 inline-flex items-center justify-center ${
+                                      active
+                                        ? "border-white/80 bg-white/15"
+                                        : "border-[color:var(--istikbal-blue)]/25"
+                                    }`}
+                                  >
+                                    {active && <Check className="size-2.5" />}
+                                  </span>
+                                  <span className="flex-1 min-w-0 truncate">{label}</span>
+                                  {typeof option.count === "number" && (
+                                    <span
+                                      className={`text-[10px] shrink-0 ${
+                                        active ? "text-white/70" : "text-[color:var(--istikbal-blue)]/40"
+                                      }`}
+                                    >
+                                      {option.count}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
-                          {typeof option.count === "number" && (
-                            <div className="mt-0.5 text-[10px] text-[color:var(--istikbal-blue)]/45">
-                              {option.count}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
+                        )}
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-0.5">
-                    {(facet.options ?? []).map((option) => {
-                      const active = isOptionSelected(facet.field, option);
-                      const label = option.label || option.value;
-                      const depth = optionDepth(option);
-                      return (
-                        <button
-                          key={`${facet.field}:${option.value}`}
-                          type="button"
-                          onClick={() => onToggleOption(facet.field, option)}
-                          style={{ paddingLeft: `${0.5 + depth * 0.75}rem` }}
-                          className={`w-full pr-2 py-1.5 rounded-lg text-left text-[12px] font-medium transition flex items-center gap-2 ${
-                            active
-                              ? "bg-[color:var(--istikbal-blue)] text-white"
-                              : "text-[color:var(--istikbal-blue)] hover:bg-black/[0.04]"
-                          }`}
-                        >
-                          <span
-                            className={`size-3.5 rounded border shrink-0 inline-flex items-center justify-center ${
-                              active
-                                ? "border-white/80 bg-white/15"
-                                : "border-[color:var(--istikbal-blue)]/25"
-                            }`}
-                          >
-                            {active && <Check className="size-2.5" />}
-                          </span>
-                          <span className="flex-1 min-w-0 truncate">{label}</span>
-                          {typeof option.count === "number" && (
-                            <span
-                              className={`text-[10px] shrink-0 ${
-                                active ? "text-white/70" : "text-[color:var(--istikbal-blue)]/40"
-                              }`}
-                            >
-                              {option.count}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+                </section>
+              );
+            })}
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function TypeCategoryTree({
+  options,
+  isOptionSelected,
+  onToggleOption,
+  expandedNodes,
+  onToggleNode,
+}: {
+  options: SearchFilterOption[];
+  isOptionSelected: (option: SearchFilterOption) => boolean;
+  onToggleOption: (option: SearchFilterOption) => void;
+  expandedNodes: Record<string, boolean>;
+  onToggleNode: (value: string) => void;
+}) {
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string | null, SearchFilterOption[]>();
+    for (const option of options) {
+      const parent = option.parentValue?.trim() || null;
+      const list = map.get(parent) ?? [];
+      list.push(option);
+      map.set(parent, list);
+    }
+    return map;
+  }, [options]);
+
+  const roots = childrenByParent.get(null) ?? options.filter((option) => !option.parentValue);
+
+  const renderNode = (option: SearchFilterOption) => {
+    const children = childrenByParent.get(option.value) ?? [];
+    const hasChildren = children.length > 0;
+    const active = isOptionSelected(option);
+    const label = option.label || option.value;
+    const expanded =
+      expandedNodes[option.value] !== undefined
+        ? expandedNodes[option.value]
+        : hasChildren && children.some((child) => isOptionSelected(child));
+
+    return (
+      <div key={option.value}>
+        <div className="flex items-center gap-0.5">
+          {hasChildren ? (
+            <button
+              type="button"
+              aria-label={expanded ? "Collapse" : "Expand"}
+              onClick={() => onToggleNode(option.value)}
+              className="size-7 rounded-md inline-flex items-center justify-center text-[color:var(--istikbal-blue)]/40 hover:bg-black/[0.04] shrink-0"
+            >
+              <ChevronDown
+                className={`size-3.5 transition-transform duration-200 ${expanded ? "rotate-0" : "-rotate-90"}`}
+              />
+            </button>
+          ) : (
+            <span className="size-7 shrink-0" />
+          )}
+          <button
+            type="button"
+            onClick={() => onToggleOption(option)}
+            className={`flex-1 min-w-0 pr-2 py-1.5 rounded-lg text-left text-[12px] font-medium transition flex items-center gap-2 ${
+              active
+                ? "bg-[color:var(--istikbal-blue)] text-white"
+                : "text-[color:var(--istikbal-blue)] hover:bg-black/[0.04]"
+            }`}
+          >
+            <span
+              className={`size-3.5 rounded border shrink-0 inline-flex items-center justify-center ${
+                active ? "border-white/80 bg-white/15" : "border-[color:var(--istikbal-blue)]/25"
+              }`}
+            >
+              {active && <Check className="size-2.5" />}
+            </span>
+            <span className="flex-1 min-w-0 truncate">{label}</span>
+            {typeof option.count === "number" && (
+              <span className={`text-[10px] shrink-0 ${active ? "text-white/70" : "text-[color:var(--istikbal-blue)]/40"}`}>
+                {option.count}
+              </span>
+            )}
+          </button>
+        </div>
+        {hasChildren && (
+          <div
+            className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+              expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+            }`}
+          >
+            <div className="min-h-0 overflow-hidden pl-3 border-l border-black/5 ml-3.5">
+              <div className="py-0.5 space-y-0.5">{children.map(renderNode)}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return <div className="space-y-0.5">{roots.map(renderNode)}</div>;
 }
