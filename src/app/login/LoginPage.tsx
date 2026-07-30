@@ -19,6 +19,7 @@ import { useTranslations } from "next-intl";
 
 type AuthTab = "credentials" | "dealer";
 type Step = "code" | "phone" | "pin";
+type CredentialsStep = "form" | "companies";
 
 type PhoneOption = {
   phoneId: string;
@@ -35,12 +36,24 @@ type LookupResult = {
   message?: string;
 };
 
+type LoginCompanyOption = {
+  companyId: string;
+  name?: string;
+  slug?: string | null;
+  available?: boolean;
+  status?: string | null;
+};
+
 function LoginPage() {
   const router = useRouter();
   const t = useTranslations("login");
   const [tab, setTab] = useState<AuthTab>("credentials");
+  const [credentialsStep, setCredentialsStep] = useState<CredentialsStep>("form");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [selectionToken, setSelectionToken] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<LoginCompanyOption[]>([]);
+  const [selectingCompanyId, setSelectingCompanyId] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("code");
   const [dealerCode, setDealerCode] = useState("");
   const [lookup, setLookup] = useState<LookupResult | null>(null);
@@ -51,6 +64,13 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
 
+  const resetCredentialsFlow = () => {
+    setCredentialsStep("form");
+    setSelectionToken(null);
+    setCompanies([]);
+    setSelectingCompanyId(null);
+  };
+
   const switchTab = (next: AuthTab) => {
     if (next === tab || busy) return;
     setTab(next);
@@ -58,7 +78,14 @@ function LoginPage() {
     setBusy(false);
     if (next === "dealer") {
       setStep("code");
+    } else {
+      resetCredentialsFlow();
     }
+  };
+
+  const finishAuthenticated = () => {
+    router.push("/");
+    router.refresh();
   };
 
   const submitCredentials = async (e: React.FormEvent) => {
@@ -71,12 +98,25 @@ function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: username.trim(),
+          identifier: username.trim(),
           password,
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (data.status === "COMPANY_SELECTION_REQUIRED" && data.selectionToken) {
+        setSelectionToken(data.selectionToken);
+        setCompanies(
+          Array.isArray(data.companies)
+            ? data.companies.filter(
+                (c: LoginCompanyOption) => typeof c?.companyId === "string",
+              )
+            : [],
+        );
+        setCredentialsStep("companies");
+        setError(null);
+        return;
+      }
+      if (!res.ok || data.success === false) {
         setError(
           typeof data.error === "string"
             ? data.error
@@ -84,12 +124,48 @@ function LoginPage() {
         );
         return;
       }
-      router.push("/");
-      router.refresh();
+      finishAuthenticated();
     } catch {
       setError(t("errorLoginUnreachable"));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const selectCompany = async (company: LoginCompanyOption) => {
+    if (!selectionToken || !company.companyId || busy || company.available === false) {
+      return;
+    }
+    setSelectingCompanyId(company.companyId);
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/login/company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectionToken,
+          companyId: company.companyId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.success === false) {
+        setError(
+          typeof data.error === "string"
+            ? data.error
+            : t("errorCompanySelectFailed"),
+        );
+        if (data.errorCode === "LOGIN_SELECTION_EXPIRED") {
+          resetCredentialsFlow();
+        }
+        return;
+      }
+      finishAuthenticated();
+    } catch {
+      setError(t("errorLoginUnreachable"));
+    } finally {
+      setBusy(false);
+      setSelectingCompanyId(null);
     }
   };
 
@@ -197,7 +273,9 @@ function LoginPage() {
 
   const hint =
     tab === "credentials"
-      ? t("credentialsHint")
+      ? credentialsStep === "companies"
+        ? t("companySelectHint")
+        : t("credentialsHint")
       : step === "code"
         ? t("stepCodeHint")
         : step === "phone" && lookup?.status === "NEEDS_PROVISION"
@@ -306,7 +384,7 @@ function LoginPage() {
             </div>
           )}
 
-          {tab === "credentials" && (
+          {tab === "credentials" && credentialsStep === "form" && (
             <form onSubmit={submitCredentials} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
@@ -366,6 +444,64 @@ function LoginPage() {
                 {t("forgotPassword")}
               </button>
             </form>
+          )}
+
+          {tab === "credentials" && credentialsStep === "companies" && (
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">
+                {t("chooseCompanyPrompt")}
+              </p>
+              <div className="space-y-2">
+                {companies.map((company) => {
+                  const available = company.available !== false;
+                  const selecting = selectingCompanyId === company.companyId;
+                  return (
+                    <button
+                      key={company.companyId}
+                      type="button"
+                      disabled={busy || !available}
+                      onClick={() => selectCompany(company)}
+                      className="w-full text-left p-4 rounded-2xl border-2 border-[color:var(--istikbal-blue)]/10 hover:border-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/5 transition-all flex items-center gap-3 disabled:opacity-50"
+                    >
+                      <div className="size-10 rounded-xl bg-[color:var(--istikbal-yellow)]/30 grid place-items-center shrink-0">
+                        <Store className="size-4.5 text-[color:var(--istikbal-blue)]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[color:var(--istikbal-blue)] text-sm truncate">
+                          {company.name || company.slug || company.companyId}
+                        </p>
+                        {company.slug && (
+                          <p className="text-xs text-[color:var(--istikbal-blue)]/60 mt-0.5">
+                            {company.slug}
+                          </p>
+                        )}
+                        {!available && (
+                          <p className="text-xs text-amber-700 mt-0.5">
+                            {t("companyUnavailable")}
+                          </p>
+                        )}
+                      </div>
+                      {selecting ? (
+                        <Loader2 className="size-4 animate-spin text-[color:var(--istikbal-blue)]" />
+                      ) : (
+                        <ArrowRight className="size-4 text-[color:var(--istikbal-blue)]/40" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  resetCredentialsFlow();
+                  setError(null);
+                }}
+                className="flex items-center gap-1 text-sm font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+              >
+                <ChevronLeft className="size-4" /> {t("backToCredentials")}
+              </button>
+            </div>
           )}
 
           {tab === "dealer" && step === "code" && (
