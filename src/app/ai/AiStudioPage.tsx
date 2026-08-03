@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   ArrowUp,
   ChevronDown,
   ChevronUp,
@@ -34,6 +32,7 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { AppHeader } from "@/components/AppHeader";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import {
@@ -695,16 +694,7 @@ function AiStudioPage() {
 
   return (
     <div className="min-h-screen bg-[color:var(--istikbal-bg)] flex flex-col">
-      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> {tCommon("back")}
-        </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
-        <div className="flex-1" />
-        <Link href="/" className="text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]">
-          <X className="size-5" />
-        </Link>
-      </header>
+      <AppHeader title={t("headerTitle")} backHref="/" />
 
       <div className="flex flex-1 min-h-0">
       {(() => {

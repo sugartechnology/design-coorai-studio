@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { AppHeader } from "@/components/AppHeader";
 import { getCollection } from "@/lib/catalog";
 import { parts, type Part } from "@/lib/kumas-data";
 
@@ -31,6 +32,8 @@ function CollectionPartsPage() {
 
   return (
     <>
+      <AppHeader title={collectionName.toUpperCase()} backHref="/kumas" />
+      <main className="flex-1 min-h-0 overflow-y-auto px-6 lg:px-10 py-4 lg:py-6">
       <div className="mb-5">
         <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">{t("collectionEyebrow")}</p>
         <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
@@ -58,6 +61,7 @@ function CollectionPartsPage() {
           </Link>
         ))}
       </div>
+      </main>
     </>
   );
 }

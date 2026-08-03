@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import {
-  ArrowLeft,
   Undo2,
   Redo2,
   RotateCcw,
@@ -20,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
+import { AppHeader } from "@/components/AppHeader";
 import {
   RoomDesignerHost,
   SUGAR_PRODUCT_MIME,
@@ -378,31 +377,25 @@ function OdaPage() {
 
   return (
     <div className="h-dvh bg-[color:var(--istikbal-bg)] flex flex-col overflow-hidden">
-      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 z-30">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]"
-        >
-          <ArrowLeft className="size-4" /> {tCommon("back")}
-        </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">
-          {t("headerTitle")}
-        </div>
-        <div className="flex-1" />
-        <button
-          type="button"
-          disabled={quoteBusy || !designerEl}
-          onClick={() => void openQuoteFromScene()}
-          className="inline-flex items-center gap-2 h-9 px-4 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold hover:bg-[color:var(--istikbal-navy)] disabled:opacity-40"
-        >
-          {quoteBusy ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <FileText className="size-3.5" />
-          )}
-          {tOffers("createQuote")}
-        </button>
-      </header>
+      <AppHeader
+        title={t("headerTitle")}
+        backHref="/"
+        actions={
+          <button
+            type="button"
+            disabled={quoteBusy || !designerEl}
+            onClick={() => void openQuoteFromScene()}
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold hover:bg-[color:var(--istikbal-navy)] disabled:opacity-40"
+          >
+            {quoteBusy ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <FileText className="size-3.5" />
+            )}
+            {tOffers("createQuote")}
+          </button>
+        }
+      />
 
       <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 grid grid-cols-12 gap-4 overflow-y-auto lg:overflow-hidden">
         <aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto min-h-0 lg:h-full">

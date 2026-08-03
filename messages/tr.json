@@ -1,6 +1,7 @@
 {
   "common": {
     "back": "Geri",
+    "home": "Ana sayfa",
     "close": "Kapat",
     "cancel": "Vazgeç",
     "done": "Tamam",
@@ -38,6 +39,12 @@
     "collectionFallback": "Koleksiyon",
     "categoryFallback": "Kategori",
     "productFallback": "Ürün",
+    "cartTitle": "Sepet",
+    "cartEmpty": "Sepetin henüz boş.",
+    "cartEmptyHint": "Ürün eklediğinde burada görünecek.",
+    "notificationsTitle": "Bildirimler",
+    "notificationsEmpty": "Yeni bildirimin yok.",
+    "notificationsEmptyHint": "Önemli güncellemeler burada listelenir.",
     "now": "Şimdi",
     "yesterday": "Dün",
     "minutesAgo": "{n} dk önce",

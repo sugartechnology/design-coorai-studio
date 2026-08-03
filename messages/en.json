@@ -1,6 +1,7 @@
 {
   "common": {
     "back": "Back",
+    "home": "Home",
     "close": "Close",
     "cancel": "Cancel",
     "done": "Done",
@@ -38,6 +39,12 @@
     "collectionFallback": "Collection",
     "categoryFallback": "Category",
     "productFallback": "Product",
+    "cartTitle": "Cart",
+    "cartEmpty": "Your cart is empty.",
+    "cartEmptyHint": "Items you add will show up here.",
+    "notificationsTitle": "Notifications",
+    "notificationsEmpty": "No new notifications.",
+    "notificationsEmptyHint": "Important updates will appear here.",
     "now": "Just now",
     "yesterday": "Yesterday",
     "minutesAgo": "{n} min ago",

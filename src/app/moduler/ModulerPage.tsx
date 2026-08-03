@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import {
-  ArrowLeft,
   Ruler,
   Eraser,
   Eye,
@@ -16,6 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { AppHeader } from "@/components/AppHeader";
 
 // Brand modular products (köşe + kanepe takımları)
 type CategoryId = "cornerSet" | "modularSofa" | "sofa";
@@ -152,23 +151,26 @@ function ModulerPage() {
 
   return (
     <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
-      {/* Header (shared style) */}
-      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> {tCommon("back")}
-        </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">
-          {selectedProduct
+      <AppHeader
+        title={
+          selectedProduct
             ? t("headerTitleWithProduct", { name: selectedProduct.name })
-            : t("headerTitle")}
-        </div>
-        <div className="flex-1" />
-        {selectedProduct && (
-          <button onClick={backToList} className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]">
-            {t("backToList")}
-          </button>
-        )}
-      </header>
+            : t("headerTitle")
+        }
+        backHref="/"
+        sticky
+        actions={
+          selectedProduct ? (
+            <button
+              type="button"
+              onClick={backToList}
+              className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+            >
+              {t("backToList")}
+            </button>
+          ) : undefined
+        }
+      />
 
       {!selectedProduct ? (
         <CatalogView

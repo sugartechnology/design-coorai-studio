@@ -11,6 +11,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { AppHeader } from "@/components/AppHeader";
 import {
   listProductFilterCategories,
   type CatalogCategory,
@@ -119,6 +120,8 @@ function CollectionsPage() {
 
   return (
     <>
+      <AppHeader title={t("layoutTitleRoot")} backHref="/" />
+      <main className="flex-1 min-h-0 overflow-y-auto px-6 lg:px-10 py-4 lg:py-6">
       <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
@@ -210,6 +213,7 @@ function CollectionsPage() {
           })}
         </div>
       )}
+      </main>
     </>
   );
 }

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, FolderOpen, Loader2, Search } from "lucide-react";
+import { FolderOpen, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { AppHeader } from "@/components/AppHeader";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import {
   getCategoryById,
@@ -139,16 +140,11 @@ function CategoryProductsPage() {
 
   return (
     <>
-      <div className="mb-6">
-        <Link
-          href={backHref}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)] hover:opacity-80"
-        >
-          <ArrowLeft className="size-4" />{" "}
-          {category?.parentId ? t("backToCategories") : t("backToCategories")}
-        </Link>
-      </div>
-
+      <AppHeader
+        title={(category?.name || tCommon("categoryFallback")).toUpperCase()}
+        backHref={backHref}
+      />
+      <main className="flex-1 min-h-0 overflow-y-auto px-6 lg:px-10 py-4 lg:py-6">
       <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">
@@ -285,6 +281,7 @@ function CategoryProductsPage() {
           />
         </>
       )}
+      </main>
     </>
   );
 }

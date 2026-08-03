@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Box, RotateCw, Loader2 } from "lucide-react";
+import { Box, RotateCw, Loader2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { parts, type Part } from "@/lib/kumas-data";
 import {
@@ -16,6 +15,7 @@ import {
   ModelViewerHost,
   SUGAR_MODEL_VIEWER_COMPANY_ID,
 } from "@/components/ModelViewerHost";
+import { AppHeader } from "@/components/AppHeader";
 import { useProductZones } from "@/lib/material-zone";
 import {
   lineFromCatalogProduct,
@@ -214,16 +214,13 @@ function ProductDetailPage() {
   };
 
   return (
-    <div className="flex min-h-full flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
-      <div className="mb-4 shrink-0">
-        <Link
-          href={backHref}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)] hover:opacity-80"
-        >
-          <ArrowLeft className="size-4" /> {tCommon("back")}
-        </Link>
-      </div>
-
+    <>
+      <AppHeader
+        title={(product?.name || part?.name || tCommon("productFallback")).toUpperCase()}
+        backHref={backHref}
+      />
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 lg:px-10 py-4 lg:py-6 lg:overflow-hidden">
+      <div className="flex min-h-full flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-[1fr_400px] lg:overflow-hidden">
         <div className="flex min-h-[360px] flex-col overflow-hidden rounded-3xl border border-black/5 bg-white shadow-sm lg:h-full lg:min-h-0">
           <div
@@ -391,7 +388,9 @@ function ProductDetailPage() {
           onDraftChange={setQuoteDraft}
         />
       </div>
-    </div>
+      </div>
+      </div>
+    </>
   );
 }
 

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft, Instagram, Facebook, Share2, Check, Download, Heart, MessageCircle, Plus, Search } from "lucide-react";
+import { Instagram, Facebook, Share2, Check, Download, Heart, MessageCircle, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { AppHeader } from "@/components/AppHeader";
 import sofa1 from "@/assets/sosyal/sofa1.jpg.asset.json";
 import sofa2 from "@/assets/sosyal/sofa2.jpg.asset.json";
 import sofa3 from "@/assets/sosyal/sofa3.jpg.asset.json";
@@ -44,14 +44,7 @@ function SosyalPage() {
 
   return (
     <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
-      {/* Header */}
-      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> {tCommon("back")}
-        </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
-        <div className="flex-1" />
-      </header>
+      <AppHeader title={t("headerTitle")} backHref="/" sticky />
 
       <main className="px-6 lg:px-10 py-8 space-y-8">
         {/* Connect bar */}

@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Search,
   Plus,
   Users,
@@ -20,6 +18,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { AppHeader } from "@/components/AppHeader";
 import { redirectToLoginOnUnauthorized } from "@/lib/auth-redirect";
 import { localizeCrmError, type CrmErrorLocale } from "@/lib/crm-errors";
 
@@ -272,27 +271,29 @@ function KullanicilarPage() {
 
   return (
     <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
-      <header className="h-14 bg-white border-b border-black/5 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-30">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]">
-          <ArrowLeft className="size-4" /> {tCommon("back")}
-        </Link>
-        <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("headerTitle")}</div>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => void loadUsers()}
-          className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--istikbal-blue)]/15 text-[color:var(--istikbal-blue)] text-xs font-semibold px-3 py-2 hover:bg-[color:var(--istikbal-blue-soft)]"
-        >
-          {tCommon("refresh")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setInviteOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs font-semibold px-3 py-2 shadow-sm"
-        >
-          <Plus className="size-4" /> {t("invite")}
-        </button>
-      </header>
+      <AppHeader
+        title={t("headerTitle")}
+        backHref="/"
+        sticky
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => void loadUsers()}
+              className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--istikbal-blue)]/15 text-[color:var(--istikbal-blue)] text-xs font-semibold px-3 py-2 hover:bg-[color:var(--istikbal-blue-soft)]"
+            >
+              {tCommon("refresh")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setInviteOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs font-semibold px-3 py-2 shadow-sm"
+            >
+              <Plus className="size-4" /> {t("invite")}
+            </button>
+          </>
+        }
+      />
 
       <div className="px-4 md:px-8 py-8 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
