@@ -160,28 +160,48 @@ export async function getCategoryById(
   };
 }
 
-/** Child categories of a parent (from product-filter-options). */
+/** Child categories of a parent (from product-filter-options, all pages). */
 export async function listChildCategories(
   parentId: string,
   options: { size?: number; search?: string; router?: RouterLike } = {},
 ): Promise<CatalogCategory[]> {
-  const page = await portalCrmFetch<SpringPage<CatalogCategory>>("categories/product-filter-options", {
-    router: options.router,
-    searchParams: {
-      size: options.size ?? 200,
-      page: 0,
-      sort: "name,asc",
-      search: options.search?.trim() || undefined,
-    },
-  });
-  return (page.content ?? [])
-    .map((c) => ({
-      ...c,
-      parentId: c.parentId ?? null,
-      hasChildren: c.hasChildren ?? false,
-      thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
-    }))
-    .filter((c) => c.parentId === parentId);
+  const pageSize = options.size ?? 200;
+  const parentKey = String(parentId);
+  const all: CatalogCategory[] = [];
+  let pageNumber = 0;
+  let totalPages = 1;
+
+  while (pageNumber < totalPages) {
+    const page = await portalCrmFetch<SpringPage<CatalogCategory>>(
+      "categories/product-filter-options",
+      {
+        router: options.router,
+        searchParams: {
+          size: pageSize,
+          page: pageNumber,
+          sort: "name,asc",
+          search: options.search?.trim() || undefined,
+        },
+      },
+    );
+    const content = page.content ?? [];
+    for (const c of content) {
+      all.push({
+        ...c,
+        parentId: c.parentId ?? null,
+        hasChildren: c.hasChildren ?? false,
+        thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
+      });
+    }
+    totalPages =
+      page.page?.totalPages ??
+      page.totalPages ??
+      (content.length < pageSize ? pageNumber + 1 : pageNumber + 2);
+    pageNumber += 1;
+    if (pageNumber > 50) break;
+  }
+
+  return all.filter((c) => c.parentId != null && String(c.parentId) === parentKey);
 }
 
 export async function productsGroupedByCollection(

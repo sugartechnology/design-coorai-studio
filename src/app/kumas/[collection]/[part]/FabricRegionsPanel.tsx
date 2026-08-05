@@ -99,7 +99,7 @@ export function FabricRegionsPanel({
           </div>
         )}
 
-        <div className="rounded-2xl bg-[color:var(--istikbal-blue)]/5 p-4">
+       {/* <div className="rounded-2xl bg-[color:var(--istikbal-blue)]/5 p-4">
           <div className="flex items-center gap-1.5 mb-2">
             {progressSlots.map((area, i) => {
               const name = area?.name ?? `placeholder-${i}`;
@@ -125,7 +125,7 @@ export function FabricRegionsPanel({
           <p className="text-[10px] text-[color:var(--istikbal-blue)]/55 leading-relaxed">
             {t("regionMatchHelp")}
           </p>
-        </div>
+        </div>*/}
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 relative">

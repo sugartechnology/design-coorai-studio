@@ -55,21 +55,19 @@ function CategoryProductsPage() {
     void (async () => {
       setMetaLoading(true);
       setMetaError(null);
+      setChildren([]);
       try {
-        const cat = await getCategoryById(categoryId, router);
-        if (cancelled) return;
-        setCategory(cat);
-
-        if (cat.hasChildren) {
-          const kids = await listChildCategories(categoryId, {
+        const [cat, kids] = await Promise.all([
+          getCategoryById(categoryId, router),
+          listChildCategories(categoryId, {
             router,
             size: 200,
             search: debouncedQuery || undefined,
-          });
-          if (!cancelled) setChildren(kids);
-        } else {
-          setChildren([]);
-        }
+          }),
+        ]);
+        if (cancelled) return;
+        setCategory(cat);
+        setChildren(kids);
       } catch (err) {
         if (err instanceof PortalCrmError && err.status === 401) return;
         if (!cancelled) {
@@ -86,7 +84,9 @@ function CategoryProductsPage() {
     };
   }, [categoryId, router, tCatalog, debouncedQuery]);
 
-  const showChildren = Boolean(category?.hasChildren);
+  // Alt kategori varsa ürün arama; yoksa bu kategorideki ürünler.
+  // hasChildren bayrağına güvenme — CRM tekil category yanıtında yanlış gelebilir.
+  const showChildren = !metaLoading && children.length > 0;
   const {
     products,
     loading: productsLoading,
@@ -99,8 +99,7 @@ function CategoryProductsPage() {
     query: showChildren ? "" : query,
     categoryId: showChildren ? null : categoryId,
     size: 40,
-    // skip product search while drilling into child categories
-    enabled: !showChildren && !metaLoading,
+    enabled: !metaLoading && !showChildren,
   });
 
   const { sentinelRef } = useInfiniteScroll({
