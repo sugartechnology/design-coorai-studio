@@ -39,12 +39,10 @@ export function FabricRegionsPanel({
   addToQuoteLabel,
 }: FabricRegionsPanelProps) {
   const t = useTranslations("kumas");
-  const progressSlots: Array<MaterialZoneArea | null> =
-    areas.length > 0 ? areas : [null, null, null, null];
 
   return (
-    <>
-      <div className="mb-5 shrink-0 space-y-3">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain pr-0.5">
         {sku && (
           <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]/70">
             {t("skuLabel", { sku })}
@@ -61,7 +59,7 @@ export function FabricRegionsPanel({
               <img
                 src={guideImage}
                 alt={t("zoneGuideAlt")}
-                className="w-full rounded-xl bg-white object-contain aspect-square mb-3 border border-black/5"
+                className="mb-3 aspect-square w-full rounded-xl border border-black/5 bg-white object-contain"
               />
             )}
             {areas.length > 0 && (
@@ -99,117 +97,89 @@ export function FabricRegionsPanel({
           </div>
         )}
 
-       {/* <div className="rounded-2xl bg-[color:var(--istikbal-blue)]/5 p-4">
-          <div className="flex items-center gap-1.5 mb-2">
-            {progressSlots.map((area, i) => {
-              const name = area?.name ?? `placeholder-${i}`;
-              const selected = area ? selectionByArea[area.name] : null;
-              return (
-                <div
-                  key={name}
-                  className="flex-1 h-2 rounded-full overflow-hidden bg-white"
-                >
-                  <div
-                    className="h-full transition-all"
-                    style={{
-                      background: selected
-                        ? optionSwatchBackground(selected)
-                        : `hsl(${i * 60}, 70%, 60%)`,
-                      width: selected ? "100%" : "30%",
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-[10px] text-[color:var(--istikbal-blue)]/55 leading-relaxed">
-            {t("regionMatchHelp")}
-          </p>
-        </div>*/}
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-2 relative">
-        {loading && areas.length === 0 && (
-          <div className="flex items-center justify-center gap-2 py-8 text-sm text-[color:var(--istikbal-blue)]/50">
-            <Loader2 className="size-4 animate-spin" /> {t("zonesLoading")}
-          </div>
-        )}
-        {loading && areas.length > 0 && (
-          <div className="absolute inset-0 z-10 flex items-start justify-center pt-6 bg-white/50 pointer-events-none">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[color:var(--istikbal-blue)]/70 shadow-sm">
-              <Loader2 className="size-3.5 animate-spin" /> {t("zonesLoading")}
-            </span>
-          </div>
-        )}
-        {!loading && error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-            {error}
-          </div>
-        )}
-        {!loading && !error && areas.length === 0 && (
-          <p className="text-sm text-[color:var(--istikbal-blue)]/50 py-6 text-center">
-            {t("zonesEmpty")}
-          </p>
-        )}
-        {areas.map((area, i) => {
-          const selected = selectionByArea[area.name];
-          const n = zoneAreaNumber(area.name, i + 1);
-          const hint =
-            area.label && !isRawZoneAreaName(area.label) ? area.label : null;
-          return (
-            <button
-              key={area.name}
-              type="button"
-              onClick={() => onOpenPicker(area.name)}
-              disabled={loading}
-              className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[color:var(--istikbal-blue)]/5 hover:bg-[color:var(--istikbal-blue)]/10 transition-colors group disabled:opacity-60"
-            >
-              <span className="font-bold text-[color:var(--istikbal-blue)] text-left">
-                {t("regionLabel", { n })}
-                {hint ? (
-                  <span className="block text-[11px] font-medium text-[color:var(--istikbal-blue)]/50">
-                    {hint}
-                  </span>
-                ) : null}
+        <div className="relative space-y-2">
+          {loading && areas.length === 0 && (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-[color:var(--istikbal-blue)]/50">
+              <Loader2 className="size-4 animate-spin" /> {t("zonesLoading")}
+            </div>
+          )}
+          {loading && areas.length > 0 && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center bg-white/50 pt-6">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[color:var(--istikbal-blue)]/70 shadow-sm">
+                <Loader2 className="size-3.5 animate-spin" /> {t("zonesLoading")}
               </span>
-              <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className={`text-sm truncate ${
-                    selected
-                      ? "text-[color:var(--istikbal-blue)]/80"
-                      : "text-[color:var(--istikbal-blue)]/50"
-                  }`}
-                >
-                  {selected?.materialName ||
-                    selected?.code ||
-                    t("chooseFabric")}
+            </div>
+          )}
+          {!loading && error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              {error}
+            </div>
+          )}
+          {!loading && !error && areas.length === 0 && (
+            <p className="py-6 text-center text-sm text-[color:var(--istikbal-blue)]/50">
+              {t("zonesEmpty")}
+            </p>
+          )}
+          {areas.map((area, i) => {
+            const selected = selectionByArea[area.name];
+            const n = zoneAreaNumber(area.name, i + 1);
+            const hint =
+              area.label && !isRawZoneAreaName(area.label) ? area.label : null;
+            return (
+              <button
+                key={area.name}
+                type="button"
+                onClick={() => onOpenPicker(area.name)}
+                disabled={loading}
+                className="group flex w-full items-center justify-between gap-3 rounded-xl bg-[color:var(--istikbal-blue)]/5 px-4 py-3 transition-colors hover:bg-[color:var(--istikbal-blue)]/10 disabled:opacity-60"
+              >
+                <span className="text-left font-bold text-[color:var(--istikbal-blue)]">
+                  {t("regionLabel", { n })}
+                  {hint ? (
+                    <span className="block text-[11px] font-medium text-[color:var(--istikbal-blue)]/50">
+                      {hint}
+                    </span>
+                  ) : null}
                 </span>
-                <span
-                  className="size-7 shrink-0 rounded-md border border-black/10 shadow-inner"
-                  style={{ background: optionSwatchBackground(selected) }}
-                />
-                <ChevronRight className="size-4 shrink-0 text-[color:var(--istikbal-blue)]/40 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </button>
-          );
-        })}
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={`truncate text-sm ${
+                      selected
+                        ? "text-[color:var(--istikbal-blue)]/80"
+                        : "text-[color:var(--istikbal-blue)]/50"
+                    }`}
+                  >
+                    {selected?.materialName ||
+                      selected?.code ||
+                      t("chooseFabric")}
+                  </span>
+                  <span
+                    className="size-7 shrink-0 rounded-md border border-black/10 shadow-inner"
+                    style={{ background: optionSwatchBackground(selected) }}
+                  />
+                  <ChevronRight className="size-4 shrink-0 text-[color:var(--istikbal-blue)]/40 transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="mt-6 shrink-0 space-y-2">
+      <div className="mt-4 shrink-0 space-y-2 border-t border-black/5 bg-white pt-4">
         <button
           type="button"
           disabled={!allSelected}
           onClick={onAddToQuote}
-          className="w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] disabled:bg-[color:var(--istikbal-blue)]/15 disabled:text-[color:var(--istikbal-blue)]/40 disabled:cursor-not-allowed transition-all shadow-md"
+          className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[color:var(--istikbal-blue)] text-sm font-bold tracking-wide text-white shadow-md transition-all hover:bg-[color:var(--istikbal-navy)] disabled:cursor-not-allowed disabled:bg-[color:var(--istikbal-blue)]/15 disabled:text-[color:var(--istikbal-blue)]/40"
         >
           <ShoppingCart className="size-4" /> {addToQuoteLabel || t("addToCart")}
         </button>
         {!allSelected && areas.length > 0 && (
-          <p className="text-center text-xs font-semibold text-[#f0a400] bg-[color:var(--istikbal-yellow)]/15 py-2 rounded-xl">
+          <p className="rounded-xl bg-[color:var(--istikbal-yellow)]/15 py-2 text-center text-xs font-semibold text-[#f0a400]">
             {t("selectAllRegionsHint")}
           </p>
         )}
       </div>
-    </>
+    </div>
   );
 }

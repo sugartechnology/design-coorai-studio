@@ -313,7 +313,7 @@ function ProductDetailPage() {
           )}
         </div>
 
-        <aside className="flex flex-col rounded-3xl border border-black/5 bg-white p-6 shadow-sm lg:h-full lg:overflow-y-auto">
+        <aside className="flex min-h-0 flex-col rounded-3xl border border-black/5 bg-white p-6 shadow-sm lg:h-full lg:overflow-hidden">
           <div className="mb-4 shrink-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/45">
               {[product?.categoryName, collectionName].filter(Boolean).join(" · ") ||
