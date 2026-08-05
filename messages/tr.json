@@ -91,10 +91,8 @@
     "tileRoomSubtitle": "Sürükle-bırak yerleşim",
     "tileModularTitle": "Modüler Ürün",
     "tileModularSubtitle": "Parça parça yapılandır",
-    "tileMarketingTitle": "Pazarlama",
-    "tileMarketingSubtitle": "Sosyal medya, WhatsApp & SMS",
-    "tileMarketingSocial": "Sosyal Medya Yönet",
-    "tileMarketingWhatsapp": "Whatsapp & SMS Marketing",
+    "tileOffersTitle": "Teklifler",
+    "tileOffersSubtitle": "Teklifleri görüntüle ve oda planını aç",
     "tileSettingsTitle": "Ayarlar",
     "tileSettingsSubtitle": "Mağaza tercihleri",
     "tileUsersTitle": "Kullanıcılar",
@@ -244,7 +242,10 @@
     "facetCollections": "Koleksiyonlar",
     "clearFacets": "Filtreleri temizle",
     "filters": "Filtreler",
-    "noModelIdTitle": "{name} (oda yerleşimi için model id yok)"
+    "noModelIdTitle": "{name} (oda yerleşimi için model id yok)",
+    "offerSceneMissing": "Bu teklifte kayıtlı oda planı yok.",
+    "offerLoadError": "Teklif yüklenemedi.",
+    "offerSceneImportError": "Oda planı içe aktarılamadı."
   },
   "aiStudio": {
     "headerTitle": "AI STUDIO",
@@ -638,6 +639,14 @@
     "viewShare": "Teklifi görüntüle",
     "editInCrm": "CRM’de düzenle",
     "createQuote": "Teklif Oluştur",
-    "addToQuote": "Teklife Ekle"
+    "addToQuote": "Teklife Ekle",
+    "listTitle": "Teklifler",
+    "listSubtitle": "Bir teklife dokunarak oda planını açın.",
+    "listSearchPlaceholder": "Teklif no, başlık veya müşteri ara…",
+    "listEmpty": "Henüz teklif yok.",
+    "listLoadError": "Teklifler yüklenemedi.",
+    "listCustomerUnknown": "Müşteri yok",
+    "listUntitled": "Başlıksız teklif",
+    "openRoom": "Oda planını aç"
   }
 }

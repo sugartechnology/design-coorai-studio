@@ -14,9 +14,9 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import {
@@ -35,10 +35,13 @@ import {
 import {
   lineFromCatalogProduct,
   formatConfigNote,
+  getOfferById,
+  resolveOfferSceneLayout,
   type QuoteDraft,
   type QuoteLineItem,
   type QuoteVariantSelection,
 } from "@/lib/offers";
+import { PortalCrmError } from "@/lib/portal-crm";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import { ProductSearchFilterMenu } from "@/components/catalog/ProductSearchFilterMenu";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
@@ -98,10 +101,13 @@ function OdaPage() {
   const language = isAppLocale(locale) ? locale : defaultLocale;
   const bcp47 = toBcp47(language);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const offerId = searchParams.get("offerId")?.trim() || null;
   const [designerEl, setDesignerEl] = useState<SugarRoomDesignerElement | null>(
     null,
   );
   const designerRef = useRef<SugarRoomDesignerElement | null>(null);
+  const offerImportDoneRef = useRef<string | null>(null);
   const catalogBySugarIdRef = useRef<Map<number, CatalogProduct>>(new Map());
   const [mode, setMode] = useState<"2D" | "3D">("2D");
   const [template, setTemplate] = useState<TemplateKey>("kare");
@@ -116,6 +122,9 @@ function OdaPage() {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
+  const [offerHeaderTitle, setOfferHeaderTitle] = useState<string | null>(null);
+  const [offerBanner, setOfferBanner] = useState<string | null>(null);
+  const [offerImporting, setOfferImporting] = useState(false);
   const {
     products,
     loading: productsLoading,
@@ -210,6 +219,63 @@ function OdaPage() {
       unsubHistory?.();
     };
   }, [designerEl]);
+
+  useEffect(() => {
+    if (!offerId) {
+      setOfferHeaderTitle(null);
+      setOfferBanner(null);
+      offerImportDoneRef.current = null;
+      return;
+    }
+    if (!designerEl?.api) return;
+    if (offerImportDoneRef.current === offerId) return;
+
+    let cancelled = false;
+    void (async () => {
+      setOfferImporting(true);
+      setOfferBanner(null);
+      try {
+        const offer = await getOfferById(offerId, router);
+        if (cancelled) return;
+        const title =
+          offer.title?.trim() ||
+          (offer.offerNumber ? `#${offer.offerNumber}` : null);
+        setOfferHeaderTitle(title);
+        const raw = resolveOfferSceneLayout(offer);
+        if (!raw) {
+          setOfferBanner(t("offerSceneMissing"));
+          offerImportDoneRef.current = offerId;
+          return;
+        }
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          setOfferBanner(t("offerSceneImportError"));
+          offerImportDoneRef.current = offerId;
+          return;
+        }
+        await designerEl.api!.execute("scene.import", parsed);
+        if (!cancelled) {
+          offerImportDoneRef.current = offerId;
+        }
+      } catch (err) {
+        if (err instanceof PortalCrmError && err.status === 401) return;
+        if (!cancelled) {
+          setOfferBanner(
+            err instanceof Error ? err.message : t("offerLoadError"),
+          );
+          offerImportDoneRef.current = offerId;
+        }
+      } finally {
+        if (!cancelled) setOfferImporting(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [designerEl, offerId, router, t]);
 
   const withDesigner = (fn: (el: SugarRoomDesignerElement) => void) => {
     const el = designerRef.current;
@@ -366,7 +432,10 @@ function OdaPage() {
         title: t("headerTitle"),
         currency: "TRY",
         language,
-        section: { name: "Oda" },
+        section: {
+          name: "Oda",
+          sceneLayout: JSON.stringify(scene),
+        },
         lines,
       });
       setQuoteOpen(true);
@@ -378,8 +447,8 @@ function OdaPage() {
   return (
     <div className="h-dvh bg-[color:var(--istikbal-bg)] flex flex-col overflow-hidden">
       <AppHeader
-        title={t("headerTitle")}
-        backHref="/"
+        title={(offerHeaderTitle || t("headerTitle")).toUpperCase()}
+        backHref={offerId ? "/teklifler" : "/"}
         actions={
           <button
             type="button"
@@ -396,6 +465,22 @@ function OdaPage() {
           </button>
         }
       />
+
+      {(offerImporting || offerBanner) && (
+        <div className="px-4 lg:px-8 pt-3">
+          {offerImporting && (
+            <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[color:var(--istikbal-blue)]/70 shadow-sm">
+              <Loader2 className="size-3.5 animate-spin" />
+              {tOffers("listTitle")}…
+            </div>
+          )}
+          {!offerImporting && offerBanner && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              {offerBanner}
+            </div>
+          )}
+        </div>
+      )}
 
       <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 grid grid-cols-12 gap-4 overflow-y-auto lg:overflow-hidden">
         <aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto min-h-0 lg:h-full">
@@ -684,4 +769,16 @@ function TemplateIcon({ kind, active }: { kind: TemplateKey; active: boolean }) 
   );
 }
 
-export default OdaPage;
+export default function OdaPageRoute() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-dvh items-center justify-center bg-[color:var(--istikbal-bg)] text-sm text-[color:var(--istikbal-blue)]/50">
+          <Loader2 className="size-6 animate-spin" />
+        </div>
+      }
+    >
+      <OdaPage />
+    </Suspense>
+  );
+}

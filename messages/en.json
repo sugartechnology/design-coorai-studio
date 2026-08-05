@@ -91,10 +91,8 @@
     "tileRoomSubtitle": "Drag-and-drop layout",
     "tileModularTitle": "Modular Product",
     "tileModularSubtitle": "Configure piece by piece",
-    "tileMarketingTitle": "Marketing",
-    "tileMarketingSubtitle": "Social, WhatsApp & SMS",
-    "tileMarketingSocial": "Manage Social Media",
-    "tileMarketingWhatsapp": "WhatsApp & SMS Marketing",
+    "tileOffersTitle": "Quotes",
+    "tileOffersSubtitle": "Browse quotes and open room plans",
     "tileSettingsTitle": "Settings",
     "tileSettingsSubtitle": "Store preferences",
     "tileUsersTitle": "Users",
@@ -244,7 +242,10 @@
     "facetCollections": "Collections",
     "clearFacets": "Clear filters",
     "filters": "Filters",
-    "noModelIdTitle": "{name} (no model id for room placement)"
+    "noModelIdTitle": "{name} (no model id for room placement)",
+    "offerSceneMissing": "This quote has no saved room plan.",
+    "offerLoadError": "Could not load quote.",
+    "offerSceneImportError": "Could not import the room plan."
   },
   "aiStudio": {
     "headerTitle": "AI STUDIO",
@@ -638,6 +639,14 @@
     "viewShare": "View quote",
     "editInCrm": "Edit in CRM",
     "createQuote": "Create quote",
-    "addToQuote": "Add to quote"
+    "addToQuote": "Add to quote",
+    "listTitle": "Quotes",
+    "listSubtitle": "Tap a quote to open its room plan.",
+    "listSearchPlaceholder": "Search quote no, title, or customer…",
+    "listEmpty": "No quotes yet.",
+    "listLoadError": "Could not load quotes.",
+    "listCustomerUnknown": "No customer",
+    "listUntitled": "Untitled quote",
+    "openRoom": "Open room plan"
   }
 }

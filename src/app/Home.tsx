@@ -6,16 +6,10 @@ import {
   Sparkles,
   LayoutDashboard,
   Boxes,
-  Megaphone,
+  FileText,
   Settings,
   Users,
   ArrowUpRight,
-  Menu,
-  X,
-  ChevronRight,
-  Home as HomeIcon,
-  Share2,
-  MessageSquare,
   LogIn,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -113,22 +107,19 @@ function ModularIllustration({ className }: { className?: string }) {
   );
 }
 
-// Mobilya fotoğrafı + paylaş ikonları
-function SocialIllustration({ className }: { className?: string }) {
+function OffersIllustration({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 240 200" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="40" y="40" width="120" height="100" rx="8" stroke="currentColor" strokeWidth="2" opacity="0.35" />
-      <rect x="55" y="90" width="90" height="35" rx="5" fill="currentColor" opacity="0.25" />
-      <rect x="55" y="75" width="90" height="20" rx="5" fill="currentColor" opacity="0.18" />
-      <circle cx="135" cy="60" r="6" fill="currentColor" opacity="0.3" />
-      <circle cx="185" cy="55" r="16" fill="currentColor" opacity="0.2" />
-      <path d="M179 55 h12 M185 49 v12" stroke="currentColor" strokeWidth="2" opacity="0.6" strokeLinecap="round" />
-      <circle cx="200" cy="100" r="14" fill="currentColor" opacity="0.18" />
-      <path d="M194 100 L200 96 L206 100 L200 104 Z" fill="currentColor" opacity="0.5" />
-      <circle cx="180" cy="135" r="12" fill="currentColor" opacity="0.15" />
-      <path d="M175 135 q5 -6 10 0" stroke="currentColor" strokeWidth="2" opacity="0.5" fill="none" />
-      <path d="M160 70 Q175 60 180 55" stroke="currentColor" strokeWidth="1" opacity="0.3" strokeDasharray="2 3" />
-      <path d="M160 100 Q180 100 188 100" stroke="currentColor" strokeWidth="1" opacity="0.3" strokeDasharray="2 3" />
+      <rect x="48" y="28" width="110" height="145" rx="8" stroke="currentColor" strokeWidth="2" opacity="0.35" />
+      <rect x="62" y="48" width="70" height="8" rx="2" fill="currentColor" opacity="0.28" />
+      <rect x="62" y="68" width="82" height="6" rx="2" fill="currentColor" opacity="0.18" />
+      <rect x="62" y="84" width="82" height="6" rx="2" fill="currentColor" opacity="0.18" />
+      <rect x="62" y="100" width="55" height="6" rx="2" fill="currentColor" opacity="0.18" />
+      <rect x="62" y="130" width="50" height="22" rx="4" fill="currentColor" opacity="0.22" />
+      <rect x="130" y="55" width="95" height="110" rx="8" fill="currentColor" opacity="0.08" stroke="currentColor" strokeWidth="2" />
+      <rect x="148" y="78" width="60" height="8" rx="2" fill="currentColor" opacity="0.25" />
+      <rect x="148" y="98" width="48" height="6" rx="2" fill="currentColor" opacity="0.16" />
+      <rect x="148" y="114" width="48" height="6" rx="2" fill="currentColor" opacity="0.16" />
     </svg>
   );
 }
@@ -238,17 +229,14 @@ function Home() {
       decoration: ModularIllustration,
     },
     {
-      title: t("tileMarketingTitle"),
-      subtitle: t("tileMarketingSubtitle"),
-      icon: Megaphone,
-      links: [
-        { label: t("tileMarketingSocial"), to: "/sosyal" },
-        { label: t("tileMarketingWhatsapp"), to: "/whatsapp-sms" },
-      ],
+      title: t("tileOffersTitle"),
+      subtitle: t("tileOffersSubtitle"),
+      icon: FileText,
+      to: "/teklifler",
       className:
         "bg-white text-[color:var(--istikbal-blue)] col-span-2 row-span-2",
       size: "md",
-      decoration: SocialIllustration,
+      decoration: OffersIllustration,
     },
     {
       title: t("tileSettingsTitle"),

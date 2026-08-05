@@ -5,6 +5,9 @@ export type {
   CustomerSearchHit,
   OfferCreateRequest,
   OfferResponse,
+  OfferSearchCriteria,
+  OfferSearchPage,
+  OfferSearchResponse,
   QuoteDraft,
   QuoteLineItem,
   QuoteSectionMeta,
@@ -15,9 +18,12 @@ export {
   createOffer,
   createShareLink,
   formatCustomerLabel,
+  getOfferById,
   quickCreateCustomer,
   resolveCustomerId,
+  resolveOfferSceneLayout,
   searchCustomersCompletion,
+  searchOffers,
 } from "./api";
 export { buildOfferCreateRequest, toOfferProductRequest } from "./build-request";
 export { createOfferWithPreview } from "./create-with-preview";

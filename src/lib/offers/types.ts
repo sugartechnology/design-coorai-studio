@@ -111,6 +111,10 @@ export type OfferProductResponse = {
 export type OfferSectionResponse = {
   id?: string;
   name?: string;
+  sectionOrder?: number;
+  roomType?: string | null;
+  promptNotes?: string | null;
+  sceneLayout?: string | null;
   products?: OfferProductResponse[];
 };
 
@@ -125,6 +129,36 @@ export type OfferResponse = {
   notes?: string;
   customer?: OfferCustomerResponse;
   sections?: OfferSectionResponse[];
+};
+
+export type OfferSearchResponse = {
+  id: string;
+  offerNumber?: string;
+  title?: string;
+  customerName?: string;
+  customerId?: string;
+  totalPrice?: number;
+  currency?: string;
+  status?: string;
+  createdAt?: string;
+};
+
+export type OfferSearchCriteria = {
+  query?: string;
+  page: number;
+  size: number;
+  sort?: Array<{ field: string; order: "ASC" | "DESC" }>;
+};
+
+export type OfferSearchPage = {
+  content?: OfferSearchResponse[];
+  page?: {
+    size: number;
+    number: number;
+    totalElements: number;
+    totalPages: number;
+  };
+  query?: string | null;
 };
 
 export type OfferShareLinkResponse = {
