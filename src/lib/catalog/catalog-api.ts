@@ -134,24 +134,12 @@ export async function listProductFilterCategories(
       search: options.search?.trim() || undefined,
     },
   });
-  const mapped = (page.content ?? []).map((c) => ({
-    ...c,
-    parentId: c.parentId ?? null,
-    hasChildren: c.hasChildren ?? false,
-    thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
-  }));
+  const mapped = (page.content ?? []).map(mapFilterCategory);
   if (!rootsOnly) return mapped;
   return mapped.filter((c) => !c.parentId);
 }
 
-export async function getCategoryById(
-  categoryId: string,
-  router?: RouterLike,
-): Promise<CatalogCategory> {
-  const c = await portalCrmFetch<CatalogCategory>(
-    `categories/${encodeURIComponent(categoryId)}`,
-    { router },
-  );
+function mapFilterCategory(c: CatalogCategory): CatalogCategory {
   return {
     ...c,
     parentId: c.parentId ?? null,
@@ -160,13 +148,11 @@ export async function getCategoryById(
   };
 }
 
-/** Child categories of a parent (from product-filter-options, all pages). */
-export async function listChildCategories(
-  parentId: string,
+/** All product-filter categories across pages (dealer-safe endpoint). */
+export async function listAllProductFilterCategories(
   options: { size?: number; search?: string; router?: RouterLike } = {},
 ): Promise<CatalogCategory[]> {
   const pageSize = options.size ?? 200;
-  const parentKey = String(parentId);
   const all: CatalogCategory[] = [];
   let pageNumber = 0;
   let totalPages = 1;
@@ -185,23 +171,62 @@ export async function listChildCategories(
       },
     );
     const content = page.content ?? [];
-    for (const c of content) {
-      all.push({
-        ...c,
-        parentId: c.parentId ?? null,
-        hasChildren: c.hasChildren ?? false,
-        thumbnailUrl: normalizeMediaUrlOrNull(c.thumbnailUrl),
-      });
-    }
-    totalPages =
+    for (const c of content) all.push(mapFilterCategory(c));
+
+    const reported =
       page.page?.totalPages ??
       page.totalPages ??
-      (content.length < pageSize ? pageNumber + 1 : pageNumber + 2);
+      null;
+    if (typeof reported === "number" && reported > 0) {
+      totalPages = reported;
+    } else if (content.length < pageSize) {
+      totalPages = pageNumber + 1;
+    } else {
+      totalPages = pageNumber + 2;
+    }
     pageNumber += 1;
     if (pageNumber > 50) break;
   }
 
-  return all.filter((c) => c.parentId != null && String(c.parentId) === parentKey);
+  return all;
+}
+
+export async function getCategoryById(
+  categoryId: string,
+  router?: RouterLike,
+): Promise<CatalogCategory> {
+  const c = await portalCrmFetch<CatalogCategory>(
+    `categories/${encodeURIComponent(categoryId)}`,
+    { router },
+  );
+  return mapFilterCategory(c);
+}
+
+/**
+ * Drill-down nav for a category using only product-filter-options.
+ * Does not depend on GET /categories/{id} (often 403 for dealer product:read).
+ */
+export async function loadCategoryNav(
+  categoryId: string,
+  options: { search?: string; router?: RouterLike } = {},
+): Promise<{ self: CatalogCategory | null; children: CatalogCategory[] }> {
+  const parentKey = String(categoryId).toLowerCase();
+  const all = await listAllProductFilterCategories(options);
+  const self =
+    all.find((c) => String(c.id).toLowerCase() === parentKey) ?? null;
+  const children = all.filter(
+    (c) => c.parentId != null && String(c.parentId).toLowerCase() === parentKey,
+  );
+  return { self, children };
+}
+
+/** Child categories of a parent (from product-filter-options, all pages). */
+export async function listChildCategories(
+  parentId: string,
+  options: { size?: number; search?: string; router?: RouterLike } = {},
+): Promise<CatalogCategory[]> {
+  const { children } = await loadCategoryNav(parentId, options);
+  return children;
 }
 
 export async function productsGroupedByCollection(

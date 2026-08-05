@@ -9,8 +9,7 @@ import { useTranslations } from "next-intl";
 import { AppHeader } from "@/components/AppHeader";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import {
-  getCategoryById,
-  listChildCategories,
+  loadCategoryNav,
   useInfiniteScroll,
   useProductSearch,
   type CatalogCategory,
@@ -57,16 +56,21 @@ function CategoryProductsPage() {
       setMetaError(null);
       setChildren([]);
       try {
-        const [cat, kids] = await Promise.all([
-          getCategoryById(categoryId, router),
-          listChildCategories(categoryId, {
-            router,
-            size: 200,
-            search: debouncedQuery || undefined,
-          }),
-        ]);
+        // Sadece product-filter-options: GET /categories/{id} bayi product:read
+        // ile 403 olabiliyor ve Promise.all çocuk listesini de düşürüyordu.
+        const { self, children: kids } = await loadCategoryNav(categoryId, {
+          router,
+          search: debouncedQuery || undefined,
+        });
         if (cancelled) return;
-        setCategory(cat);
+        setCategory(
+          self ?? {
+            id: categoryId,
+            name: tCommon("categoryFallback"),
+            parentId: null,
+            hasChildren: kids.length > 0,
+          },
+        );
         setChildren(kids);
       } catch (err) {
         if (err instanceof PortalCrmError && err.status === 401) return;
@@ -82,10 +86,10 @@ function CategoryProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryId, router, tCatalog, debouncedQuery]);
+  }, [categoryId, router, tCatalog, tCommon, debouncedQuery]);
 
-  // Alt kategori varsa ürün arama; yoksa bu kategorideki ürünler.
-  // hasChildren bayrağına güvenme — CRM tekil category yanıtında yanlış gelebilir.
+  // Alt kategori kartları: product-filter-options'tan gelen children.
+  // (hasChildren tek başına yetmez — boş grid + ürün araması kapalı kalırdı.)
   const showChildren = !metaLoading && children.length > 0;
   const {
     products,

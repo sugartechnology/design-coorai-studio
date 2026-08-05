@@ -21,6 +21,7 @@ export {
   listChildCategories,
   listCollections,
   listProductFilterCategories,
+  loadCategoryNav,
   productsGroupedByCollection,
   searchCatalogProducts,
   searchRootProducts,
