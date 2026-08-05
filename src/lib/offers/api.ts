@@ -102,44 +102,6 @@ export function resolveOfferSceneLayout(offer: OfferResponse): string | null {
   return null;
 }
 
-/** Debug summary for offer → scene import troubleshooting. */
-export function summarizeOfferScenePayload(offer: OfferResponse): {
-  offerId: string;
-  sectionCount: number;
-  sections: Array<{
-    id?: string;
-    name?: string;
-    hasSceneLayout: boolean;
-    sceneLayoutLength: number;
-    productCount: number;
-  }>;
-  sceneLayoutFound: boolean;
-  sceneLayoutLength: number;
-} {
-  const sections = offer.sections ?? [];
-  const raw = resolveOfferSceneLayout(offer);
-  return {
-    offerId: offer.id,
-    sectionCount: sections.length,
-    sections: sections.map((section) => {
-      const layout =
-        section.sceneLayout?.trim() ||
-        (typeof (section as { scene?: unknown }).scene === "string"
-          ? String((section as { scene?: string }).scene).trim()
-          : "");
-      return {
-        id: section.id,
-        name: section.name,
-        hasSceneLayout: Boolean(layout),
-        sceneLayoutLength: layout.length,
-        productCount: section.products?.length ?? 0,
-      };
-    }),
-    sceneLayoutFound: Boolean(raw),
-    sceneLayoutLength: raw?.length ?? 0,
-  };
-}
-
 export function resolveCustomerId(hit: CustomerSearchHit): string | null {
   return hit.customerId || hit.id || null;
 }

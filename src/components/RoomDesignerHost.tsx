@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useTranslations } from "next-intl";
 import { loadVendorCustomElement } from "@/lib/load-vendor-element";
+import { clearRoomDesignerLastScene } from "@/lib/offers";
 
 const SCRIPT_SRC = "/vendor/sugar-room-designer.js";
 const TAG_NAME = "sugar-room-designer";
@@ -29,7 +30,9 @@ export type SugarRoomDesignerElement = HTMLElement & {
   undo: () => void;
   redo: () => void;
   newScene: () => Promise<void>;
-  applyRoomShape: (shape: string) => void;
+  applyRoomShape: (
+    shape: string | { specs: unknown[] } | { shape: unknown },
+  ) => void;
   addProduct: (
     productIdOrPayload:
       | number
@@ -52,14 +55,12 @@ type RoomDesignerHostProps = {
   /** builtin = full chrome; none = canvas only (default for studio host). */
   ui?: "builtin" | "none";
   /**
-   * Clear room-designer last-scene localStorage before mounting the element
-   * so controller auto-restore cannot race an external scene.import.
+   * Clear room-designer last-scene localStorage before mounting so controller
+   * auto-restore cannot overwrite an offer restore.
    */
   clearLastSceneOnMount?: boolean;
   onReady?: (el: SugarRoomDesignerElement) => void;
 };
-
-const ROOM_LAST_SCENE_KEY = "sugartech:room-designer:last-scene:v1";
 
 function loadRoomDesignerBundle(): Promise<void> {
   return loadVendorCustomElement(SCRIPT_SRC, TAG_NAME);
@@ -74,9 +75,7 @@ function isSceneApiReady(el: SugarRoomDesignerElement | null): boolean {
     const msg = err instanceof Error ? err.message : "";
     if (msg.includes("no owner") || msg.includes("not registered")) return false;
   }
-  // design-menu appears only after full bootstrap (_ok + renderHtml).
-  const menu = el.shadowRoot?.querySelector("design-menu");
-  return Boolean(menu);
+  return Boolean(el.shadowRoot?.querySelector("design-menu"));
 }
 
 export const RoomDesignerHost = forwardRef<
@@ -105,19 +104,7 @@ export const RoomDesignerHost = forwardRef<
 
   if (clearLastSceneOnMount && !clearedLastSceneRef.current) {
     clearedLastSceneRef.current = true;
-    try {
-      window.localStorage.removeItem(ROOM_LAST_SCENE_KEY);
-    } catch {
-      // ignore
-    }
-    try {
-      window.sessionStorage.setItem(
-        "sugartech:room-designer:suppress-last-scene",
-        "1",
-      );
-    } catch {
-      // ignore
-    }
+    clearRoomDesignerLastScene();
   }
 
   useImperativeHandle(ref, () => elRef.current as SugarRoomDesignerElement, [
@@ -140,7 +127,6 @@ export const RoomDesignerHost = forwardRef<
     };
   }, []);
 
-  // Sync element instance after mount (ref is set before layout/passive effects).
   useEffect(() => {
     if (!bundleReady) {
       setHostEl(null);
@@ -161,17 +147,11 @@ export const RoomDesignerHost = forwardRef<
       if (!isSceneApiReady(el)) return;
       if (notifiedElRef.current === el) return;
       notifiedElRef.current = el;
-      console.info("[RoomDesignerHost] onReady");
       onReadyRef.current?.(el);
     };
 
-    const onDomReady = () => {
-      console.info("[RoomDesignerHost] DOM ready event");
-      notify();
-    };
-    el.addEventListener("ready", onDomReady);
-
-    // Soft-nav: cached catalog/bootstrap can emit "ready" before this effect runs.
+    el.addEventListener("ready", notify);
+    // Soft-nav: "ready" may fire before this effect attaches.
     notify();
     pollId = window.setInterval(() => {
       notify();
@@ -187,7 +167,7 @@ export const RoomDesignerHost = forwardRef<
 
     return () => {
       cancelled = true;
-      el.removeEventListener("ready", onDomReady);
+      el.removeEventListener("ready", notify);
       if (pollId) window.clearInterval(pollId);
       window.clearTimeout(stopPoll);
       if (notifiedElRef.current === el) notifiedElRef.current = null;

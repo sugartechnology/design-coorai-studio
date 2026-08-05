@@ -39,7 +39,8 @@ import {
   formatConfigNote,
   getOfferById,
   resolveOfferSceneLayout,
-  summarizeOfferScenePayload,
+  applyOfferSceneToDesigner,
+  clearRoomDesignerLastScene,
   type QuoteDraft,
   type QuoteLineItem,
   type QuoteVariantSelection,
@@ -50,38 +51,6 @@ import { ProductSearchFilterMenu } from "@/components/catalog/ProductSearchFilte
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 const ODA_FILTERS_STORAGE_KEY = "istikbal-oda-product-filters-v1";
-/** Room designer auto-restores this on every new controller — races offer import. */
-const ROOM_LAST_SCENE_KEY = "sugartech:room-designer:last-scene:v1";
-
-function clearRoomLastScene() {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(ROOM_LAST_SCENE_KEY);
-  } catch {
-    // ignore
-  }
-  try {
-    // Held until offer import finishes — controller skips auto-restore while set.
-    // Also skipped when URL has offerId= (see RoomDesignerController).
-    window.sessionStorage.setItem(
-      "sugartech:room-designer:suppress-last-scene",
-      "1",
-    );
-  } catch {
-    // ignore
-  }
-}
-
-function releaseRoomLastSceneSuppress() {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.removeItem(
-      "sugartech:room-designer:suppress-last-scene",
-    );
-  } catch {
-    // ignore
-  }
-}
 
 function readOdaQuery(): string {
   if (typeof window === "undefined") return "";
@@ -175,9 +144,8 @@ function OdaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const offerId = searchParams.get("offerId")?.trim() || null;
-  // Must run before <sugar-room-designer> mounts: controller schedules
-  // localStorage scene restore on construct and that races offer import.
-  if (offerId) clearRoomLastScene();
+  // Clear before CE mount so controller last-scene restore is a no-op.
+  if (offerId) clearRoomDesignerLastScene();
   const [designerEl, setDesignerEl] = useState<SugarRoomDesignerElement | null>(
     null,
   );
@@ -325,151 +293,37 @@ function OdaPage() {
     void (async () => {
       setOfferImporting(true);
       setOfferBanner(null);
-      console.info("[oda] offer import start", { offerId });
       try {
-        // Wait until session registered scene.* commands (bootstrap race).
-        const readyDeadline = Date.now() + 30_000;
-        let sceneReady = false;
-        while (Date.now() < readyDeadline) {
-          if (cancelled) return;
-          try {
-            designerEl.api!.execute("scene.export", undefined);
-            sceneReady = true;
-            break;
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : "";
-            if (!msg.includes("no owner")) throw err;
-            await new Promise((r) => window.setTimeout(r, 50));
-          }
-        }
-        console.info("[oda] scene.export ready", { sceneReady, offerId });
-
         const offer = await getOfferById(offerId, router);
         if (cancelled) return;
-        const summary = summarizeOfferScenePayload(offer);
-        console.info("[oda] offer loaded", summary);
-        console.info("[oda] offer section keys", {
-          sectionKeys: (offer.sections ?? []).map((s) => Object.keys(s ?? {})),
-        });
 
         const title =
           offer.title?.trim() ||
           (offer.offerNumber ? `#${offer.offerNumber}` : null);
         setOfferHeaderTitle(title);
+
         const raw = resolveOfferSceneLayout(offer);
         if (!raw) {
-          console.warn("[oda] no sceneLayout on offer sections", summary);
           setOfferBanner(t("offerSceneMissing"));
           offerImportDoneRef.current = { offerId, designer: designerEl };
           return;
         }
+
         let parsed: unknown;
         try {
           parsed = JSON.parse(raw);
-        } catch (parseErr) {
-          console.error("[oda] sceneLayout JSON.parse failed", {
-            length: raw.length,
-            head: raw.slice(0, 200),
-            parseErr,
-          });
+        } catch {
           setOfferBanner(t("offerSceneImportError"));
           offerImportDoneRef.current = { offerId, designer: designerEl };
           return;
         }
 
-        const sceneObj =
-          parsed && typeof parsed === "object"
-            ? (parsed as Record<string, unknown>)
-            : null;
-        const shapes =
-          sceneObj?.shapes && typeof sceneObj.shapes === "object"
-            ? (sceneObj.shapes as Record<string, unknown>)
-            : null;
-        const productList = Array.isArray(sceneObj?.products)
-          ? (sceneObj.products as { id?: unknown; productId?: unknown }[])
-          : [];
-        const instanceList = Array.isArray(sceneObj?.productInstances)
-          ? (sceneObj.productInstances as { model?: unknown; stateUuid?: string }[])
-          : [];
-        console.info("[oda] sceneLayout parsed", {
-          type: typeof parsed,
-          topKeys: sceneObj ? Object.keys(sceneObj) : [],
-          productInstances: instanceList.length,
-          products: productList.length,
-          productIds: productList.map((p) => p?.id ?? p?.productId),
-          instanceModels: instanceList.map((i) => i?.model),
-          instanceStateUuids: instanceList.map((i) => i?.stateUuid),
-          corners: Array.isArray(shapes?.corners) ? shapes.corners.length : null,
-          walls: Array.isArray(shapes?.walls) ? shapes.walls.length : null,
-          hasStateSlices: !!(
-            sceneObj?.stateSlices &&
-            typeof sceneObj.stateSlices === "object"
-          ),
-          preview: raw.slice(0, 400),
-        });
-
-        const expectedInstances = Array.isArray(sceneObj?.productInstances)
-          ? sceneObj.productInstances.length
-          : 0;
-
-        clearRoomLastScene();
-        await Promise.resolve(
-          designerEl.api!.execute("scene.import", parsed),
-        );
-
-        // Wait a frame so any late async work settles, then verify.
-        await new Promise((r) => window.setTimeout(r, 100));
-
-        let after = designerEl.api!.execute(
-          "scene.export",
-          undefined,
-        ) as Record<string, unknown> | undefined;
-        let afterCount = Array.isArray(after?.productInstances)
-          ? after.productInstances.length
-          : 0;
-
-        if (expectedInstances > 0 && afterCount < expectedInstances) {
-          console.warn("[oda] scene emptied after import — re-applying offer scene", {
-            expectedInstances,
-            afterCount,
-          });
-          clearRoomLastScene();
-          await Promise.resolve(
-            designerEl.api!.execute("scene.import", parsed),
-          );
-          after = designerEl.api!.execute("scene.export", undefined) as
-            | Record<string, unknown>
-            | undefined;
-          afterCount = Array.isArray(after?.productInstances)
-            ? after.productInstances.length
-            : 0;
-        }
-
-        const afterShapes =
-          after?.shapes && typeof after.shapes === "object"
-            ? (after.shapes as Record<string, unknown>)
-            : null;
-        console.info("[oda] scene.export after import", {
-          productInstances: afterCount,
-          products: Array.isArray(after?.products)
-            ? after.products.length
-            : null,
-          corners: Array.isArray(afterShapes?.corners)
-            ? afterShapes.corners.length
-            : null,
-          walls: Array.isArray(afterShapes?.walls)
-            ? afterShapes.walls.length
-            : null,
-        });
-
-        releaseRoomLastSceneSuppress();
-
+        await applyOfferSceneToDesigner(designerEl, parsed);
         if (!cancelled) {
           offerImportDoneRef.current = { offerId, designer: designerEl };
         }
       } catch (err) {
-        console.error("[oda] offer import failed", err);
-        releaseRoomLastSceneSuppress();
+        console.error("[oda] offer scene restore failed", err);
         if (err instanceof PortalCrmError && err.status === 401) return;
         if (!cancelled) {
           setOfferBanner(
