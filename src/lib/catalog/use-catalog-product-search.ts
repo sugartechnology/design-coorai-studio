@@ -38,6 +38,60 @@ function emptySelection(): CatalogFacetSelection {
   };
 }
 
+function isFacetSelection(value: unknown): value is CatalogFacetSelection {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    Array.isArray(v.catalogIds) &&
+    Array.isArray(v.typeCategoryIds) &&
+    Array.isArray(v.categoryIds) &&
+    Array.isArray(v.categoryNames) &&
+    Array.isArray(v.collectionIds) &&
+    Array.isArray(v.collectionNames)
+  );
+}
+
+function readPersistedSelection(key: string | null | undefined): CatalogFacetSelection {
+  if (!key || typeof window === "undefined") return emptySelection();
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return emptySelection();
+    const parsed = JSON.parse(raw) as { selection?: unknown };
+    if (isFacetSelection(parsed.selection)) return parsed.selection;
+    if (isFacetSelection(parsed)) return parsed;
+  } catch {
+    // ignore
+  }
+  return emptySelection();
+}
+
+function writePersistedSelection(
+  key: string | null | undefined,
+  selection: CatalogFacetSelection,
+) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    const prevRaw = window.localStorage.getItem(key);
+    let prev: Record<string, unknown> = {};
+    if (prevRaw) {
+      try {
+        const parsed = JSON.parse(prevRaw) as unknown;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          prev = parsed as Record<string, unknown>;
+        }
+      } catch {
+        prev = {};
+      }
+    }
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({ ...prev, selection }),
+    );
+  } catch {
+    // ignore quota
+  }
+}
+
 function collectAncestors(
   id: string,
   parentById: Map<string, string | null>,
@@ -127,6 +181,8 @@ export function useCatalogProductSearch(input: {
   currency?: string;
   enabled?: boolean;
   size?: number;
+  /** When set, facet selection is restored/saved in localStorage under this key. */
+  persistKey?: string | null;
 }) {
   const router = useRouter();
   const t = useTranslations("catalog");
@@ -134,12 +190,15 @@ export function useCatalogProductSearch(input: {
   const channel = input.channel ?? "RAPID_RENDER";
   const currency = input.currency;
   const enabled = input.enabled !== false;
+  const persistKey = input.persistKey?.trim() || null;
 
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [aggregations, setAggregations] = useState<SearchFilter[]>([]);
-  const [selection, setSelection] = useState<CatalogFacetSelection>(emptySelection);
+  const [selection, setSelection] = useState<CatalogFacetSelection>(() =>
+    readPersistedSelection(persistKey),
+  );
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -155,6 +214,10 @@ export function useCatalogProductSearch(input: {
   const typeCategoryOptionsRef = useRef<SearchFilterOption[]>([]);
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
+
+  useEffect(() => {
+    writePersistedSelection(persistKey, selection);
+  }, [persistKey, selection]);
 
   useEffect(() => {
     const facet = aggregations.find((filter) => filter.field === "typeCategories");

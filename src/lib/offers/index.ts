@@ -22,6 +22,7 @@ export {
   quickCreateCustomer,
   resolveCustomerId,
   resolveOfferSceneLayout,
+  summarizeOfferScenePayload,
   searchCustomersCompletion,
   searchOffers,
 } from "./api";

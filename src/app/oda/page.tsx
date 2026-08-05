@@ -39,6 +39,7 @@ import {
   formatConfigNote,
   getOfferById,
   resolveOfferSceneLayout,
+  summarizeOfferScenePayload,
   type QuoteDraft,
   type QuoteLineItem,
   type QuoteVariantSelection,
@@ -48,6 +49,43 @@ import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import { ProductSearchFilterMenu } from "@/components/catalog/ProductSearchFilterMenu";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
+const ODA_FILTERS_STORAGE_KEY = "istikbal-oda-product-filters-v1";
+
+function readOdaQuery(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const raw = window.localStorage.getItem(ODA_FILTERS_STORAGE_KEY);
+    if (!raw) return "";
+    const parsed = JSON.parse(raw) as { query?: unknown };
+    return typeof parsed.query === "string" ? parsed.query : "";
+  } catch {
+    return "";
+  }
+}
+
+function writeOdaQuery(query: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const prevRaw = window.localStorage.getItem(ODA_FILTERS_STORAGE_KEY);
+    let prev: Record<string, unknown> = {};
+    if (prevRaw) {
+      try {
+        const parsed = JSON.parse(prevRaw) as unknown;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          prev = parsed as Record<string, unknown>;
+        }
+      } catch {
+        prev = {};
+      }
+    }
+    window.localStorage.setItem(
+      ODA_FILTERS_STORAGE_KEY,
+      JSON.stringify({ ...prev, query }),
+    );
+  } catch {
+    // ignore
+  }
+}
 type TemplateKey = "kare" | "L" | "U" | "T";
 
 type SceneExport = {
@@ -118,7 +156,7 @@ function OdaPage() {
   );
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => readOdaQuery());
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [productScrollEl, setProductScrollEl] = useState<HTMLDivElement | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -141,7 +179,15 @@ function OdaPage() {
     toggleFacetOption,
     clearFacets,
     isOptionSelected,
-  } = useCatalogProductSearch({ query, size: 40 });
+  } = useCatalogProductSearch({
+    query,
+    size: 40,
+    persistKey: ODA_FILTERS_STORAGE_KEY,
+  });
+
+  useEffect(() => {
+    writeOdaQuery(query);
+  }, [query]);
 
   const { sentinelRef: productSentinelRef } = useInfiniteScroll({
     hasMore: productsHasMore,
@@ -238,13 +284,16 @@ function OdaPage() {
     void (async () => {
       setOfferImporting(true);
       setOfferBanner(null);
+      console.info("[oda] offer import start", { offerId });
       try {
         // Wait until session registered scene.* commands (bootstrap race).
         const readyDeadline = Date.now() + 30_000;
+        let sceneReady = false;
         while (Date.now() < readyDeadline) {
           if (cancelled) return;
           try {
             designerEl.api!.execute("scene.export", undefined);
+            sceneReady = true;
             break;
           } catch (err) {
             const msg = err instanceof Error ? err.message : "";
@@ -252,15 +301,23 @@ function OdaPage() {
             await new Promise((r) => window.setTimeout(r, 50));
           }
         }
+        console.info("[oda] scene.export ready", { sceneReady, offerId });
 
         const offer = await getOfferById(offerId, router);
         if (cancelled) return;
+        const summary = summarizeOfferScenePayload(offer);
+        console.info("[oda] offer loaded", summary);
+        console.info("[oda] offer section keys", {
+          sectionKeys: (offer.sections ?? []).map((s) => Object.keys(s ?? {})),
+        });
+
         const title =
           offer.title?.trim() ||
           (offer.offerNumber ? `#${offer.offerNumber}` : null);
         setOfferHeaderTitle(title);
         const raw = resolveOfferSceneLayout(offer);
         if (!raw) {
+          console.warn("[oda] no sceneLayout on offer sections", summary);
           setOfferBanner(t("offerSceneMissing"));
           offerImportDoneRef.current = offerId;
           return;
@@ -268,16 +325,63 @@ function OdaPage() {
         let parsed: unknown;
         try {
           parsed = JSON.parse(raw);
-        } catch {
+        } catch (parseErr) {
+          console.error("[oda] sceneLayout JSON.parse failed", {
+            length: raw.length,
+            head: raw.slice(0, 200),
+            parseErr,
+          });
           setOfferBanner(t("offerSceneImportError"));
           offerImportDoneRef.current = offerId;
           return;
         }
-        await designerEl.api!.execute("scene.import", parsed);
+
+        const sceneObj =
+          parsed && typeof parsed === "object"
+            ? (parsed as Record<string, unknown>)
+            : null;
+        console.info("[oda] sceneLayout parsed", {
+          type: typeof parsed,
+          topKeys: sceneObj ? Object.keys(sceneObj) : [],
+          productInstances: Array.isArray(sceneObj?.productInstances)
+            ? sceneObj.productInstances.length
+            : null,
+          products: Array.isArray(sceneObj?.products)
+            ? sceneObj.products.length
+            : null,
+          walls: Array.isArray(sceneObj?.walls) ? sceneObj.walls.length : null,
+          preview: raw.slice(0, 400),
+        });
+
+        const importResult = await designerEl.api!.execute(
+          "scene.import",
+          parsed,
+        );
+        console.info("[oda] scene.import done", { importResult });
+
+        try {
+          const after = designerEl.api!.execute(
+            "scene.export",
+            undefined,
+          ) as Record<string, unknown> | undefined;
+          console.info("[oda] scene.export after import", {
+            productInstances: Array.isArray(after?.productInstances)
+              ? after.productInstances.length
+              : null,
+            products: Array.isArray(after?.products)
+              ? after.products.length
+              : null,
+            topKeys: after && typeof after === "object" ? Object.keys(after) : [],
+          });
+        } catch (exportErr) {
+          console.warn("[oda] scene.export after import failed", exportErr);
+        }
+
         if (!cancelled) {
           offerImportDoneRef.current = offerId;
         }
       } catch (err) {
+        console.error("[oda] offer import failed", err);
         if (err instanceof PortalCrmError && err.status === 401) return;
         if (!cancelled) {
           setOfferBanner(
