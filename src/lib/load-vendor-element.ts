@@ -2,6 +2,62 @@
 
 const loadCache = new Map<string, Promise<void>>();
 
+/** Bundles that register the same Lit tags (sugar-light, sugar-viewport, …). */
+const EXCLUSIVE_VENDOR_SRCS = [
+  "/vendor/sugar-model-viewer.js",
+  "/vendor/sugar-room-designer.js",
+] as const;
+
+/** Tags registered by both exclusive vendor bundles. */
+const SHARED_CORE_TAGS = [
+  "sugar-light",
+  "sugar-viewport",
+  "sugar-canvas",
+] as const;
+
+const RELOAD_GUARD_KEY = "__sugar_ce_vendor_reload";
+
+/**
+ * CustomElementRegistry cannot unregister. Loading model-viewer then
+ * room-designer (or the reverse) via client navigation redefines shared
+ * tags — or worse, skips redefine and mixes classes (applySettings crashes).
+ * Hard-reload clears the registry for the product that is mounting now.
+ */
+function hasConflictingVendor(scriptSrc: string, tagName: string): boolean {
+  if (customElements.get(tagName)) return false;
+
+  for (const src of EXCLUSIVE_VENDOR_SRCS) {
+    if (src === scriptSrc) continue;
+    if (
+      document.querySelector(`script[data-sugar-vendor="${CSS.escape(src)}"]`)
+    ) {
+      return true;
+    }
+  }
+
+  return SHARED_CORE_TAGS.some((name) => Boolean(customElements.get(name)));
+}
+
+function reloadForCleanRegistry(tagName: string): Promise<void> {
+  try {
+    const prev = sessionStorage.getItem(RELOAD_GUARD_KEY);
+    if (prev === tagName) {
+      sessionStorage.removeItem(RELOAD_GUARD_KEY);
+      return Promise.reject(
+        new Error(
+          `Custom element conflict for "${tagName}" survived reload. Hard-refresh the tab.`,
+        ),
+      );
+    }
+    sessionStorage.setItem(RELOAD_GUARD_KEY, tagName);
+  } catch {
+    // sessionStorage blocked — still attempt reload
+  }
+  window.location.reload();
+  // Page is unloading; leave the host pending.
+  return new Promise<void>(() => {});
+}
+
 /**
  * Load a public ESM vendor bundle via <script type="module">.
  * Prefer this over dynamic `import("/vendor/...")` — Next/Turbopack can
@@ -12,7 +68,18 @@ export function loadVendorCustomElement(
   tagName: string,
 ): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  if (customElements.get(tagName)) return Promise.resolve();
+  if (customElements.get(tagName)) {
+    try {
+      sessionStorage.removeItem(RELOAD_GUARD_KEY);
+    } catch {
+      /* ignore */
+    }
+    return Promise.resolve();
+  }
+
+  if (hasConflictingVendor(scriptSrc, tagName)) {
+    return reloadForCleanRegistry(tagName);
+  }
 
   const cacheKey = `${scriptSrc}::${tagName}`;
   const existing = loadCache.get(cacheKey);
@@ -21,12 +88,24 @@ export function loadVendorCustomElement(
   const promise = new Promise<void>((resolve, reject) => {
     const finish = () => {
       if (customElements.get(tagName)) {
+        try {
+          sessionStorage.removeItem(RELOAD_GUARD_KEY);
+        } catch {
+          /* ignore */
+        }
         resolve();
         return;
       }
       customElements
         .whenDefined(tagName)
-        .then(() => resolve())
+        .then(() => {
+          try {
+            sessionStorage.removeItem(RELOAD_GUARD_KEY);
+          } catch {
+            /* ignore */
+          }
+          resolve();
+        })
         .catch(reject);
     };
 
@@ -45,6 +124,12 @@ export function loadVendorCustomElement(
         () => reject(new Error(`Failed to load ${scriptSrc}`)),
         { once: true },
       );
+      return;
+    }
+
+    // Re-check right before inject (soft-nav race with the other product).
+    if (hasConflictingVendor(scriptSrc, tagName)) {
+      void reloadForCleanRegistry(tagName).then(resolve, reject);
       return;
     }
 
