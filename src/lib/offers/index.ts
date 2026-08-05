@@ -26,6 +26,6 @@ export {
   searchOffers,
 } from "./api";
 export { buildOfferCreateRequest, toOfferProductRequest } from "./build-request";
-export { createOfferWithPreview } from "./create-with-preview";
+export { createOfferWithPreview, buildOfferEditUrl } from "./create-with-preview";
 export { lineFromCatalogProduct, resolveCatalogUnitPrice } from "./pricing";
 export { formatConfigNote, zoneSelectionsToConfig } from "./zone-config";

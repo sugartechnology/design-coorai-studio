@@ -645,12 +645,14 @@
     "createQuote": "Teklif Oluştur",
     "addToQuote": "Teklife Ekle",
     "listTitle": "Teklifler",
-    "listSubtitle": "Bir teklife dokunarak oda planını açın.",
+    "listSubtitle": "Teklifi CRM’de görüntüleyin veya oda tasarımına gidin.",
     "listSearchPlaceholder": "Teklif no, başlık veya müşteri ara…",
     "listEmpty": "Henüz teklif yok.",
     "listLoadError": "Teklifler yüklenemedi.",
     "listCustomerUnknown": "Müşteri yok",
     "listUntitled": "Başlıksız teklif",
+    "listViewOffer": "Teklifi gör",
+    "listGoToDesign": "Tasarıma git",
     "openRoom": "Oda planını aç"
   }
 }

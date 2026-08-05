@@ -3,12 +3,19 @@ import { buildOfferCreateRequest } from "./build-request";
 import { createOffer, createShareLink } from "./api";
 import type { CreateOfferResult, QuoteDraft } from "./types";
 
-function crmWebOrigin(): string {
+export function crmWebOrigin(): string {
   const raw =
     process.env.NEXT_PUBLIC_CRM_WEB_ORIGIN?.trim() ||
     process.env.NEXT_PUBLIC_CRM_WEB_URL?.trim() ||
     "";
   return raw.replace(/\/$/, "");
+}
+
+/** CRM proposal editor URL for an existing offer. */
+export function buildOfferEditUrl(offerId: string, companySlug: string): string {
+  const origin = crmWebOrigin();
+  const path = `/${companySlug}/proposals/new?id=${encodeURIComponent(offerId)}`;
+  return origin ? `${origin}${path}` : path;
 }
 
 type RouterLike = { replace: (href: string) => void };
@@ -28,9 +35,7 @@ export async function createOfferWithPreview(
   const request = buildOfferCreateRequest(draft);
   const offer = await createOffer(request, router);
   const origin = crmWebOrigin();
-  const editUrl = origin
-    ? `${origin}/${session.companySlug}/proposals/new?id=${offer.id}`
-    : `/${session.companySlug}/proposals/new?id=${offer.id}`;
+  const editUrl = buildOfferEditUrl(offer.id, session.companySlug);
 
   let shareToken = "";
   let shareUrl = "";

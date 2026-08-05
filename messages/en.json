@@ -645,12 +645,14 @@
     "createQuote": "Create quote",
     "addToQuote": "Add to quote",
     "listTitle": "Quotes",
-    "listSubtitle": "Tap a quote to open its room plan.",
+    "listSubtitle": "View the quote in CRM or open the room design.",
     "listSearchPlaceholder": "Search quote no, title, or customer…",
     "listEmpty": "No quotes yet.",
     "listLoadError": "Could not load quotes.",
     "listCustomerUnknown": "No customer",
     "listUntitled": "Untitled quote",
+    "listViewOffer": "View quote",
+    "listGoToDesign": "Go to design",
     "openRoom": "Open room plan"
   }
 }

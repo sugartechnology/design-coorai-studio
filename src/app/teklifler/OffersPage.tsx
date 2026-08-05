@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, FileText, Loader2, Search } from "lucide-react";
+import { ExternalLink, FileText, Loader2, Search, Sofa } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { AppHeader } from "@/components/AppHeader";
 import {
+  buildOfferEditUrl,
   searchOffers,
   type OfferSearchResponse,
 } from "@/lib/offers";
-import { PortalCrmError } from "@/lib/portal-crm";
+import { getPortalSessionView, PortalCrmError } from "@/lib/portal-crm";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 function formatMoney(
@@ -52,6 +53,23 @@ function OffersPage() {
   const [offers, setOffers] = useState<OfferSearchResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [companySlug, setCompanySlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getPortalSessionView()
+      .then((session) => {
+        if (!cancelled && session?.companySlug) {
+          setCompanySlug(session.companySlug);
+        }
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -132,41 +150,72 @@ function OffersPage() {
 
         {!loading && !error && offers.length > 0 && (
           <ul className="space-y-2">
-            {offers.map((offer) => (
-              <li key={offer.id}>
-                <Link
-                  href={`/oda?offerId=${encodeURIComponent(offer.id)}`}
-                  className="group flex items-center gap-3 rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            {offers.map((offer) => {
+              const viewHref = companySlug
+                ? buildOfferEditUrl(offer.id, companySlug)
+                : null;
+              return (
+                <li
+                  key={offer.id}
+                  className="rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm"
                 >
-                  <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[color:var(--istikbal-blue)]/5 text-[color:var(--istikbal-blue)]">
-                    <FileText className="size-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <p className="truncate text-sm font-bold text-[color:var(--istikbal-blue)]">
-                        {offer.title?.trim() || t("listUntitled")}
-                      </p>
-                      {offer.offerNumber && (
-                        <span className="shrink-0 text-[11px] font-semibold text-[color:var(--istikbal-blue)]/45">
-                          #{offer.offerNumber}
-                        </span>
-                      )}
+                  <div className="flex items-start gap-3">
+                    <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[color:var(--istikbal-blue)]/5 text-[color:var(--istikbal-blue)]">
+                      <FileText className="size-4" />
                     </div>
-                    <p className="mt-0.5 truncate text-xs text-[color:var(--istikbal-blue)]/55">
-                      {offer.customerName?.trim() || t("listCustomerUnknown")}
-                      {" · "}
-                      {formatDate(offer.createdAt, bcp47)}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <p className="truncate text-sm font-bold text-[color:var(--istikbal-blue)]">
+                          {offer.title?.trim() || t("listUntitled")}
+                        </p>
+                        {offer.offerNumber && (
+                          <span className="shrink-0 text-[11px] font-semibold text-[color:var(--istikbal-blue)]/45">
+                            #{offer.offerNumber}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-[color:var(--istikbal-blue)]/55">
+                        {offer.customerName?.trim() || t("listCustomerUnknown")}
+                        {" · "}
+                        {formatDate(offer.createdAt, bcp47)}
+                      </p>
+                      <p className="mt-1 text-sm font-bold text-[color:var(--istikbal-blue)]">
+                        {formatMoney(offer.totalPrice, offer.currency, bcp47)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-sm font-bold text-[color:var(--istikbal-blue)]">
-                      {formatMoney(offer.totalPrice, offer.currency, bcp47)}
-                    </span>
-                    <ChevronRight className="size-4 text-[color:var(--istikbal-blue)]/30 transition group-hover:translate-x-0.5" />
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {viewHref ? (
+                      <a
+                        href={viewHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--istikbal-blue)]/15 bg-white px-2 text-xs font-bold text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/5"
+                      >
+                        <ExternalLink className="size-3.5 shrink-0" />
+                        <span className="truncate">{t("listViewOffer")}</span>
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--istikbal-blue)]/10 px-2 text-xs font-bold text-[color:var(--istikbal-blue)]/35"
+                      >
+                        <ExternalLink className="size-3.5 shrink-0" />
+                        <span className="truncate">{t("listViewOffer")}</span>
+                      </button>
+                    )}
+                    <Link
+                      href={`/oda?offerId=${encodeURIComponent(offer.id)}`}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--istikbal-blue)] px-2 text-xs font-bold text-white hover:bg-[color:var(--istikbal-navy)]"
+                    >
+                      <Sofa className="size-3.5 shrink-0" />
+                      <span className="truncate">{t("listGoToDesign")}</span>
+                    </Link>
                   </div>
-                </Link>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </main>
