@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { loadVendorCustomElement } from "@/lib/load-vendor-element";
 
 const SCRIPT_SRC = "/vendor/sugar-model-viewer.js";
+const TAG_NAME = "sugar-model-viewer";
 /** İstikbal / Sugar catalog company for model fetch */
 export const SUGAR_MODEL_VIEWER_COMPANY_ID = 42;
 
@@ -78,25 +80,8 @@ type ModelViewerHostProps = {
   onElementReady?: (el: SugarModelViewerElement) => void;
 };
 
-declare global {
-  interface Window {
-    __sugarModelViewerLoading?: Promise<void>;
-  }
-}
-
 function loadModelViewerBundle(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (customElements.get("sugar-model-viewer")) return Promise.resolve();
-  if (!window.__sugarModelViewerLoading) {
-    window.__sugarModelViewerLoading = import(
-      /* webpackIgnore: true */
-      /* @vite-ignore */
-      SCRIPT_SRC
-    ).then(async () => {
-      await customElements.whenDefined("sugar-model-viewer");
-    });
-  }
-  return window.__sugarModelViewerLoading;
+  return loadVendorCustomElement(SCRIPT_SRC, TAG_NAME);
 }
 
 /** Dispatch apply-material to the viewer element (no class methods). */

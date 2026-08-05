@@ -8,8 +8,10 @@ import {
   useState,
 } from "react";
 import { useTranslations } from "next-intl";
+import { loadVendorCustomElement } from "@/lib/load-vendor-element";
 
 const SCRIPT_SRC = "/vendor/sugar-room-designer.js";
+const TAG_NAME = "sugar-room-designer";
 const APP_IDENTIFIER = "10203";
 
 export type SugarRoomDesignerElement = HTMLElement & {
@@ -52,25 +54,8 @@ type RoomDesignerHostProps = {
   onReady?: (el: SugarRoomDesignerElement) => void;
 };
 
-declare global {
-  interface Window {
-    __sugarRoomDesignerLoading?: Promise<void>;
-  }
-}
-
 function loadRoomDesignerBundle(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (customElements.get("sugar-room-designer")) return Promise.resolve();
-  if (!window.__sugarRoomDesignerLoading) {
-    window.__sugarRoomDesignerLoading = import(
-      /* webpackIgnore: true */
-      /* @vite-ignore */
-      SCRIPT_SRC
-    ).then(async () => {
-      await customElements.whenDefined("sugar-room-designer");
-    });
-  }
-  return window.__sugarRoomDesignerLoading;
+  return loadVendorCustomElement(SCRIPT_SRC, TAG_NAME);
 }
 
 export const RoomDesignerHost = forwardRef<
