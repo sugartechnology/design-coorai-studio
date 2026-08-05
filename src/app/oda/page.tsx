@@ -235,6 +235,20 @@ function OdaPage() {
       setOfferImporting(true);
       setOfferBanner(null);
       try {
+        // Wait until session registered scene.* commands (bootstrap race).
+        const readyDeadline = Date.now() + 30_000;
+        while (Date.now() < readyDeadline) {
+          if (cancelled) return;
+          try {
+            designerEl.api!.execute("scene.export", undefined);
+            break;
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : "";
+            if (!msg.includes("no owner")) throw err;
+            await new Promise((r) => window.setTimeout(r, 50));
+          }
+        }
+
         const offer = await getOfferById(offerId, router);
         if (cancelled) return;
         const title =

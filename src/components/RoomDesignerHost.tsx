@@ -101,10 +101,11 @@ export const RoomDesignerHost = forwardRef<
     const el = elRef.current;
     if (!el) return;
 
+    // Only notify after sugar-room-designer bootstrap emits "ready".
+    // Calling onReady immediately races ensureDesigner() command registration
+    // ("Product command has no owner: scene.import").
     const notify = () => onReady?.(el);
     el.addEventListener("ready", notify);
-    // Already ready if attribute/bootstrap finished before listener.
-    notify();
     return () => el.removeEventListener("ready", notify);
   }, [ready, onReady]);
 
