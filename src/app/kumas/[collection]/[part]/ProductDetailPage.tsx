@@ -22,6 +22,7 @@ import {
   zoneSelectionsToConfig,
   type QuoteDraft,
 } from "@/lib/offers";
+import { useCart } from "@/lib/cart";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import { defaultLocale, isAppLocale } from "@/i18n/config";
 import { FabricPicker } from "./FabricPicker";
@@ -47,7 +48,6 @@ function ProductDetailPage() {
   const params = useParams<{ collection: string; part: string }>();
   const searchParams = useSearchParams();
   const t = useTranslations("kumas");
-  const tOffers = useTranslations("offers");
   const tCommon = useTranslations("common");
   const tCatalog = useTranslations("catalog");
   const locale = useLocale();
@@ -66,6 +66,8 @@ function ProductDetailPage() {
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
+  const { addLines } = useCart();
+  const [cartFlash, setCartFlash] = useState(false);
 
   const part: Part | null =
     mockPart ??
@@ -339,7 +341,37 @@ function ProductDetailPage() {
             guideImage={guideImage}
             companyId={SUGAR_MODEL_VIEWER_COMPANY_ID}
             onOpenPicker={setPickerAreaName}
-            addToQuoteLabel={tOffers("addToQuote")}
+            onAddToCart={() => {
+              if (!product) return;
+              const { variantSelections, note } = zoneSelectionsToConfig(
+                areas,
+                selectionByArea,
+                (n) => t("regionLabel", { n }),
+              );
+              const line = lineFromCatalogProduct(product, {
+                currency: "TRY",
+                note,
+                variantSelections,
+              });
+              addLines(
+                [line],
+                "kumas",
+                {
+                  name: product.name,
+                  images: guideImage
+                    ? [
+                        {
+                          imageUrl: guideImage,
+                          imageOrder: 0,
+                          altText: t("zoneGuideAlt"),
+                        },
+                      ]
+                    : [],
+                },
+              );
+              setCartFlash(true);
+              window.setTimeout(() => setCartFlash(false), 1800);
+            }}
             onAddToQuote={() => {
               if (!product) return;
               const { variantSelections, note } = zoneSelectionsToConfig(
@@ -352,9 +384,6 @@ function ProductDetailPage() {
                 note,
                 variantSelections,
               });
-              if (guideImage) {
-                // zone guide stays on section images
-              }
               setQuoteDraft({
                 title: product.name,
                 currency: line.currency,
@@ -362,7 +391,13 @@ function ProductDetailPage() {
                 section: {
                   name: product.name,
                   images: guideImage
-                    ? [{ imageUrl: guideImage, imageOrder: 0, altText: t("zoneGuideAlt") }]
+                    ? [
+                        {
+                          imageUrl: guideImage,
+                          imageOrder: 0,
+                          altText: t("zoneGuideAlt"),
+                        },
+                      ]
                     : [],
                 },
                 lines: [line],
@@ -370,6 +405,11 @@ function ProductDetailPage() {
               setQuoteOpen(true);
             }}
           />
+          {cartFlash ? (
+            <p className="mt-2 text-center text-xs font-semibold text-[color:var(--istikbal-blue)]">
+              {tCommon("addedToCart")}
+            </p>
+          ) : null}
         </aside>
 
         {pickerArea && (

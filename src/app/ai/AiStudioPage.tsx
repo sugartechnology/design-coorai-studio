@@ -28,6 +28,7 @@ import {
   Download,
   Coins,
   FileText,
+  ShoppingCart,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -35,6 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
+import { useCart } from "@/lib/cart";
 import {
   useCatalogFilters,
   useInfiniteScroll,
@@ -45,6 +47,7 @@ import {
 import {
   lineFromCatalogProduct,
   type QuoteDraft,
+  type QuoteLineItem,
 } from "@/lib/offers";
 import { defaultLocale, isAppLocale } from "@/i18n/config";
 import {
@@ -251,6 +254,8 @@ function AiStudioPage() {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
+  const [cartFlash, setCartFlash] = useState(false);
+  const { addLines } = useCart();
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
@@ -291,62 +296,56 @@ function AiStudioPage() {
     setSelectedUid((cur) => (cur === uid ? null : cur));
   }, []);
 
-  const openQuoteFromSelected = useCallback(async () => {
-    if (selected.length === 0) return;
-    setQuoteBusy(true);
-    setError(null);
-    try {
-      const qtyById = new Map<string, { product: CatalogProduct; quantity: number }>();
-      for (const item of selected) {
-        const existing = qtyById.get(item.product.id);
-        if (existing) existing.quantity += 1;
-        else qtyById.set(item.product.id, { product: item.product, quantity: 1 });
-      }
+  const buildQuoteFromSelected = useCallback(async (): Promise<QuoteDraft | null> => {
+    if (selected.length === 0) return null;
 
-      const lines = await Promise.all(
-        [...qtyById.values()].map(async ({ product, quantity }) => {
-          try {
-            const detail = await getProductById(product.id, router);
-            return lineFromCatalogProduct(detail, {
-              quantity,
-              currency: "TRY",
-              variantSelections: [],
-            });
-          } catch {
-            return lineFromCatalogProduct(
-              {
-                id: product.id,
-                name: product.name,
-                sku: null,
-                thumbnailUrl: product.thumbnailUrl,
-                prices: [],
-              },
-              { quantity, currency: "TRY", variantSelections: [] },
-            );
-          }
-        }),
-      );
-
-      const renderUrl = roomPreviewUrl || latestGalleryThumbnail;
-      setQuoteDraft({
-        title: tOffers("createQuote"),
-        currency: "TRY",
-        language,
-        notes: promptNotes || undefined,
-        section: {
-          name: "AI Studio",
-          roomType: "living-room",
-          promptNotes: promptNotes || null,
-          images: renderUrl
-            ? [{ imageUrl: renderUrl, imageOrder: 0, altText: "AI render" }]
-            : [],
-        },
-        lines,
-      });
-      setQuoteOpen(true);
-    } finally {
-      setQuoteBusy(false);
+    const qtyById = new Map<string, { product: CatalogProduct; quantity: number }>();
+    for (const item of selected) {
+      const existing = qtyById.get(item.product.id);
+      if (existing) existing.quantity += 1;
+      else qtyById.set(item.product.id, { product: item.product, quantity: 1 });
     }
+
+    const lines: QuoteLineItem[] = await Promise.all(
+      [...qtyById.values()].map(async ({ product, quantity }) => {
+        try {
+          const detail = await getProductById(product.id, router);
+          return lineFromCatalogProduct(detail, {
+            quantity,
+            currency: "TRY",
+            variantSelections: [],
+          });
+        } catch {
+          return lineFromCatalogProduct(
+            {
+              id: product.id,
+              name: product.name,
+              sku: null,
+              thumbnailUrl: product.thumbnailUrl,
+              prices: [],
+            },
+            { quantity, currency: "TRY", variantSelections: [] },
+          );
+        }
+      }),
+    );
+
+    const renderUrl = roomPreviewUrl || latestGalleryThumbnail;
+    return {
+      title: tOffers("createQuote"),
+      currency: "TRY",
+      language,
+      notes: promptNotes || undefined,
+      section: {
+        name: "AI Studio",
+        roomType: "living-room",
+        promptNotes: promptNotes || null,
+        images: renderUrl
+          ? [{ imageUrl: renderUrl, imageOrder: 0, altText: "AI render" }]
+          : [],
+      },
+      lines,
+    };
   }, [
     selected,
     router,
@@ -356,6 +355,35 @@ function AiStudioPage() {
     language,
     tOffers,
   ]);
+
+  const openQuoteFromSelected = useCallback(async () => {
+    if (selected.length === 0) return;
+    setQuoteBusy(true);
+    setError(null);
+    try {
+      const draft = await buildQuoteFromSelected();
+      if (!draft) return;
+      setQuoteDraft(draft);
+      setQuoteOpen(true);
+    } finally {
+      setQuoteBusy(false);
+    }
+  }, [buildQuoteFromSelected, selected.length]);
+
+  const addSelectedToCart = useCallback(async () => {
+    if (selected.length === 0) return;
+    setQuoteBusy(true);
+    setError(null);
+    try {
+      const draft = await buildQuoteFromSelected();
+      if (!draft) return;
+      addLines(draft.lines, "ai", draft.section);
+      setCartFlash(true);
+      window.setTimeout(() => setCartFlash(false), 1800);
+    } finally {
+      setQuoteBusy(false);
+    }
+  }, [addLines, buildQuoteFromSelected, selected.length]);
 
   const placeProductOnCanvas = useCallback(
     (product: CatalogProduct, x: number, y: number, uid?: string) => {
@@ -812,19 +840,39 @@ function AiStudioPage() {
                       </div>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    disabled={quoteBusy}
-                    onClick={() => void openQuoteFromSelected()}
-                    className="mt-3 w-full h-10 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] disabled:opacity-50"
-                  >
-                    {quoteBusy ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <FileText className="size-4" />
-                    )}
-                    {tOffers("createQuote")}
-                  </button>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={quoteBusy}
+                      onClick={() => void addSelectedToCart()}
+                      className="h-10 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[color:var(--istikbal-navy)] disabled:opacity-50 px-2"
+                    >
+                      {quoteBusy ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <ShoppingCart className="size-3.5 shrink-0" />
+                      )}
+                      <span className="truncate">{tCommon("addToCart")}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={quoteBusy}
+                      onClick={() => void openQuoteFromSelected()}
+                      className="h-10 rounded-full border border-[color:var(--istikbal-blue)]/20 bg-white text-[color:var(--istikbal-blue)] text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[color:var(--istikbal-blue)]/5 disabled:opacity-50 px-2"
+                    >
+                      {quoteBusy ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <FileText className="size-3.5 shrink-0" />
+                      )}
+                      <span className="truncate">{tOffers("createQuote")}</span>
+                    </button>
+                  </div>
+                  {cartFlash ? (
+                    <p className="mt-2 text-center text-[10px] font-semibold text-[color:var(--istikbal-blue)]">
+                      {tCommon("addedToCart")}
+                    </p>
+                  ) : null}
                 </div>
               )}
 

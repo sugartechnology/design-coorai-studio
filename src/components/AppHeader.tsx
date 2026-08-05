@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Bell, ShoppingBag } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { ArrowLeft, Bell, FileText, ShoppingBag, Trash2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   forwardRef,
   useEffect,
@@ -19,6 +19,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useCart } from "@/lib/cart";
+import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
+import type { QuoteDraft } from "@/lib/offers";
+import { defaultLocale, isAppLocale } from "@/i18n/config";
 
 type AppHeaderProps = {
   title: string;
@@ -89,28 +93,109 @@ function HeaderPanelShell({
   );
 }
 
+function formatMoney(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currency || "TRY",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
+
 function HeaderCartBox() {
   const t = useTranslations("common");
+  const locale = useLocale();
+  const language = isAppLocale(locale) ? locale : defaultLocale;
+  const { lines, count, removeLine, clear, toQuoteDraft } = useCart();
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [draft, setDraft] = useState<QuoteDraft | null>(null);
+
+  const openQuote = () => {
+    const next = toQuoteDraft(language);
+    if (!next) return;
+    setDraft(next);
+    setQuoteOpen(true);
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <HeaderIconButton label={t("cartTitle")}>
-          <ShoppingBag className="size-4" />
-        </HeaderIconButton>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        sideOffset={8}
-        className="w-80 rounded-2xl border border-black/5 bg-white p-4 shadow-lg"
-      >
-        <HeaderPanelShell
-          title={t("cartTitle")}
-          emptyTitle={t("cartEmpty")}
-          emptyHint={t("cartEmptyHint")}
-          icon={<ShoppingBag className="size-4" />}
-        />
-      </PopoverContent>
-    </Popover>
+    <>
+      <Popover>
+        <PopoverTrigger asChild>
+          <HeaderIconButton label={t("cartTitle")} count={count}>
+            <ShoppingBag className="size-4" />
+          </HeaderIconButton>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          sideOffset={8}
+          className="w-80 rounded-2xl border border-black/5 bg-white p-4 shadow-lg"
+        >
+          {lines.length === 0 ? (
+            <HeaderPanelShell
+              title={t("cartTitle")}
+              emptyTitle={t("cartEmpty")}
+              emptyHint={t("cartEmptyHint")}
+              icon={<ShoppingBag className="size-4" />}
+            />
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-bold text-[color:var(--istikbal-blue)]">
+                  {t("cartTitle")}
+                </h3>
+                <span className="text-[10px] font-bold tracking-wide text-[color:var(--istikbal-blue)]/45">
+                  {count}
+                </span>
+              </div>
+              <ul className="max-h-64 space-y-2 overflow-y-auto pr-0.5">
+                {lines.map((line) => (
+                  <li
+                    key={line.id}
+                    className="flex items-start gap-2 rounded-xl bg-[color:var(--istikbal-bg)] px-2.5 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-[color:var(--istikbal-blue)]">
+                        {line.name}
+                      </p>
+                      <p className="mt-0.5 text-[10px] font-medium text-[color:var(--istikbal-blue)]/55">
+                        ×{line.quantity} ·{" "}
+                        {formatMoney(line.price * line.quantity, line.currency)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={t("cartRemove")}
+                      onClick={() => removeLine(line.id)}
+                      className="size-7 shrink-0 grid place-items-center rounded-lg text-[color:var(--istikbal-blue)]/40 hover:bg-white hover:text-red-600"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={openQuote}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] text-xs font-bold text-white hover:bg-[color:var(--istikbal-navy)]"
+              >
+                <FileText className="size-3.5" />
+                {t("cartCreateQuote")}
+              </button>
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>
+      <QuoteOfferSheet
+        open={quoteOpen}
+        onOpenChange={setQuoteOpen}
+        draft={draft}
+        onDraftChange={setDraft}
+        onCreated={() => clear()}
+      />
+    </>
   );
 }
 

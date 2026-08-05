@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { TutorialButton } from "@/components/TutorialButton";
+import { CartProvider } from "@/lib/cart";
 import { getPortalTheme } from "@/lib/branding";
 import "./globals.css";
 
@@ -38,8 +39,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale}>
       <body style={themeStyles}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
-          <TutorialButton />
+          <CartProvider>
+            {children}
+            <TutorialButton />
+          </CartProvider>
         </NextIntlClientProvider>
       </body>
     </html>

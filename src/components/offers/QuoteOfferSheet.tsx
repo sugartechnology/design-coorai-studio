@@ -37,6 +37,8 @@ type QuoteOfferSheetProps = {
   onOpenChange: (open: boolean) => void;
   draft: QuoteDraft | null;
   onDraftChange?: (draft: QuoteDraft) => void;
+  /** Called after offer is created successfully (e.g. clear cart). */
+  onCreated?: (result: CreateOfferResult) => void;
 };
 
 export function QuoteOfferSheet({
@@ -44,6 +46,7 @@ export function QuoteOfferSheet({
   onOpenChange,
   draft,
   onDraftChange,
+  onCreated,
 }: QuoteOfferSheetProps) {
   const t = useTranslations("offers");
   const router = useRouter();
@@ -191,6 +194,7 @@ export function QuoteOfferSheet({
       };
       const created = await createOfferWithPreview(payload, router);
       setResult(created);
+      onCreated?.(created);
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
       setError(err instanceof Error ? err.message : t("createError"));

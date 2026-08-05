@@ -13,6 +13,7 @@ import {
   Box,
   FileText,
   Loader2,
+  ShoppingCart,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -25,6 +26,7 @@ import {
   type SugarRoomDesignerElement,
 } from "@/components/RoomDesignerHost";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
+import { useCart } from "@/lib/cart";
 import {
   useCatalogProductSearch,
   useInfiniteScroll,
@@ -122,6 +124,8 @@ function OdaPage() {
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
+  const [cartFlash, setCartFlash] = useState(false);
+  const { addLines } = useCart();
   const [offerHeaderTitle, setOfferHeaderTitle] = useState<string | null>(null);
   const [offerBanner, setOfferBanner] = useState<string | null>(null);
   const [offerImporting, setOfferImporting] = useState(false);
@@ -351,112 +355,125 @@ function OdaPage() {
     withDesigner((el) => el.cancelProductDrag());
   };
 
-  const openQuoteFromScene = useCallback(async () => {
+  const buildQuoteFromScene = useCallback(async (): Promise<QuoteDraft | null> => {
     const el = designerRef.current;
-    if (!el?.api) return;
+    if (!el?.api) return null;
+    const scene = el.api.execute("scene.export", undefined) as SceneExport;
+    const instances = scene.productInstances ?? [];
+    if (instances.length === 0) return null;
+
+    type Acc = {
+      sugarId: number;
+      name: string;
+      quantity: number;
+      variantSelections: QuoteVariantSelection[];
+    };
+    const grouped = new Map<string, Acc>();
+
+    for (const inst of instances) {
+      const sugarId = Number(inst.model);
+      if (!Number.isFinite(sugarId)) continue;
+      const productMeta = scene.products?.find((p) => p.id === sugarId);
+      const slice = inst.stateUuid ? scene.stateSlices?.[inst.stateUuid] : undefined;
+      const variantSelections = partMaterialsToSelections(
+        slice?.kind === "sugarModel" ? slice.value?.partMaterials : undefined,
+      );
+      const key = `${sugarId}::${configSignature(variantSelections)}`;
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        grouped.set(key, {
+          sugarId,
+          name: productMeta?.name || `Product ${sugarId}`,
+          quantity: 1,
+          variantSelections,
+        });
+      }
+    }
+
+    const lines: QuoteLineItem[] = [];
+    for (const row of grouped.values()) {
+      const cached = catalogBySugarIdRef.current.get(row.sugarId);
+      let catalogId = cached?.id;
+      let detailName = cached?.name || row.name;
+      let prices: CatalogProductDetail["prices"] = [];
+      let sku: string | null = null;
+      let thumbnailUrl: string | null = cached?.thumbnailUrl ?? null;
+
+      if (catalogId) {
+        try {
+          const detail = await getProductById(catalogId, router);
+          detailName = detail.name;
+          prices = detail.prices;
+          sku = detail.sku ?? null;
+          thumbnailUrl = detail.thumbnailUrl ?? thumbnailUrl;
+        } catch {
+          // keep cached / scene name
+        }
+      } else {
+        console.warn("[oda] missing CRM product for sugar id", row.sugarId);
+        continue;
+      }
+
+      const note = formatConfigNote(row.variantSelections);
+      lines.push(
+        lineFromCatalogProduct(
+          {
+            id: catalogId,
+            name: detailName,
+            sku,
+            thumbnailUrl,
+            prices: prices ?? [],
+          },
+          {
+            quantity: row.quantity,
+            currency: "TRY",
+            note: note || null,
+            variantSelections: row.variantSelections,
+          },
+        ),
+      );
+    }
+
+    if (lines.length === 0) return null;
+
+    return {
+      title: t("headerTitle"),
+      currency: "TRY",
+      language,
+      section: {
+        name: "Oda",
+        sceneLayout: JSON.stringify(scene),
+      },
+      lines,
+    };
+  }, [language, router, t]);
+
+  const openQuoteFromScene = useCallback(async () => {
     setQuoteBusy(true);
     try {
-      const scene = el.api.execute("scene.export", undefined) as SceneExport;
-      const instances = scene.productInstances ?? [];
-      if (instances.length === 0) {
-        setQuoteBusy(false);
-        return;
-      }
-
-      type Acc = {
-        sugarId: number;
-        name: string;
-        quantity: number;
-        variantSelections: QuoteVariantSelection[];
-      };
-      const grouped = new Map<string, Acc>();
-
-      for (const inst of instances) {
-        const sugarId = Number(inst.model);
-        if (!Number.isFinite(sugarId)) continue;
-        const productMeta = scene.products?.find((p) => p.id === sugarId);
-        const slice = inst.stateUuid ? scene.stateSlices?.[inst.stateUuid] : undefined;
-        const variantSelections = partMaterialsToSelections(
-          slice?.kind === "sugarModel" ? slice.value?.partMaterials : undefined,
-        );
-        const key = `${sugarId}::${configSignature(variantSelections)}`;
-        const existing = grouped.get(key);
-        if (existing) {
-          existing.quantity += 1;
-        } else {
-          grouped.set(key, {
-            sugarId,
-            name: productMeta?.name || `Product ${sugarId}`,
-            quantity: 1,
-            variantSelections,
-          });
-        }
-      }
-
-      const lines: QuoteLineItem[] = [];
-      for (const row of grouped.values()) {
-        const cached = catalogBySugarIdRef.current.get(row.sugarId);
-        let catalogId = cached?.id;
-        let detailName = cached?.name || row.name;
-        let prices: CatalogProductDetail["prices"] = [];
-        let sku: string | null = null;
-        let thumbnailUrl: string | null = cached?.thumbnailUrl ?? null;
-
-        if (catalogId) {
-          try {
-            const detail = await getProductById(catalogId, router);
-            detailName = detail.name;
-            prices = detail.prices;
-            sku = detail.sku ?? null;
-            thumbnailUrl = detail.thumbnailUrl ?? thumbnailUrl;
-          } catch {
-            // keep cached / scene name
-          }
-        } else {
-          console.warn("[oda] missing CRM product for sugar id", row.sugarId);
-          continue;
-        }
-
-        const note = formatConfigNote(row.variantSelections);
-        lines.push(
-          lineFromCatalogProduct(
-            {
-              id: catalogId,
-              name: detailName,
-              sku,
-              thumbnailUrl,
-              prices: prices ?? [],
-            },
-            {
-              quantity: row.quantity,
-              currency: "TRY",
-              note: note || null,
-              variantSelections: row.variantSelections,
-            },
-          ),
-        );
-      }
-
-      if (lines.length === 0) {
-        setQuoteBusy(false);
-        return;
-      }
-
-      setQuoteDraft({
-        title: t("headerTitle"),
-        currency: "TRY",
-        language,
-        section: {
-          name: "Oda",
-          sceneLayout: JSON.stringify(scene),
-        },
-        lines,
-      });
+      const draft = await buildQuoteFromScene();
+      if (!draft) return;
+      setQuoteDraft(draft);
       setQuoteOpen(true);
     } finally {
       setQuoteBusy(false);
     }
-  }, [language, router, t]);
+  }, [buildQuoteFromScene]);
+
+  const addSceneToCart = useCallback(async () => {
+    setQuoteBusy(true);
+    try {
+      const draft = await buildQuoteFromScene();
+      if (!draft) return;
+      addLines(draft.lines, "oda", draft.section);
+      setCartFlash(true);
+      window.setTimeout(() => setCartFlash(false), 1800);
+    } finally {
+      setQuoteBusy(false);
+    }
+  }, [addLines, buildQuoteFromScene]);
 
   return (
     <div className="h-dvh bg-[color:var(--istikbal-bg)] flex flex-col overflow-hidden">
@@ -464,21 +481,44 @@ function OdaPage() {
         title={(offerHeaderTitle || t("headerTitle")).toUpperCase()}
         backHref={offerId ? "/teklifler" : "/"}
         actions={
-          <button
-            type="button"
-            disabled={quoteBusy || !designerEl}
-            onClick={() => void openQuoteFromScene()}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold hover:bg-[color:var(--istikbal-navy)] disabled:opacity-40"
-          >
-            {quoteBusy ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <FileText className="size-3.5" />
-            )}
-            {tOffers("createQuote")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={quoteBusy || !designerEl}
+              onClick={() => void addSceneToCart()}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold hover:bg-[color:var(--istikbal-navy)] disabled:opacity-40"
+            >
+              {quoteBusy ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ShoppingCart className="size-3.5" />
+              )}
+              {tCommon("addToCart")}
+            </button>
+            <button
+              type="button"
+              disabled={quoteBusy || !designerEl}
+              onClick={() => void openQuoteFromScene()}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-[color:var(--istikbal-blue)]/20 bg-white text-[color:var(--istikbal-blue)] text-xs font-bold hover:bg-[color:var(--istikbal-blue)]/5 disabled:opacity-40"
+            >
+              {quoteBusy ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <FileText className="size-3.5" />
+              )}
+              {tOffers("createQuote")}
+            </button>
+          </div>
         }
       />
+
+      {cartFlash && (
+        <div className="px-4 lg:px-8 pt-2">
+          <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]">
+            {tCommon("addedToCart")}
+          </p>
+        </div>
+      )}
 
       {(offerImporting || offerBanner) && (
         <div className="px-4 lg:px-8 pt-3">

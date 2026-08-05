@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Loader2, ShoppingCart } from "lucide-react";
+import { ChevronRight, FileText, Loader2, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   isRawZoneAreaName,
@@ -21,7 +21,9 @@ type FabricRegionsPanelProps = {
   guideImage?: string | null;
   companyId?: number | string;
   onOpenPicker: (areaName: string) => void;
+  onAddToCart?: () => void;
   onAddToQuote?: () => void;
+  addToCartLabel?: string;
   addToQuoteLabel?: string;
 };
 
@@ -35,10 +37,13 @@ export function FabricRegionsPanel({
   guideImage,
   companyId = 42,
   onOpenPicker,
+  onAddToCart,
   onAddToQuote,
+  addToCartLabel,
   addToQuoteLabel,
 }: FabricRegionsPanelProps) {
   const t = useTranslations("kumas");
+  const tOffers = useTranslations("offers");
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -166,14 +171,28 @@ export function FabricRegionsPanel({
       </div>
 
       <div className="mt-4 shrink-0 space-y-2 border-t border-black/5 bg-white pt-4">
-        <button
-          type="button"
-          disabled={!allSelected}
-          onClick={onAddToQuote}
-          className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[color:var(--istikbal-blue)] text-sm font-bold tracking-wide text-white shadow-md transition-all hover:bg-[color:var(--istikbal-navy)] disabled:cursor-not-allowed disabled:bg-[color:var(--istikbal-blue)]/15 disabled:text-[color:var(--istikbal-blue)]/40"
-        >
-          <ShoppingCart className="size-4" /> {addToQuoteLabel || t("addToCart")}
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={!allSelected}
+            onClick={onAddToCart}
+            className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-[color:var(--istikbal-blue)] px-2 text-xs font-bold tracking-wide text-white shadow-md transition-all hover:bg-[color:var(--istikbal-navy)] disabled:cursor-not-allowed disabled:bg-[color:var(--istikbal-blue)]/15 disabled:text-[color:var(--istikbal-blue)]/40"
+          >
+            <ShoppingCart className="size-3.5 shrink-0" />
+            <span className="truncate">{addToCartLabel || t("addToCart")}</span>
+          </button>
+          <button
+            type="button"
+            disabled={!allSelected}
+            onClick={onAddToQuote}
+            className="flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-[color:var(--istikbal-blue)]/20 bg-white px-2 text-xs font-bold tracking-wide text-[color:var(--istikbal-blue)] transition-all hover:bg-[color:var(--istikbal-blue)]/5 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <FileText className="size-3.5 shrink-0" />
+            <span className="truncate">
+              {addToQuoteLabel || tOffers("addToQuote")}
+            </span>
+          </button>
+        </div>
         {!allSelected && areas.length > 0 && (
           <p className="rounded-xl bg-[color:var(--istikbal-yellow)]/15 py-2 text-center text-xs font-semibold text-[#f0a400]">
             {t("selectAllRegionsHint")}
