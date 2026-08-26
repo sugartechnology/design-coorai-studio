@@ -193,7 +193,7 @@ export const RoomDesignerHost = forwardRef<
           ref={(node: SugarRoomDesignerElement | null) => {
             elRef.current = node;
           }}
-          app-identifier={appIdentifier}
+          /*app-identifier={appIdentifier}*/
           welcome-menu={welcomeMenu ? "true" : "false"}
           /*ui={ui}*/
           style={{ display: "block", width: "100%", height: "100%" }}
