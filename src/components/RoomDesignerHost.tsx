@@ -195,7 +195,7 @@ export const RoomDesignerHost = forwardRef<
           }}
           app-identifier={appIdentifier}
           welcome-menu={welcomeMenu ? "true" : "false"}
-          ui={ui}
+          /*ui={ui}*/
           style={{ display: "block", width: "100%", height: "100%" }}
         />
       )}
