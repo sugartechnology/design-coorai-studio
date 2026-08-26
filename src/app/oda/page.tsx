@@ -722,7 +722,7 @@ function OdaPage() {
           </div>
         </aside>*/}
 
-        <section className="col-span-12 lg:col-span-7 min-h-[520px] lg:min-h-0 lg:h-full">
+        <section className="col-span-12 lg:col-span-9 min-h-[520px] lg:min-h-0 lg:h-full">
           <div className="bg-white rounded-3xl shadow-sm overflow-hidden relative h-full min-h-[520px] lg:min-h-0">
             <RoomDesignerHost
               className="absolute inset-0 h-full w-full"
