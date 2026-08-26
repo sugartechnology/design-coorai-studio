@@ -583,7 +583,7 @@ function OdaPage() {
       )}
 
       <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 grid grid-cols-12 gap-4 overflow-y-auto lg:overflow-hidden">
-        <aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto min-h-0 lg:h-full">
+        {/*<aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto min-h-0 lg:h-full">
           <div className="bg-white rounded-2xl p-2 shadow-sm">
             <div className="relative flex rounded-xl bg-[color:var(--brand-bg)] p-1">
               <div
@@ -720,7 +720,7 @@ function OdaPage() {
               </p>
             )}
           </div>
-        </aside>
+        </aside>*/}
 
         <section className="col-span-12 lg:col-span-7 min-h-[520px] lg:min-h-0 lg:h-full">
           <div className="bg-white rounded-3xl shadow-sm overflow-hidden relative h-full min-h-[520px] lg:min-h-0">
