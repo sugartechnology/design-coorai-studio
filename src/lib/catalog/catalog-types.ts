@@ -43,6 +43,7 @@ export type CatalogProduct = {
   categoryId?: string | null;
   categoryName?: string | null;
   thumbnailUrl?: string | null;
+  rapidRenderRefs?: Array<{ rrCompanyId?: number | null; rrProductId?: number | null }> | null;
 };
 
 export type CatalogProductPrice = {
@@ -77,6 +78,7 @@ export type CatalogProductBrief = {
   collection?: { id?: string; name?: string } | null;
   category?: { id?: string; name?: string } | null;
   categories?: Array<{ id?: string; name?: string }>;
+  rapidRenderRefs?: Array<{ rrCompanyId?: number | null; rrProductId?: number | null }> | null;
 };
 
 export type SearchFilterOption = {

@@ -19,6 +19,8 @@ export type PortalSession = {
   refreshToken: string;
   companySlug: string;
   companyId: string;
+  /** RapidRender numeric company id (`rrCompanyId`). */
+  rrCompanyId?: number | null;
   user: PortalSessionUser;
 };
 
@@ -76,6 +78,7 @@ export function publicSessionView(session: PortalSession) {
     authenticated: true as const,
     companySlug: session.companySlug,
     companyId: session.companyId,
+    rrCompanyId: session.rrCompanyId ?? null,
     user: {
       id: session.user.id,
       username: session.user.username,

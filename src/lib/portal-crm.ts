@@ -15,6 +15,7 @@ export type PortalSessionView = {
   authenticated: true;
   companySlug: string;
   companyId: string;
+  rrCompanyId?: number | null;
   user: {
     id: string;
     username: string;

@@ -14,6 +14,7 @@ import {
   FileText,
   Loader2,
   ShoppingCart,
+  ChevronLeft,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -47,7 +48,7 @@ import {
 } from "@/lib/offers";
 import { PortalCrmError } from "@/lib/portal-crm";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
-import { ProductSearchFilterMenu } from "@/components/catalog/ProductSearchFilterMenu";
+import { ProductSearchFilterList } from "@/components/catalog/ProductSearchFilterMenu";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 const ODA_FILTERS_STORAGE_KEY = "istikbal-oda-product-filters-v1";
@@ -114,6 +115,17 @@ function resolveSugarProductId(product: CatalogProduct): number | null {
   return Number.isFinite(id) ? id : null;
 }
 
+function resolveRrCompanyId(
+  product: CatalogProduct,
+  fallback: number | null,
+): number | undefined {
+  const fromRef = product.rapidRenderRefs?.find(
+    (ref) => ref.rrCompanyId != null,
+  )?.rrCompanyId;
+  const id = Number(fromRef ?? fallback);
+  return Number.isFinite(id) && id > 0 ? id : undefined;
+}
+
 function configSignature(selections: QuoteVariantSelection[]): string {
   return selections
     .map((s) => `${s.optionName}=${s.valuePathName || s.valueName}`)
@@ -162,8 +174,9 @@ function OdaPage() {
   );
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const [query, setQuery] = useState(() => readOdaQuery());
-  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
+  const [productPanelDismissed, setProductPanelDismissed] = useState(false);
   const [productScrollEl, setProductScrollEl] = useState<HTMLDivElement | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
@@ -181,10 +194,10 @@ function OdaPage() {
     loadMore: loadMoreProducts,
     facetFilters,
     hasActiveFacets,
-    activeFacetCount,
     toggleFacetOption,
     clearFacets,
     isOptionSelected,
+    rrCompanyId,
   } = useCatalogProductSearch({
     query,
     size: 40,
@@ -192,8 +205,14 @@ function OdaPage() {
   });
 
   useEffect(() => {
+    setQuery(readOdaQuery());
+    setFiltersHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
     writeOdaQuery(query);
-  }, [query]);
+  }, [filtersHydrated, query]);
 
   const { sentinelRef: productSentinelRef } = useInfiniteScroll({
     hasMore: productsHasMore,
@@ -201,6 +220,14 @@ function OdaPage() {
     onLoadMore: loadMoreProducts,
     root: productScrollEl,
   });
+
+  const wantsProductPanel = hasActiveFacets || query.trim().length > 0;
+  const showProductPanel =
+    filtersHydrated && wantsProductPanel && !productPanelDismissed;
+
+  useEffect(() => {
+    if (wantsProductPanel) setProductPanelDismissed(false);
+  }, [wantsProductPanel]);
 
   const templateLabels = useMemo(
     (): Record<TemplateKey, string> => ({
@@ -373,8 +400,9 @@ function OdaPage() {
       return;
     }
     catalogBySugarIdRef.current.set(sugarId, product);
+    const companyId = resolveRrCompanyId(product, rrCompanyId);
     withDesigner((el) => {
-      void el.addProduct(sugarId).catch((err) => {
+      void el.addProduct({ productId: sugarId, companyId }).catch((err) => {
         console.error("[oda] addProduct failed", err);
       });
     });
@@ -390,7 +418,10 @@ function OdaPage() {
       return;
     }
     catalogBySugarIdRef.current.set(sugarId, product);
-    const payload = { productId: sugarId };
+    const payload = {
+      productId: sugarId,
+      companyId: resolveRrCompanyId(product, rrCompanyId),
+    };
     event.dataTransfer.setData(SUGAR_PRODUCT_MIME, JSON.stringify(payload));
     event.dataTransfer.setData("text/plain", String(sugarId));
     event.dataTransfer.effectAllowed = "copy";
@@ -722,7 +753,7 @@ function OdaPage() {
           </div>
         </aside>*/}
 
-        <section className="col-span-12 lg:col-span-9 min-h-[520px] lg:min-h-0 lg:h-full">
+        <section className="col-span-12 lg:col-span-9 min-h-[520px] lg:min-h-0 lg:h-full relative">
           <div className="bg-white rounded-3xl shadow-sm overflow-hidden relative h-full min-h-[520px] lg:min-h-0">
             <RoomDesignerHost
               className="absolute inset-0 h-full w-full"
@@ -730,118 +761,156 @@ function OdaPage() {
               clearLastSceneOnMount={Boolean(offerId)}
               onReady={onDesignerReady}
             />
+            {showProductPanel && (
+              <div className="absolute top-3 bottom-3 right-3 z-20 w-[min(20rem,calc(100%-1.5rem))] pointer-events-none">
+                <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg border border-black/5 flex flex-col min-h-0 h-full">
+                  <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0 gap-2">
+                    <span>{t("productsTitle")}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[color:var(--brand-primary)]/40 normal-case font-medium">
+                        {products.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setProductPanelDismissed(true)}
+                        className="size-8 rounded-lg inline-flex items-center justify-center text-[color:var(--brand-primary)]/50 hover:bg-black/5 hover:text-[color:var(--brand-primary)]"
+                        aria-label={t("hideProducts")}
+                        title={t("hideProducts")}
+                      >
+                        <ChevronLeft className="size-4" />
+                      </button>
+                    </span>
+                  </h3>
+                  <div
+                    ref={setProductScrollEl}
+                    className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4"
+                  >
+                    {productsLoading && products.length === 0 && (
+                      <p className="text-xs text-[color:var(--brand-primary)]/50 text-center py-6">
+                        {tCommon("loading")}
+                      </p>
+                    )}
+                    {!productsLoading && productsByCollection.length === 0 && (
+                      <div className="text-sm text-[color:var(--brand-primary)]/40 text-center py-6">
+                        {tCommon("noResults")}
+                      </div>
+                    )}
+                    {productsByCollection.map(([collection, items]) => (
+                      <div key={collection}>
+                        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-1 mb-1.5 flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-[color:var(--brand-primary)] uppercase tracking-wider">
+                            {collection}
+                          </span>
+                          <span className="text-[10px] text-[color:var(--brand-primary)]/40">
+                            {items.length}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {items.map((p) => {
+                            const sugarId = resolveSugarProductId(p);
+                            const canPlace = sugarId != null;
+                            return (
+                            <button
+                              type="button"
+                              key={p.id}
+                              title={
+                                canPlace
+                                  ? p.name
+                                  : t("noModelIdTitle", { name: p.name })
+                              }
+                              draggable={canPlace}
+                              onDragStart={(e) => onProductDragStart(e, p)}
+                              onDragEnd={onProductDragEnd}
+                              onClick={() => addProduct(p)}
+                              disabled={!canPlace}
+                              className="group rounded-xl border border-black/5 hover:border-[color:var(--brand-primary)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                            >
+                              <div className="aspect-square rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
+                                {p.thumbnailUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={p.thumbnailUrl}
+                                    alt={p.name}
+                                    loading="lazy"
+                                    className="w-full h-full object-cover group-hover:scale-[1.04] transition duration-300"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[color:var(--brand-primary)]/20 text-xs">
+                                    {tCommon("emDash")}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-[11px] font-semibold text-[color:var(--brand-primary)] leading-tight line-clamp-2">
+                                {p.name}
+                              </div>
+                              <div className="mt-1 flex items-center justify-end">
+                                <Plus className="size-3 text-[color:var(--brand-primary)]/40 group-hover:text-[color:var(--brand-primary)] shrink-0" />
+                              </div>
+                            </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    <InfiniteScrollSentinel
+                      sentinelRef={productSentinelRef}
+                      hasMore={productsHasMore}
+                      loadingMore={productsLoadingMore}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
         <aside className="col-span-12 lg:col-span-3 flex flex-col min-h-0 lg:h-full">
           <div className="bg-white rounded-2xl p-3 shadow-sm flex flex-col min-h-0 flex-1">
-            <div className="relative mb-3 shrink-0 flex items-center gap-2">
-              <div className="relative flex-1 min-w-0">
-                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t("searchProductsPlaceholder")}
-                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--brand-primary)]/40 text-[color:var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]/20"
-                />
-              </div>
-              <ProductSearchFilterMenu
-                open={filterMenuOpen}
-                onOpenChange={setFilterMenuOpen}
+            <div className="relative mb-3 shrink-0">
+              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("searchProductsPlaceholder")}
+                className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--brand-primary)]/40 text-[color:var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]/20"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
+              <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider">
+                {t("filters")}
+              </h3>
+              {hasActiveFacets && (
+                <button
+                  type="button"
+                  onClick={clearFacets}
+                  className="h-7 px-2 rounded-lg text-[10px] font-semibold text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
+                >
+                  {t("clearFacets")}
+                </button>
+              )}
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+              <ProductSearchFilterList
                 facetFilters={facetFilters}
-                hasActiveFacets={hasActiveFacets}
-                activeFacetCount={activeFacetCount}
                 facetLabel={facetLabel}
                 isOptionSelected={isOptionSelected}
                 onToggleOption={toggleFacetOption}
-                onClear={clearFacets}
-                clearLabel={t("clearFacets")}
-                filterAriaLabel={t("filters")}
               />
             </div>
-            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0">
-              <span>{t("productsTitle")}</span>
-              <span className="text-[color:var(--brand-primary)]/40 normal-case font-medium">
-                {products.length}
-              </span>
-            </h3>
-            <div
-              ref={setProductScrollEl}
-              className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4"
-            >
-              {productsLoading && products.length === 0 && (
-                <p className="text-xs text-[color:var(--brand-primary)]/50 text-center py-6">
-                  {tCommon("loading")}
-                </p>
-              )}
-              {!productsLoading && productsByCollection.length === 0 && (
-                  <div className="text-sm text-[color:var(--brand-primary)]/40 text-center py-6">
-                    {tCommon("noResults")}
-                  </div>
-                )}
-              {productsByCollection.map(([collection, items]) => (
-                <div key={collection}>
-                  <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-1 mb-1.5 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-[color:var(--brand-primary)] uppercase tracking-wider">
-                      {collection}
-                    </span>
-                    <span className="text-[10px] text-[color:var(--brand-primary)]/40">
-                      {items.length}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {items.map((p) => {
-                      const sugarId = resolveSugarProductId(p);
-                      const canPlace = sugarId != null;
-                      return (
-                      <button
-                        type="button"
-                        key={p.id}
-                        title={
-                          canPlace
-                            ? p.name
-                            : t("noModelIdTitle", { name: p.name })
-                        }
-                        draggable={canPlace}
-                        onDragStart={(e) => onProductDragStart(e, p)}
-                        onDragEnd={onProductDragEnd}
-                        onClick={() => addProduct(p)}
-                        disabled={!canPlace}
-                        className="group rounded-xl border border-black/5 hover:border-[color:var(--brand-primary)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
-                      >
-                        <div className="aspect-square rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
-                          {p.thumbnailUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={p.thumbnailUrl}
-                              alt={p.name}
-                              loading="lazy"
-                              className="w-full h-full object-cover group-hover:scale-[1.04] transition duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[color:var(--brand-primary)]/20 text-xs">
-                              {tCommon("emDash")}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-[11px] font-semibold text-[color:var(--brand-primary)] leading-tight line-clamp-2">
-                          {p.name}
-                        </div>
-                        <div className="mt-1 flex items-center justify-end">
-                          <Plus className="size-3 text-[color:var(--brand-primary)]/40 group-hover:text-[color:var(--brand-primary)] shrink-0" />
-                        </div>
-                      </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              <InfiniteScrollSentinel
-                sentinelRef={productSentinelRef}
-                hasMore={productsHasMore}
-                loadingMore={productsLoadingMore}
-              />
-            </div>
+            {!wantsProductPanel && (
+              <p className="mt-2 shrink-0 text-[10px] text-[color:var(--brand-primary)]/50">
+                {t("chooseFilterHint")}
+              </p>
+            )}
+            {wantsProductPanel && productPanelDismissed && (
+              <button
+                type="button"
+                onClick={() => setProductPanelDismissed(false)}
+                className="mt-2 shrink-0 h-9 rounded-xl bg-[color:var(--brand-primary)] text-white text-[11px] font-bold"
+              >
+                {t("showProducts")}
+              </button>
+            )}
           </div>
         </aside>
       </main>

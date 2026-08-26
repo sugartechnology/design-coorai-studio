@@ -142,11 +142,23 @@ export function buildPortalSessionFromUnified(
   );
   if (!tokens) return null;
 
+  const rrFromMatch = data.companies?.find(
+    (company) => company.companyId === data.user?.companyId,
+  )?.rapidRenderCompanyId;
+  const rrFallback = data.companies?.find(
+    (company) => company.rapidRenderCompanyId != null,
+  )?.rapidRenderCompanyId;
+  const rrCompanyId = rrFromMatch ?? rrFallback ?? null;
+
   return {
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
     companySlug: tokens.companySlug,
     companyId: data.user.companyId,
+    rrCompanyId:
+      typeof rrCompanyId === "number" && Number.isFinite(rrCompanyId)
+        ? rrCompanyId
+        : null,
     user: {
       id: data.user.id,
       username: data.user.username ?? identifierFallback,

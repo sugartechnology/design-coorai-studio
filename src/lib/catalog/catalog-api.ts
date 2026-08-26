@@ -52,6 +52,7 @@ function mapProduct(raw: CatalogProductBrief): CatalogProduct | null {
     categoryId: category?.id ?? null,
     categoryName: category?.name ?? null,
     thumbnailUrl: normalizeMediaUrlOrNull(raw.thumbnailUrl),
+    rapidRenderRefs: raw.rapidRenderRefs ?? null,
   };
 }
 

@@ -193,12 +193,13 @@ export function useCatalogProductSearch(input: {
   const persistKey = input.persistKey?.trim() || null;
 
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [rrCompanyId, setRrCompanyId] = useState<number | null>(null);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [aggregations, setAggregations] = useState<SearchFilter[]>([]);
-  const [selection, setSelection] = useState<CatalogFacetSelection>(() =>
-    readPersistedSelection(persistKey),
-  );
+  const [catalogUniverse, setCatalogUniverse] = useState<SearchFilter | null>(null);
+  const [selection, setSelection] = useState<CatalogFacetSelection>(emptySelection);
+  const [persistHydrated, setPersistHydrated] = useState(!persistKey);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -216,8 +217,48 @@ export function useCatalogProductSearch(input: {
   selectionRef.current = selection;
 
   useEffect(() => {
+    if (!persistKey) {
+      setPersistHydrated(true);
+      return;
+    }
+    setSelection(readPersistedSelection(persistKey));
+    setPersistHydrated(true);
+  }, [persistKey]);
+
+  useEffect(() => {
+    if (!persistHydrated) return;
     writePersistedSelection(persistKey, selection);
-  }, [persistKey, selection]);
+  }, [persistKey, persistHydrated, selection]);
+
+  useEffect(() => {
+    if (!enabled || !companyId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await searchCatalogProducts(
+          {
+            companyId,
+            channel,
+            currency,
+            criteria: buildCatalogProductSearchCriteria({
+              query: "",
+              page: 0,
+              size: 1,
+            }),
+          },
+          router,
+        );
+        if (cancelled) return;
+        const catalogs = result.filters.find((filter) => filter.field === "catalogs");
+        if (catalogs) setCatalogUniverse(catalogs);
+      } catch {
+        // Product search still supplies other facets; catalog list stays empty until retry.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [channel, companyId, currency, enabled, router]);
 
   useEffect(() => {
     const facet = aggregations.find((filter) => filter.field === "typeCategories");
@@ -239,6 +280,11 @@ export function useCatalogProductSearch(input: {
         return;
       }
       setCompanyId(session.companyId);
+      setRrCompanyId(
+        typeof session.rrCompanyId === "number" && Number.isFinite(session.rrCompanyId)
+          ? session.rrCompanyId
+          : null,
+      );
     })();
     return () => {
       cancelled = true;
@@ -290,7 +336,9 @@ export function useCatalogProductSearch(input: {
         pageRef.current = pageToLoad;
         setPage(pageToLoad);
         if (!append) {
-          setAggregations(result.filters);
+          setAggregations(
+            result.filters.filter((filter) => filter.field !== "catalogs"),
+          );
         }
         setProducts((prev) => {
           const next = !append
@@ -485,13 +533,20 @@ export function useCatalogProductSearch(input: {
     );
     const allowed = new Set(
       hasTypeCategories
-        ? ["catalogs", "typeCategories", "collections"]
-        : ["catalogs", "categories", "collections"],
+        ? ["typeCategories", "collections"]
+        : ["categories", "collections"],
     );
-    return aggregations.filter(
+    const rest = aggregations.filter(
       (f) => f.field && allowed.has(f.field) && (f.options?.length ?? 0) > 0,
     );
-  }, [aggregations]);
+    const catalogs =
+      catalogUniverse && (catalogUniverse.options?.length ?? 0) > 0
+        ? catalogUniverse
+        : aggregations.find(
+            (f) => f.field === "catalogs" && (f.options?.length ?? 0) > 0,
+          );
+    return catalogs ? [catalogs, ...rest] : rest;
+  }, [aggregations, catalogUniverse]);
 
   const activeFacetCount =
     selection.catalogIds.length +
@@ -503,6 +558,7 @@ export function useCatalogProductSearch(input: {
 
   return {
     companyId,
+    rrCompanyId,
     products,
     totalElements,
     page,

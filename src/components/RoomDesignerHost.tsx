@@ -13,7 +13,6 @@ import { clearRoomDesignerLastScene } from "@/lib/offers";
 
 const SCRIPT_SRC = "/vendor/sugar-room-designer.js";
 const TAG_NAME = "sugar-room-designer";
-const APP_IDENTIFIER = "10203";
 
 export type SugarRoomDesignerElement = HTMLElement & {
   ui?: "builtin" | "none";
@@ -36,11 +35,12 @@ export type SugarRoomDesignerElement = HTMLElement & {
   addProduct: (
     productIdOrPayload:
       | number
-      | { productId?: number; product?: unknown },
+      | { productId?: number; product?: unknown; companyId?: number },
   ) => Promise<unknown>;
   beginProductDrag: (payload: {
     productId?: number;
     product?: unknown;
+    companyId?: number;
   }) => void;
   cancelProductDrag: () => void;
   deleteSelection: () => boolean;
@@ -84,9 +84,7 @@ export const RoomDesignerHost = forwardRef<
 >(function RoomDesignerHost(
   {
     className,
-    appIdentifier = APP_IDENTIFIER,
     welcomeMenu = true,
-    ui = "none",
     clearLastSceneOnMount = false,
     onReady,
   },
@@ -193,9 +191,7 @@ export const RoomDesignerHost = forwardRef<
           ref={(node: SugarRoomDesignerElement | null) => {
             elRef.current = node;
           }}
-          /*app-identifier={appIdentifier}*/
           welcome-menu={welcomeMenu ? "true" : "false"}
-          /*ui={ui}*/
           style={{ display: "block", width: "100%", height: "100%" }}
         />
       )}
