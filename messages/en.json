@@ -57,7 +57,7 @@
     "studioTagline": "3D Design Studio"
   },
   "meta": {
-    "title": "İstikbal 3D Design Studio",
+    "title": "{brand} {tagline}",
     "description": "3D design, fabric selection, AI-assisted room planning, and modular product management for furniture stores.",
     "ogDescription": "Choose fabric, design with AI, plan rooms, and manage your store from one panel."
   },
@@ -108,8 +108,9 @@
     "featureDealerCode": "Dealer code",
     "featureSmsPin": "SMS PIN",
     "featureSecure": "Secure",
-    "footerCopyright": "© {year} İstikbal · 3D Design Studio",
+    "footerCopyright": "© {year} {brand} · {tagline}",
     "title": "Sign in",
+    "metaDescription": "Sign in to the {brand} dealer panel with your dealer code and SMS PIN.",
     "tabCredentials": "Username",
     "tabDealer": "Dealer code",
     "credentialsHint": "Sign in with your username (or email) and password.",

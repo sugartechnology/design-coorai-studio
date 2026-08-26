@@ -47,12 +47,12 @@ const HeaderIconButton = forwardRef<
       ref={ref}
       type="button"
       aria-label={label}
-      className="relative size-9 rounded-full border border-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)] grid place-items-center hover:bg-[color:var(--istikbal-blue)]/5 transition-colors"
+      className="relative size-9 rounded-full border border-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)] grid place-items-center hover:bg-[color:var(--brand-primary)]/5 transition-colors"
       {...props}
     >
       {children}
       {showBadge ? (
-        <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-[color:var(--istikbal-yellow)] text-[10px] font-bold text-[color:var(--istikbal-blue)] grid place-items-center leading-none">
+        <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-[color:var(--brand-accent)] text-[10px] font-bold text-[color:var(--brand-primary)] grid place-items-center leading-none">
           {count > 9 ? "9+" : count}
         </span>
       ) : null}
@@ -74,18 +74,18 @@ function HeaderPanelShell({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-bold text-[color:var(--istikbal-blue)]">
+        <h3 className="text-sm font-bold text-[color:var(--brand-primary)]">
           {title}
         </h3>
       </div>
-      <div className="rounded-2xl border border-dashed border-[color:var(--istikbal-blue)]/15 bg-[color:var(--istikbal-bg)] px-4 py-8 text-center">
-        <div className="mx-auto mb-3 size-10 rounded-full bg-[color:var(--istikbal-blue)]/5 text-[color:var(--istikbal-blue)]/50 grid place-items-center">
+      <div className="rounded-2xl border border-dashed border-[color:var(--brand-primary)]/15 bg-[color:var(--brand-bg)] px-4 py-8 text-center">
+        <div className="mx-auto mb-3 size-10 rounded-full bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)]/50 grid place-items-center">
           {icon}
         </div>
-        <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">
+        <p className="text-sm font-semibold text-[color:var(--brand-primary)]">
           {emptyTitle}
         </p>
-        <p className="mt-1 text-xs text-[color:var(--istikbal-blue)]/55 leading-relaxed">
+        <p className="mt-1 text-xs text-[color:var(--brand-primary)]/55 leading-relaxed">
           {emptyHint}
         </p>
       </div>
@@ -143,10 +143,10 @@ function HeaderCartBox() {
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-bold text-[color:var(--istikbal-blue)]">
+                <h3 className="text-sm font-bold text-[color:var(--brand-primary)]">
                   {t("cartTitle")}
                 </h3>
-                <span className="text-[10px] font-bold tracking-wide text-[color:var(--istikbal-blue)]/45">
+                <span className="text-[10px] font-bold tracking-wide text-[color:var(--brand-primary)]/45">
                   {count}
                 </span>
               </div>
@@ -154,13 +154,13 @@ function HeaderCartBox() {
                 {lines.map((line) => (
                   <li
                     key={line.id}
-                    className="flex items-start gap-2 rounded-xl bg-[color:var(--istikbal-bg)] px-2.5 py-2"
+                    className="flex items-start gap-2 rounded-xl bg-[color:var(--brand-bg)] px-2.5 py-2"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-[color:var(--istikbal-blue)]">
+                      <p className="truncate text-xs font-semibold text-[color:var(--brand-primary)]">
                         {line.name}
                       </p>
-                      <p className="mt-0.5 text-[10px] font-medium text-[color:var(--istikbal-blue)]/55">
+                      <p className="mt-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]/55">
                         ×{line.quantity} ·{" "}
                         {formatMoney(line.price * line.quantity, line.currency)}
                       </p>
@@ -169,7 +169,7 @@ function HeaderCartBox() {
                       type="button"
                       aria-label={t("cartRemove")}
                       onClick={() => removeLine(line.id)}
-                      className="size-7 shrink-0 grid place-items-center rounded-lg text-[color:var(--istikbal-blue)]/40 hover:bg-white hover:text-red-600"
+                      className="size-7 shrink-0 grid place-items-center rounded-lg text-[color:var(--brand-primary)]/40 hover:bg-white hover:text-red-600"
                     >
                       <Trash2 className="size-3.5" />
                     </button>
@@ -179,7 +179,7 @@ function HeaderCartBox() {
               <button
                 type="button"
                 onClick={openQuote}
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] text-xs font-bold text-white hover:bg-[color:var(--istikbal-navy)]"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--brand-primary)] text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)]"
               >
                 <FileText className="size-3.5" />
                 {t("cartCreateQuote")}
@@ -254,11 +254,11 @@ function HeaderUserChip() {
 
   return (
     <div className="flex items-center gap-2 shrink-0 min-w-0">
-      <span className="hidden sm:inline text-sm font-semibold text-[color:var(--istikbal-blue)] truncate max-w-[10rem] lg:max-w-[14rem]">
+      <span className="hidden sm:inline text-sm font-semibold text-[color:var(--brand-primary)] truncate max-w-[10rem] lg:max-w-[14rem]">
         {displayName}
       </span>
       <div
-        className="size-8 rounded-full bg-[color:var(--istikbal-blue)] text-white grid place-items-center text-xs font-bold shrink-0"
+        className="size-8 rounded-full bg-[color:var(--brand-primary)] text-white grid place-items-center text-xs font-bold shrink-0"
         aria-hidden
       >
         {initial}
@@ -286,11 +286,11 @@ export function AppHeader({
     >
       <Link
         href={backHref}
-        className="flex items-center gap-2 text-sm font-semibold text-[color:var(--istikbal-blue)]"
+        className="flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-primary)]"
       >
         <ArrowLeft className="size-4" /> {label}
       </Link>
-      <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70 truncate">
+      <div className="text-xs font-bold tracking-[0.18em] text-[color:var(--brand-primary)]/70 truncate">
         {title}
       </div>
       <div className="flex-1" />

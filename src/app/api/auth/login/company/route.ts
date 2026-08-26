@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     const upstream = await fetch(crmUrl("/login/unified/company"), {
       method: "POST",
-      headers: crmHeaders({ "Content-Type": "application/json" }),
+      headers: await crmHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ selectionToken, companyId }),
       cache: "no-store",
     });

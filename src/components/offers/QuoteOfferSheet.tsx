@@ -210,10 +210,10 @@ export function QuoteOfferSheet({
         className="w-full sm:max-w-md overflow-y-auto bg-white p-0"
       >
         <SheetHeader className="border-b border-black/5 px-5 py-4 text-left">
-          <SheetTitle className="text-[color:var(--istikbal-blue)]">
+          <SheetTitle className="text-[color:var(--brand-primary)]">
             {result ? t("successTitle") : t("title")}
           </SheetTitle>
-          <SheetDescription className="text-[color:var(--istikbal-blue)]/60">
+          <SheetDescription className="text-[color:var(--brand-primary)]/60">
             {result
               ? t("successHint", {
                   number: result.offer.offerNumber || result.offer.id.slice(0, 8),
@@ -234,19 +234,19 @@ export function QuoteOfferSheet({
           ) : (
             <>
               <section className="space-y-2">
-                <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]/50">
+                <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/50">
                   {t("customerSection")}
                 </h3>
                 {draft?.customerId ? (
-                  <div className="flex items-center justify-between gap-2 rounded-xl bg-[color:var(--istikbal-blue)]/5 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2 rounded-xl bg-[color:var(--brand-primary)]/5 px-3 py-2.5">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[color:var(--istikbal-blue)] truncate">
+                      <p className="text-sm font-semibold text-[color:var(--brand-primary)] truncate">
                         {draft.customerLabel || draft.customerId}
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+                      className="text-xs font-semibold text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
                       onClick={() =>
                         patchDraft({ customerId: null, customerLabel: null })
                       }
@@ -257,15 +257,15 @@ export function QuoteOfferSheet({
                 ) : (
                   <>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
                       <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={t("customerSearchPlaceholder")}
-                        className="w-full h-11 rounded-xl border border-black/10 bg-white pl-10 pr-3 text-sm text-[color:var(--istikbal-blue)] outline-none focus:border-[color:var(--istikbal-blue)]/40"
+                        className="w-full h-11 rounded-xl border border-black/10 bg-white pl-10 pr-3 text-sm text-[color:var(--brand-primary)] outline-none focus:border-[color:var(--brand-primary)]/40"
                       />
                       {searching && (
-                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-[color:var(--istikbal-blue)]/40" />
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-[color:var(--brand-primary)]/40" />
                       )}
                     </div>
                     {hits.length > 0 && (
@@ -278,9 +278,9 @@ export function QuoteOfferSheet({
                               <button
                                 type="button"
                                 onClick={() => selectCustomer(hit)}
-                                className="w-full text-left px-3 py-2.5 text-sm hover:bg-[color:var(--istikbal-blue)]/5"
+                                className="w-full text-left px-3 py-2.5 text-sm hover:bg-[color:var(--brand-primary)]/5"
                               >
-                                <span className="font-semibold text-[color:var(--istikbal-blue)]">
+                                <span className="font-semibold text-[color:var(--brand-primary)]">
                                   {formatCustomerLabel(hit)}
                                 </span>
                               </button>
@@ -293,7 +293,7 @@ export function QuoteOfferSheet({
                       <button
                         type="button"
                         onClick={() => setShowQuickCreate(true)}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[color:var(--istikbal-blue)]"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[color:var(--brand-primary)]"
                       >
                         <Plus className="size-3.5" /> {t("quickCreate")}
                       </button>
@@ -315,7 +315,7 @@ export function QuoteOfferSheet({
                           type="button"
                           disabled={creating}
                           onClick={() => void handleQuickCreate()}
-                          className="w-full h-10 rounded-lg bg-[color:var(--istikbal-blue)] text-white text-sm font-bold disabled:opacity-50"
+                          className="w-full h-10 rounded-lg bg-[color:var(--brand-primary)] text-white text-sm font-bold disabled:opacity-50"
                         >
                           {creating ? (
                             <Loader2 className="size-4 animate-spin mx-auto" />
@@ -330,11 +330,11 @@ export function QuoteOfferSheet({
               </section>
 
               <section className="space-y-2">
-                <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]/50">
+                <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/50">
                   {t("linesSection")}
                 </h3>
                 {lines.length === 0 ? (
-                  <p className="text-sm text-[color:var(--istikbal-blue)]/50">
+                  <p className="text-sm text-[color:var(--brand-primary)]/50">
                     {t("linesEmpty")}
                   </p>
                 ) : (
@@ -350,7 +350,7 @@ export function QuoteOfferSheet({
                     ))}
                   </ul>
                 )}
-                <p className="text-sm font-bold text-[color:var(--istikbal-blue)] text-right">
+                <p className="text-sm font-bold text-[color:var(--brand-primary)] text-right">
                   {t("subtotal")}: {lineTotal.toLocaleString(language)}{" "}
                   {draft?.currency || "TRY"}
                 </p>
@@ -360,7 +360,7 @@ export function QuoteOfferSheet({
                 type="button"
                 disabled={submitting || !draft?.customerId || lines.length === 0}
                 onClick={() => void handleSubmit()}
-                className="w-full h-12 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full h-12 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -385,17 +385,17 @@ function LineRow({
   onRemove?: () => void;
 }) {
   return (
-    <li className="rounded-xl border border-black/5 bg-[color:var(--istikbal-blue)]/5 px-3 py-2.5">
+    <li className="rounded-xl border border-black/5 bg-[color:var(--brand-primary)]/5 px-3 py-2.5">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-[color:var(--istikbal-blue)] truncate">
+          <p className="text-sm font-semibold text-[color:var(--brand-primary)] truncate">
             {line.name}
           </p>
-          <p className="text-[11px] text-[color:var(--istikbal-blue)]/55">
+          <p className="text-[11px] text-[color:var(--brand-primary)]/55">
             ×{line.quantity} · {line.price.toLocaleString()} {line.currency}
           </p>
           {line.note ? (
-            <p className="mt-1 text-[11px] text-[color:var(--istikbal-blue)]/70 leading-snug">
+            <p className="mt-1 text-[11px] text-[color:var(--brand-primary)]/70 leading-snug">
               {line.note}
             </p>
           ) : null}
@@ -404,7 +404,7 @@ function LineRow({
           <button
             type="button"
             onClick={onRemove}
-            className="p-1 text-[color:var(--istikbal-blue)]/40 hover:text-red-600"
+            className="p-1 text-[color:var(--brand-primary)]/40 hover:text-red-600"
             aria-label="Remove"
           >
             <Trash2 className="size-3.5" />
@@ -435,42 +435,42 @@ function SuccessPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-[color:var(--istikbal-blue)]/5 p-4 space-y-1">
-        <p className="text-xs font-bold text-[color:var(--istikbal-blue)]/50">
+      <div className="rounded-2xl bg-[color:var(--brand-primary)]/5 p-4 space-y-1">
+        <p className="text-xs font-bold text-[color:var(--brand-primary)]/50">
           {t("offerNumber")}
         </p>
-        <p className="text-lg font-extrabold text-[color:var(--istikbal-blue)]">
+        <p className="text-lg font-extrabold text-[color:var(--brand-primary)]">
           {offer.offerNumber || offer.id}
         </p>
-        <p className="text-sm text-[color:var(--istikbal-blue)]/70">
+        <p className="text-sm text-[color:var(--brand-primary)]/70">
           {t("status")}: {offer.status || "PENDING"}
         </p>
         {typeof offer.totalPrice === "number" && (
-          <p className="text-sm font-bold text-[color:var(--istikbal-blue)]">
+          <p className="text-sm font-bold text-[color:var(--brand-primary)]">
             {t("total")}: {offer.totalPrice.toLocaleString()} {offer.currency}
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]/50">
+        <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/50">
           {t("draftPreview")}
         </h3>
         <ul className="space-y-2">
           {products.map((p, i) => (
             <li
               key={i}
-              className="rounded-xl border border-black/5 px-3 py-2 text-sm text-[color:var(--istikbal-blue)]"
+              className="rounded-xl border border-black/5 px-3 py-2 text-sm text-[color:var(--brand-primary)]"
             >
               <span className="font-semibold">{p.name}</span>
               {p.quantity != null ? (
-                <span className="text-[color:var(--istikbal-blue)]/55">
+                <span className="text-[color:var(--brand-primary)]/55">
                   {" "}
                   ×{p.quantity}
                 </span>
               ) : null}
               {p.note ? (
-                <p className="text-[11px] text-[color:var(--istikbal-blue)]/60 mt-0.5">
+                <p className="text-[11px] text-[color:var(--brand-primary)]/60 mt-0.5">
                   {p.note}
                 </p>
               ) : null}
@@ -485,7 +485,7 @@ function SuccessPanel({
             href={result.shareUrl}
             target="_blank"
             rel="noreferrer"
-            className="h-11 rounded-xl bg-[color:var(--istikbal-blue)] text-white text-sm font-bold flex items-center justify-center gap-2"
+            className="h-11 rounded-xl bg-[color:var(--brand-primary)] text-white text-sm font-bold flex items-center justify-center gap-2"
           >
             <ExternalLink className="size-4" /> {t("viewShare")}
           </a>
@@ -495,7 +495,7 @@ function SuccessPanel({
             href={result.editUrl}
             target="_blank"
             rel="noreferrer"
-            className="h-11 rounded-xl border border-[color:var(--istikbal-blue)]/20 text-[color:var(--istikbal-blue)] text-sm font-bold flex items-center justify-center gap-2"
+            className="h-11 rounded-xl border border-[color:var(--brand-primary)]/20 text-[color:var(--brand-primary)] text-sm font-bold flex items-center justify-center gap-2"
           >
             <FileText className="size-4" /> {t("editInCrm")}
           </a>

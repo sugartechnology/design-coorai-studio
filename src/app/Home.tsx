@@ -15,6 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { BrandLogo } from "@/components/BrandLogo";
 
 type SessionUser = {
   displayName: string;
@@ -194,7 +195,7 @@ function Home() {
       icon: Sofa,
       to: "/kumas",
       className:
-        "bg-[color:var(--istikbal-blue)] text-white col-span-2 sm:col-span-3 row-span-2",
+        "bg-[color:var(--brand-primary)] text-white col-span-2 sm:col-span-3 row-span-2",
       size: "lg",
       decoration: FabricIllustration,
     },
@@ -204,7 +205,7 @@ function Home() {
       icon: Sparkles,
       to: "/ai",
       className:
-        "bg-gradient-to-br from-[color:var(--istikbal-yellow)] to-[#f6b900] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-2",
+        "bg-gradient-to-br from-[color:var(--brand-accent)] to-[color:var(--brand-accent)] text-[color:var(--brand-primary)] col-span-2 sm:col-span-3 row-span-2",
       size: "lg",
       decoration: AiIllustration,
     },
@@ -214,7 +215,7 @@ function Home() {
       icon: LayoutDashboard,
       to: "/oda",
       className:
-        "bg-white text-[color:var(--istikbal-blue)] col-span-2 row-span-2",
+        "bg-white text-[color:var(--brand-primary)] col-span-2 row-span-2",
       size: "md",
       decoration: RoomIllustration,
     },
@@ -224,7 +225,7 @@ function Home() {
       icon: Boxes,
       to: "/moduler",
       className:
-        "bg-[color:var(--istikbal-navy)] text-white col-span-2 row-span-2",
+        "bg-[color:var(--brand-primary-strong)] text-white col-span-2 row-span-2",
       size: "md",
       decoration: ModularIllustration,
     },
@@ -234,7 +235,7 @@ function Home() {
       icon: FileText,
       to: "/teklifler",
       className:
-        "bg-white text-[color:var(--istikbal-blue)] col-span-2 row-span-2",
+        "bg-white text-[color:var(--brand-primary)] col-span-2 row-span-2",
       size: "md",
       decoration: OffersIllustration,
     },
@@ -244,7 +245,7 @@ function Home() {
       icon: Settings,
       to: "/ayarlar",
       className:
-        "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-1",
+        "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] col-span-2 sm:col-span-3 row-span-1",
       size: "sm",
       decoration: SettingsIllustration,
     },
@@ -254,7 +255,7 @@ function Home() {
       icon: Users,
       to: "/kullanicilar",
       className:
-        "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] col-span-2 sm:col-span-3 row-span-1",
+        "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] col-span-2 sm:col-span-3 row-span-1",
       size: "sm",
       decoration: UsersIllustration,
     },
@@ -285,16 +286,11 @@ function Home() {
   const initial = (session?.user?.firstName || displayName).charAt(0).toUpperCase() || "B";
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
+    <div className="min-h-screen bg-[color:var(--brand-bg)]">
       <header className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 border-b border-black/5">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-1">
-            <span className="text-[color:var(--istikbal-yellow)] text-2xl sm:text-3xl leading-none">≋</span>
-            <span className="text-xl sm:text-2xl font-extrabold italic text-[color:var(--istikbal-blue)] tracking-tight">
-              istikbal
-            </span>
-          </div>
-          <span className="ml-3 hidden md:inline text-sm font-medium text-[color:var(--istikbal-blue)]/60 truncate">
+          <BrandLogo className="h-7 sm:h-8" />
+          <span className="ml-1 hidden md:inline text-sm font-medium text-[color:var(--brand-primary)]/60 truncate">
             {t("productSubtitle")}
           </span>
         </div>
@@ -303,24 +299,24 @@ function Home() {
             <button
               type="button"
               onClick={logout}
-              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-full border border-[color:var(--istikbal-blue)]/15 text-[color:var(--istikbal-blue)] text-sm font-semibold hover:bg-[color:var(--istikbal-blue)]/5 transition-colors"
+              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-full border border-[color:var(--brand-primary)]/15 text-[color:var(--brand-primary)] text-sm font-semibold hover:bg-[color:var(--brand-primary)]/5 transition-colors"
             >
               {t("logout")}
             </button>
           ) : (
             <Link href="/login"
-              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-semibold hover:bg-[color:var(--istikbal-navy)] transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-[color:var(--brand-primary)] text-white text-sm font-semibold hover:bg-[color:var(--brand-primary-strong)] transition-colors shadow-sm"
             >
               <LogIn className="size-4" />
               <span className="hidden sm:inline">{t("login")}</span>
             </Link>
           )}
-          <span className="text-sm text-[color:var(--istikbal-blue)]/70 hidden md:inline">
+          <span className="text-sm text-[color:var(--brand-primary)]/70 hidden md:inline">
             {session?.authenticated
               ? t("welcomeNamed", { name: displayName })
               : t("welcome")}
           </span>
-          <div className="size-9 sm:size-10 rounded-full bg-[color:var(--istikbal-blue)] text-white grid place-items-center font-semibold">
+          <div className="size-9 sm:size-10 rounded-full bg-[color:var(--brand-primary)] text-white grid place-items-center font-semibold">
             {initial}
           </div>
         </div>
@@ -328,10 +324,10 @@ function Home() {
 
       <main className="px-4 sm:px-6 lg:px-8 py-5 sm:py-7 lg:py-10 max-w-[1600px] mx-auto">
         <div className="mb-5 sm:mb-7 lg:mb-10">
-          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">
             {t("headline")}
           </h1>
-          <p className="mt-1.5 sm:mt-2 text-[color:var(--istikbal-blue)]/60 text-sm sm:text-base lg:text-lg">
+          <p className="mt-1.5 sm:mt-2 text-[color:var(--brand-primary)]/60 text-sm sm:text-base lg:text-lg">
             {t("subhead")}
           </p>
         </div>

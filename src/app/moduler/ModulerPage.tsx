@@ -150,7 +150,7 @@ function ModulerPage() {
   const clearAll = () => setBuild([]);
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
+    <div className="min-h-screen bg-[color:var(--brand-bg)]">
       <AppHeader
         title={
           selectedProduct
@@ -164,7 +164,7 @@ function ModulerPage() {
             <button
               type="button"
               onClick={backToList}
-              className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+              className="text-xs font-semibold text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
             >
               {t("backToList")}
             </button>
@@ -189,7 +189,7 @@ function ModulerPage() {
         <section className="col-span-12 lg:col-span-8">
           <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
             <div
-              className={`aspect-[16/10] bg-gradient-to-br from-white to-stone-100 relative transition ${dragOver ? "ring-4 ring-[color:var(--istikbal-blue)]/40 ring-inset" : ""}`}
+              className={`aspect-[16/10] bg-gradient-to-br from-white to-stone-100 relative transition ${dragOver ? "ring-4 ring-[color:var(--brand-primary)]/40 ring-inset" : ""}`}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={onDropModule}
@@ -197,7 +197,7 @@ function ModulerPage() {
               <SofaPreview build={build} fabric={fabricObj} wood={woodObj} arm={armObj.id} />
               {dragOver && (
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="px-4 py-2 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-semibold shadow-lg">{t("dropToAdd")}</div>
+                  <div className="px-4 py-2 rounded-full bg-[color:var(--brand-primary)] text-white text-sm font-semibold shadow-lg">{t("dropToAdd")}</div>
                 </div>
               )}
 
@@ -211,14 +211,14 @@ function ModulerPage() {
               {/* Price + list */}
               <div className="absolute bottom-4 right-4 flex items-center gap-3">
                 <div className="text-right">
-                  <div className="text-xs text-[color:var(--istikbal-blue)]/50 font-medium">{tCommon("total")}</div>
-                  <div className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">
+                  <div className="text-xs text-[color:var(--brand-primary)]/50 font-medium">{tCommon("total")}</div>
+                  <div className="text-2xl font-extrabold text-[color:var(--brand-primary)]">
                     {total.toLocaleString("tr-TR")}<span className="text-sm font-semibold">,00 {tCommon("currencyTl")}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setListOpen(true)}
-                  className="h-12 px-5 rounded-full bg-[color:var(--istikbal-blue)] text-white font-semibold hover:opacity-90 flex items-center gap-2"
+                  className="h-12 px-5 rounded-full bg-[color:var(--brand-primary)] text-white font-semibold hover:opacity-90 flex items-center gap-2"
                 >
                   <ListOrdered className="size-4" /> {t("productList")} <ChevronRight className="size-4" />
                 </button>
@@ -228,13 +228,13 @@ function ModulerPage() {
 
           {/* Selected modules row */}
           <div className="mt-4 bg-white rounded-2xl shadow-sm p-3 flex items-center gap-2 overflow-x-auto">
-            <span className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider px-2 shrink-0">{t("selectedModules")}</span>
-            {build.length === 0 && <span className="text-sm text-[color:var(--istikbal-blue)]/40 px-2">{t("noModulesYet")}</span>}
+            <span className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider px-2 shrink-0">{t("selectedModules")}</span>
+            {build.length === 0 && <span className="text-sm text-[color:var(--brand-primary)]/40 px-2">{t("noModulesYet")}</span>}
             {build.map(b => {
               const m = MODULES.find(x => x.id === b.moduleId)!;
               return (
                 <div key={b.uid} className="shrink-0 flex items-center gap-2 rounded-xl bg-black/5 pl-3 pr-1 py-1">
-                  <span className="text-xs font-semibold text-[color:var(--istikbal-blue)]">{m.name}</span>
+                  <span className="text-xs font-semibold text-[color:var(--brand-primary)]">{m.name}</span>
                   <button onClick={() => removeModule(b.uid)} className="size-6 rounded-full bg-white text-rose-500 hover:bg-rose-50 flex items-center justify-center">
                     <X className="size-3" />
                   </button>
@@ -250,7 +250,7 @@ function ModulerPage() {
           <OptionBlock title={t("woodOption")} value={t("woodValuePrefix", { label: woodLabel })}>
             <div className="flex items-center gap-2 flex-wrap">
               {WOODS.map(w => (
-                <button key={w.id} onClick={() => setWood(w.id)} className={`size-11 rounded-full border-2 transition flex items-center justify-center ${wood === w.id ? "border-[color:var(--istikbal-blue)]" : "border-transparent hover:border-black/10"}`}>
+                <button key={w.id} onClick={() => setWood(w.id)} className={`size-11 rounded-full border-2 transition flex items-center justify-center ${wood === w.id ? "border-[color:var(--brand-primary)]" : "border-transparent hover:border-black/10"}`}>
                   <span className="size-9 rounded-full block" style={{ background: w.color, boxShadow: "inset 0 -3px 6px rgba(0,0,0,0.15)" }} />
                 </button>
               ))}
@@ -261,7 +261,7 @@ function ModulerPage() {
           <OptionBlock title={t("fabricOption")} value={`/ ${fabricObj.label}`}>
             <div className="flex items-center gap-2 flex-wrap">
               {FABRICS.map(f => (
-                <button key={f.id} onClick={() => setFabric(f.id)} className={`size-11 rounded-full border-2 transition ${fabric === f.id ? "border-[color:var(--istikbal-blue)]" : "border-transparent hover:border-black/10"}`}>
+                <button key={f.id} onClick={() => setFabric(f.id)} className={`size-11 rounded-full border-2 transition ${fabric === f.id ? "border-[color:var(--brand-primary)]" : "border-transparent hover:border-black/10"}`}>
                   <span className="size-9 rounded-full block" style={{ background: f.color, boxShadow: "inset 0 -3px 6px rgba(0,0,0,0.18)" }} />
                 </button>
               ))}
@@ -272,9 +272,9 @@ function ModulerPage() {
           <OptionBlock title={t("backCushion")} value={cushionLabel}>
             <div className="flex items-center gap-2">
               {CUSHIONS.map(c => (
-                <button key={c.id} onClick={() => setCushion(c.id)} className={`flex items-center gap-2 h-11 px-4 rounded-xl border-2 transition ${cushion === c.id ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5" : "border-black/5 hover:border-black/20"}`}>
+                <button key={c.id} onClick={() => setCushion(c.id)} className={`flex items-center gap-2 h-11 px-4 rounded-xl border-2 transition ${cushion === c.id ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5" : "border-black/5 hover:border-black/20"}`}>
                   <CushionIcon variant={c.id === "c1" ? "soft" : "firm"} active={cushion === c.id} />
-                  <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t(c.labelKey)}</span>
+                  <span className="text-sm font-semibold text-[color:var(--brand-primary)]">{t(c.labelKey)}</span>
                 </button>
               ))}
             </div>
@@ -284,9 +284,9 @@ function ModulerPage() {
           <OptionBlock title={t("armOption")} value={armLabel}>
             <div className="flex items-center gap-2">
               {ARMS.map(a => (
-                <button key={a.id} onClick={() => setArm(a.id)} className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition w-24 ${arm === a.id ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5" : "border-black/5 hover:border-black/20"}`}>
+                <button key={a.id} onClick={() => setArm(a.id)} className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition w-24 ${arm === a.id ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5" : "border-black/5 hover:border-black/20"}`}>
                   <ArmIcon variant={a.id === "a1" ? "thin" : "thick"} active={arm === a.id} />
-                  <span className="text-[11px] font-semibold text-[color:var(--istikbal-blue)]">{t(a.labelKey)}</span>
+                  <span className="text-[11px] font-semibold text-[color:var(--brand-primary)]">{t(a.labelKey)}</span>
                 </button>
               ))}
             </div>
@@ -294,7 +294,7 @@ function ModulerPage() {
 
           {/* Modules */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-3 flex items-center gap-1.5"><GripVertical className="size-3" /> {t("modulesDragHint")}</h3>
+            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-3 flex items-center gap-1.5"><GripVertical className="size-3" /> {t("modulesDragHint")}</h3>
             <div className="grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto pr-1">
               {MODULES.map(m => (
                 <button
@@ -302,15 +302,15 @@ function ModulerPage() {
                   onClick={() => addModule(m)}
                   draggable
                   onDragStart={(e) => { e.dataTransfer.setData("text/module", m.id); e.dataTransfer.effectAllowed = "copy"; }}
-                  className="group rounded-xl border border-black/5 hover:border-[color:var(--istikbal-blue)]/40 hover:shadow-md transition p-2 text-left cursor-grab active:cursor-grabbing"
+                  className="group rounded-xl border border-black/5 hover:border-[color:var(--brand-primary)]/40 hover:shadow-md transition p-2 text-left cursor-grab active:cursor-grabbing"
                 >
                   <div className="aspect-[4/3] rounded-lg bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center mb-1.5">
                     <ModuleSilhouette kind={m.kind} color={fabricObj.color} woodColor={woodObj.color} />
                   </div>
-                  <div className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] leading-tight line-clamp-2">{m.name}</div>
+                  <div className="text-[11px] font-semibold text-[color:var(--brand-primary)] leading-tight line-clamp-2">{m.name}</div>
                   <div className="mt-1 flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[color:var(--istikbal-blue)]/60">{m.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</span>
-                    <Plus className="size-3.5 text-[color:var(--istikbal-blue)]/40 group-hover:text-[color:var(--istikbal-blue)]" />
+                    <span className="text-[10px] font-bold text-[color:var(--brand-primary)]/60">{m.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</span>
+                    <Plus className="size-3.5 text-[color:var(--brand-primary)]/40 group-hover:text-[color:var(--brand-primary)]" />
                   </div>
                 </button>
               ))}
@@ -325,29 +325,29 @@ function ModulerPage() {
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setListOpen(false)}>
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[color:var(--istikbal-blue)]">{t("productList")}</h3>
-              <button onClick={() => setListOpen(false)} className="size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--istikbal-blue)]"><X className="size-4" /></button>
+              <h3 className="text-lg font-bold text-[color:var(--brand-primary)]">{t("productList")}</h3>
+              <button onClick={() => setListOpen(false)} className="size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--brand-primary)]"><X className="size-4" /></button>
             </div>
             <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-              {build.length === 0 && <p className="text-sm text-[color:var(--istikbal-blue)]/50">{t("listEmpty")}</p>}
+              {build.length === 0 && <p className="text-sm text-[color:var(--brand-primary)]/50">{t("listEmpty")}</p>}
               {build.map(b => {
                 const m = MODULES.find(x => x.id === b.moduleId)!;
                 return (
                   <div key={b.uid} className="flex items-center justify-between p-3 rounded-xl bg-stone-50">
                     <div>
-                      <div className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{m.name}</div>
-                      <div className="text-[11px] text-[color:var(--istikbal-blue)]/50">{t("listLineMeta", { fabric: fabricObj.label, wood: woodLabel })}</div>
+                      <div className="text-sm font-semibold text-[color:var(--brand-primary)]">{m.name}</div>
+                      <div className="text-[11px] text-[color:var(--brand-primary)]/50">{t("listLineMeta", { fabric: fabricObj.label, wood: woodLabel })}</div>
                     </div>
-                    <div className="text-sm font-bold text-[color:var(--istikbal-blue)]">{m.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</div>
+                    <div className="text-sm font-bold text-[color:var(--brand-primary)]">{m.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</div>
                   </div>
                 );
               })}
             </div>
             <div className="mt-4 pt-4 border-t border-black/5 flex items-center justify-between">
-              <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]/70">{tCommon("total")}</span>
-              <span className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">{total.toLocaleString("tr-TR")},00 {tCommon("currencyTl")}</span>
+              <span className="text-sm font-semibold text-[color:var(--brand-primary)]/70">{tCommon("total")}</span>
+              <span className="text-2xl font-extrabold text-[color:var(--brand-primary)]">{total.toLocaleString("tr-TR")},00 {tCommon("currencyTl")}</span>
             </div>
-            <button className="mt-4 w-full h-12 rounded-xl bg-[color:var(--istikbal-blue)] text-white font-semibold hover:opacity-90 flex items-center justify-center gap-2">
+            <button className="mt-4 w-full h-12 rounded-xl bg-[color:var(--brand-primary)] text-white font-semibold hover:opacity-90 flex items-center justify-center gap-2">
               <Check className="size-4" /> {t("confirmSave")}
             </button>
           </div>
@@ -362,8 +362,8 @@ function OptionBlock({ title, value, children }: { title: string; value: string;
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm">
       <div className="flex items-baseline gap-2 mb-3">
-        <h3 className="text-sm font-bold text-[color:var(--istikbal-blue)]">{title}</h3>
-        <span className="text-xs text-[color:var(--istikbal-blue)]/50">- {value}</span>
+        <h3 className="text-sm font-bold text-[color:var(--brand-primary)]">{title}</h3>
+        <span className="text-xs text-[color:var(--brand-primary)]/50">- {value}</span>
       </div>
       {children}
     </div>
@@ -372,14 +372,14 @@ function OptionBlock({ title, value, children }: { title: string; value: string;
 
 function ToolBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
   return (
-    <button onClick={onClick} className="h-10 px-3 rounded-xl bg-white/90 backdrop-blur border border-black/5 text-xs font-semibold text-[color:var(--istikbal-blue)] hover:bg-white flex items-center gap-1.5 shadow-sm">
+    <button onClick={onClick} className="h-10 px-3 rounded-xl bg-white/90 backdrop-blur border border-black/5 text-xs font-semibold text-[color:var(--brand-primary)] hover:bg-white flex items-center gap-1.5 shadow-sm">
       {icon} {label}
     </button>
   );
 }
 
 function CushionIcon({ variant, active }: { variant: "soft" | "firm"; active: boolean }) {
-  const c = active ? "var(--istikbal-blue)" : "#9ca3af";
+  const c = active ? "var(--brand-primary)" : "#9ca3af";
   return (
     <svg viewBox="0 0 32 32" className="w-7 h-7">
       {variant === "soft" ? (
@@ -392,7 +392,7 @@ function CushionIcon({ variant, active }: { variant: "soft" | "firm"; active: bo
 }
 
 function ArmIcon({ variant, active }: { variant: "thin" | "thick"; active: boolean }) {
-  const c = active ? "var(--istikbal-blue)" : "#9ca3af";
+  const c = active ? "var(--brand-primary)" : "#9ca3af";
   const w = variant === "thin" ? 4 : 9;
   return (
     <svg viewBox="0 0 40 30" className="w-10 h-7">
@@ -444,7 +444,7 @@ function SofaPreview({ build, fabric, wood, arm }: { build: { uid: string; modul
       <div className="absolute inset-0 flex items-center justify-center text-center px-8">
         <div>
           <div className="text-5xl mb-2">🛋️</div>
-          <p className="text-[color:var(--istikbal-blue)]/50 text-sm font-medium whitespace-pre-line">{t("emptyPreviewHint")}</p>
+          <p className="text-[color:var(--brand-primary)]/50 text-sm font-medium whitespace-pre-line">{t("emptyPreviewHint")}</p>
         </div>
       </div>
     );
@@ -555,17 +555,17 @@ function CatalogView({
     <main className="px-4 lg:px-8 py-6">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-[color:var(--istikbal-blue)]">{t("catalogTitle")}</h1>
-          <p className="text-sm text-[color:var(--istikbal-blue)]/60 mt-1">{t("catalogSubtitle")}</p>
+          <h1 className="text-3xl font-extrabold text-[color:var(--brand-primary)]">{t("catalogTitle")}</h1>
+          <p className="text-sm text-[color:var(--brand-primary)]/60 mt-1">{t("catalogSubtitle")}</p>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-72">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
+            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("searchPlaceholder")}
-              className="w-full h-11 pl-9 pr-3 rounded-xl bg-white border border-black/5 text-sm text-[color:var(--istikbal-blue)] outline-none focus:border-[color:var(--istikbal-blue)]/30"
+              className="w-full h-11 pl-9 pr-3 rounded-xl bg-white border border-black/5 text-sm text-[color:var(--brand-primary)] outline-none focus:border-[color:var(--brand-primary)]/30"
             />
           </div>
         </div>
@@ -576,7 +576,7 @@ function CatalogView({
           <button
             key={c}
             onClick={() => setCatFilter(c)}
-            className={`h-9 px-4 rounded-full text-xs font-semibold whitespace-nowrap transition border ${catFilter === c ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)]" : "bg-white text-[color:var(--istikbal-blue)]/70 border-black/5 hover:border-black/20"}`}
+            className={`h-9 px-4 rounded-full text-xs font-semibold whitespace-nowrap transition border ${catFilter === c ? "bg-[color:var(--brand-primary)] text-white border-[color:var(--brand-primary)]" : "bg-white text-[color:var(--brand-primary)]/70 border-black/5 hover:border-black/20"}`}
           >
             {catLabel(c)}
           </button>
@@ -588,26 +588,26 @@ function CatalogView({
           <button
             key={p.id}
             onClick={() => onOpen(p)}
-            className="group bg-white rounded-2xl shadow-sm overflow-hidden text-left hover:shadow-lg transition border border-transparent hover:border-[color:var(--istikbal-blue)]/20"
+            className="group bg-white rounded-2xl shadow-sm overflow-hidden text-left hover:shadow-lg transition border border-transparent hover:border-[color:var(--brand-primary)]/20"
           >
             <div className="aspect-[4/3] bg-gradient-to-br from-stone-50 to-stone-100 relative flex items-center justify-center">
               <ProductThumb modules={p.modules} fabric={fabric} wood={wood} />
               {p.badge && (
-                <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-[color:var(--istikbal-yellow)] text-[10px] font-bold text-[color:var(--istikbal-blue)]">{t(BADGE_LABEL_KEYS[p.badge])}</span>
+                <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-[color:var(--brand-accent)] text-[10px] font-bold text-[color:var(--brand-primary)]">{t(BADGE_LABEL_KEYS[p.badge])}</span>
               )}
             </div>
             <div className="p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">{t(CATEGORY_LABEL_KEYS[p.category])}</div>
-              <div className="text-sm font-bold text-[color:var(--istikbal-blue)] mt-0.5 line-clamp-1">{p.name}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]/50">{t(CATEGORY_LABEL_KEYS[p.category])}</div>
+              <div className="text-sm font-bold text-[color:var(--brand-primary)] mt-0.5 line-clamp-1">{p.name}</div>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-sm font-extrabold text-[color:var(--istikbal-blue)]">{p.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</span>
-                <span className="text-[11px] font-semibold text-[color:var(--istikbal-blue)]/60 group-hover:text-[color:var(--istikbal-blue)] flex items-center gap-0.5">{t("customize")} <ChevronRight className="size-3.5" /></span>
+                <span className="text-sm font-extrabold text-[color:var(--brand-primary)]">{p.price.toLocaleString("tr-TR")} {tCommon("currencyTl")}</span>
+                <span className="text-[11px] font-semibold text-[color:var(--brand-primary)]/60 group-hover:text-[color:var(--brand-primary)] flex items-center gap-0.5">{t("customize")} <ChevronRight className="size-3.5" /></span>
               </div>
             </div>
           </button>
         ))}
         {products.length === 0 && (
-          <div className="col-span-full bg-white rounded-2xl p-10 text-center text-sm text-[color:var(--istikbal-blue)]/50">{tCommon("noResults")}</div>
+          <div className="col-span-full bg-white rounded-2xl p-10 text-center text-sm text-[color:var(--brand-primary)]/50">{tCommon("noResults")}</div>
         )}
       </div>
     </main>

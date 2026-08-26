@@ -24,7 +24,7 @@ export function InfiniteScrollSentinel({
   return (
     <div
       ref={sentinelRef}
-      className={`flex min-h-8 items-center justify-center py-4 text-sm text-[color:var(--istikbal-blue)]/55 ${className}`}
+      className={`flex min-h-8 items-center justify-center py-4 text-sm text-[color:var(--brand-primary)]/55 ${className}`}
       aria-hidden={!loadingMore}
     >
       {loadingMore ? (

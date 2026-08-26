@@ -1,0 +1,30 @@
+{
+  "id": "bellona",
+  "companySlug": "bellona",
+  "displayName": "Bellona",
+  "productName": "3D Tasarım Stüdyosu",
+  "hosts": [
+    "bellonadesign.com",
+    "www.bellonadesign.com",
+    "bellonadesign.app",
+    "www.bellonadesign.app","localhost",
+    "127.0.0.1"
+  ],
+  "colors": {
+    "primary": "#008286",
+    "primaryStrong": "#005153",
+    "accent": "#238286",
+    "background": "#f2eded",
+    "surface": "#ffffff",
+    "text": "#30434A",
+    "muted": "#6f8193",
+    "border": "#dfeff0",
+    "soft": "#dfeff0",
+    "loginAsideFrom": "#008286",
+    "loginAsideTo": "#005153"
+  },
+  "assets": {
+    "logoUrl": "/brands/bellona/logo.png",
+    "faviconUrl": "/brands/bellona/favicon.svg"
+  }
+}

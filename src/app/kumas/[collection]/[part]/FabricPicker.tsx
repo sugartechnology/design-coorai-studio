@@ -42,19 +42,19 @@ export function FabricPicker({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 size-9 grid place-items-center rounded-full hover:bg-[color:var(--istikbal-blue)]/5 text-[color:var(--istikbal-blue)]/60"
+          className="absolute top-4 right-4 size-9 grid place-items-center rounded-full hover:bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)]/60"
         >
           <X className="size-5" />
         </button>
         <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/45">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/45">
             {t("regionLabel", { n })}
             {hint ? ` · ${hint}` : ""}
           </p>
-          <h3 className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">
+          <h3 className="text-2xl font-extrabold text-[color:var(--brand-primary)]">
             {t("suitableFabricsTitle")}
           </h3>
-          <p className="text-sm text-[color:var(--istikbal-blue)]/55 mt-1">
+          <p className="text-sm text-[color:var(--brand-primary)]/55 mt-1">
             {t("suitableFabricsHint")}
           </p>
         </div>
@@ -69,8 +69,8 @@ export function FabricPicker({
                 onClick={() => onPick(option)}
                 className={`group text-left rounded-2xl overflow-hidden border-2 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
                   active
-                    ? "border-[color:var(--istikbal-blue)] shadow-lg"
-                    : "border-transparent bg-[color:var(--istikbal-blue)]/5"
+                    ? "border-[color:var(--brand-primary)] shadow-lg"
+                    : "border-transparent bg-[color:var(--brand-primary)]/5"
                 }`}
               >
                 <div
@@ -78,12 +78,12 @@ export function FabricPicker({
                   style={{ background: optionSwatchBackground(option) }}
                 >
                   {active && (
-                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[color:var(--istikbal-blue)] text-white text-[11px] font-bold">
+                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[color:var(--brand-primary)] text-white text-[11px] font-bold">
                       <Check className="size-3" /> {tCommon("selected")}
                     </span>
                   )}
                 </div>
-                <p className="px-4 py-3 font-semibold text-[color:var(--istikbal-blue)]">
+                <p className="px-4 py-3 font-semibold text-[color:var(--brand-primary)]">
                   {option.materialName || option.code}
                 </p>
               </button>

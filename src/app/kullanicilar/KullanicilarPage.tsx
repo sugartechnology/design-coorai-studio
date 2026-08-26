@@ -73,13 +73,13 @@ const ROLE_META: Record<
     icon: Crown,
     labelKey: "roleOwner",
     descKey: "roleOwnerDesc",
-    tint: "bg-[color:var(--istikbal-yellow)]/20 text-amber-700",
+    tint: "bg-[color:var(--brand-accent)]/20 text-amber-700",
   },
   admin: {
     icon: ShieldCheck,
     labelKey: "roleAdmin",
     descKey: "roleAdminDesc",
-    tint: "bg-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)]",
+    tint: "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
   },
   designer: {
     icon: UserIcon,
@@ -270,7 +270,7 @@ function KullanicilarPage() {
     r === "all" ? t("filterAll") : t(ROLE_META[r].labelKey);
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
+    <div className="min-h-screen bg-[color:var(--brand-bg)]">
       <AppHeader
         title={t("headerTitle")}
         backHref="/"
@@ -280,14 +280,14 @@ function KullanicilarPage() {
             <button
               type="button"
               onClick={() => void loadUsers()}
-              className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--istikbal-blue)]/15 text-[color:var(--istikbal-blue)] text-xs font-semibold px-3 py-2 hover:bg-[color:var(--istikbal-blue-soft)]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--brand-primary)]/15 text-[color:var(--brand-primary)] text-xs font-semibold px-3 py-2 hover:bg-[color:var(--brand-soft)]"
             >
               {tCommon("refresh")}
             </button>
             <button
               type="button"
               onClick={() => setInviteOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs font-semibold px-3 py-2 shadow-sm"
+              className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/90 text-white text-xs font-semibold px-3 py-2 shadow-sm"
             >
               <Plus className="size-4" /> {t("invite")}
             </button>
@@ -305,12 +305,12 @@ function KullanicilarPage() {
 
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={t("searchPlaceholder")}
-              className="w-full rounded-2xl bg-white border border-black/5 text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 pl-10 pr-4 py-3 outline-none focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10"
+              className="w-full rounded-2xl bg-white border border-black/5 text-sm text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35 pl-10 pr-4 py-3 outline-none focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-primary)]/10"
             />
           </div>
           <div className="inline-flex bg-white border border-black/5 rounded-2xl p-1 overflow-x-auto">
@@ -322,8 +322,8 @@ function KullanicilarPage() {
                 className={[
                   "px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition",
                   filter === r
-                    ? "bg-[color:var(--istikbal-blue)] text-white shadow-sm"
-                    : "text-[color:var(--istikbal-blue)]/65 hover:bg-[color:var(--istikbal-blue-soft)]",
+                    ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                    : "text-[color:var(--brand-primary)]/65 hover:bg-[color:var(--brand-soft)]",
                 ].join(" ")}
               >
                 {roleFilterLabel(r)}
@@ -339,7 +339,7 @@ function KullanicilarPage() {
         )}
 
         <div className="rounded-3xl bg-white border border-black/5 shadow-sm overflow-hidden">
-          <div className="hidden md:grid grid-cols-12 gap-3 px-6 py-3 bg-[color:var(--istikbal-blue-soft)]/50 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
+          <div className="hidden md:grid grid-cols-12 gap-3 px-6 py-3 bg-[color:var(--brand-soft)]/50 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60">
             <div className="col-span-4">{t("colMember")}</div>
             <div className="col-span-3">{t("colRole")}</div>
             <div className="col-span-2">{t("colStatus")}</div>
@@ -348,7 +348,7 @@ function KullanicilarPage() {
           </div>
 
           {loading && (
-            <div className="p-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/70">
+            <div className="p-12 flex flex-col items-center gap-3 text-[color:var(--brand-primary)]/70">
               <Loader2 className="size-8 animate-spin" />
               <p className="text-sm font-medium">{t("loading")}</p>
             </div>
@@ -356,13 +356,13 @@ function KullanicilarPage() {
 
           {!loading && filtered.length === 0 && (
             <div className="p-12 text-center">
-              <div className="size-14 mx-auto rounded-2xl bg-[color:var(--istikbal-blue-soft)] grid place-items-center text-[color:var(--istikbal-blue)]/50">
+              <div className="size-14 mx-auto rounded-2xl bg-[color:var(--brand-soft)] grid place-items-center text-[color:var(--brand-primary)]/50">
                 <Users className="size-6" />
               </div>
-              <p className="mt-3 text-sm font-semibold text-[color:var(--istikbal-blue)]">
+              <p className="mt-3 text-sm font-semibold text-[color:var(--brand-primary)]">
                 {members.length === 0 ? t("emptyNoneTitle") : t("emptyFilterTitle")}
               </p>
-              <p className="text-xs text-[color:var(--istikbal-blue)]/55">
+              <p className="text-xs text-[color:var(--brand-primary)]/55">
                 {members.length === 0 ? t("emptyNoneBody") : t("emptyFilterBody")}
               </p>
             </div>
@@ -375,7 +375,7 @@ function KullanicilarPage() {
                 return (
                   <li
                     key={m.id}
-                    className="grid grid-cols-12 gap-3 items-center px-4 md:px-6 py-4 hover:bg-[color:var(--istikbal-blue-soft)]/30 transition"
+                    className="grid grid-cols-12 gap-3 items-center px-4 md:px-6 py-4 hover:bg-[color:var(--brand-soft)]/30 transition"
                   >
                     <div className="col-span-12 md:col-span-4 flex items-center gap-3">
                       <div
@@ -385,12 +385,12 @@ function KullanicilarPage() {
                         {m.initials}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-[color:var(--istikbal-blue)] truncate">{m.name}</p>
-                        <p className="text-xs text-[color:var(--istikbal-blue)]/55 truncate flex items-center gap-1">
+                        <p className="text-sm font-bold text-[color:var(--brand-primary)] truncate">{m.name}</p>
+                        <p className="text-xs text-[color:var(--brand-primary)]/55 truncate flex items-center gap-1">
                           <Mail className="size-3" /> {m.email}
                         </p>
                         {m.phone !== emDash && (
-                          <p className="text-xs text-[color:var(--istikbal-blue)]/45 truncate flex items-center gap-1 mt-0.5">
+                          <p className="text-xs text-[color:var(--brand-primary)]/45 truncate flex items-center gap-1 mt-0.5">
                             <Phone className="size-3" /> {m.phone}
                           </p>
                         )}
@@ -406,7 +406,7 @@ function KullanicilarPage() {
                       >
                         <RoleIcon className="size-3.5" /> {t(ROLE_META[m.role].labelKey)}
                       </span>
-                      <p className="hidden md:block text-[11px] text-[color:var(--istikbal-blue)]/45 mt-1 truncate">
+                      <p className="hidden md:block text-[11px] text-[color:var(--brand-primary)]/45 mt-1 truncate">
                         {m.roleLabel}
                       </p>
                     </div>
@@ -415,14 +415,14 @@ function KullanicilarPage() {
                       <StatusBadge status={m.status} />
                     </div>
 
-                    <div className="hidden md:block col-span-2 text-xs text-[color:var(--istikbal-blue)]/60">
+                    <div className="hidden md:block col-span-2 text-xs text-[color:var(--brand-primary)]/60">
                       {formatLastSeen(m.updatedAt, tCommon)}
                     </div>
 
                     <div className="col-span-12 md:col-span-1 flex md:justify-end">
                       <button
                         type="button"
-                        className="size-9 grid place-items-center rounded-xl text-[color:var(--istikbal-blue)]/60 hover:bg-[color:var(--istikbal-blue-soft)] hover:text-[color:var(--istikbal-blue)]"
+                        className="size-9 grid place-items-center rounded-xl text-[color:var(--brand-primary)]/60 hover:bg-[color:var(--brand-soft)] hover:text-[color:var(--brand-primary)]"
                       >
                         <MoreVertical className="size-4" />
                       </button>
@@ -435,22 +435,22 @@ function KullanicilarPage() {
         </div>
 
         <div className="rounded-3xl bg-white border border-black/5 shadow-sm p-6">
-          <h2 className="text-base font-extrabold text-[color:var(--istikbal-blue)] tracking-tight mb-1">{t("rolesTitle")}</h2>
-          <p className="text-xs text-[color:var(--istikbal-blue)]/60 mb-4">{t("rolesSubtitle")}</p>
+          <h2 className="text-base font-extrabold text-[color:var(--brand-primary)] tracking-tight mb-1">{t("rolesTitle")}</h2>
+          <p className="text-xs text-[color:var(--brand-primary)]/60 mb-4">{t("rolesSubtitle")}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {(Object.keys(ROLE_META) as Role[]).map((r) => {
               const Icon = ROLE_META[r].icon;
               const count = members.filter((m) => m.role === r).length;
               return (
-                <div key={r} className="rounded-2xl bg-[color:var(--istikbal-blue-soft)]/40 p-4 border border-black/5">
+                <div key={r} className="rounded-2xl bg-[color:var(--brand-soft)]/40 p-4 border border-black/5">
                   <div className="flex items-center justify-between">
                     <span className={["inline-flex items-center justify-center size-10 rounded-xl", ROLE_META[r].tint].join(" ")}>
                       <Icon className="size-5" />
                     </span>
-                    <span className="text-2xl font-extrabold text-[color:var(--istikbal-blue)]">{count}</span>
+                    <span className="text-2xl font-extrabold text-[color:var(--brand-primary)]">{count}</span>
                   </div>
-                  <p className="text-sm font-bold text-[color:var(--istikbal-blue)] mt-3">{t(ROLE_META[r].labelKey)}</p>
-                  <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t(ROLE_META[r].descKey)}</p>
+                  <p className="text-sm font-bold text-[color:var(--brand-primary)] mt-3">{t(ROLE_META[r].labelKey)}</p>
+                  <p className="text-xs text-[color:var(--brand-primary)]/55 mt-0.5">{t(ROLE_META[r].descKey)}</p>
                 </div>
               );
             })}
@@ -479,17 +479,17 @@ function StatCard({
       ? "bg-emerald-100 text-emerald-700"
       : accent === "amber"
         ? "bg-amber-100 text-amber-700"
-        : "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)]";
+        : "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]";
   return (
     <div className="rounded-2xl bg-white border border-black/5 p-4 shadow-sm flex items-center gap-3">
       <span className={["size-11 rounded-xl grid place-items-center shrink-0", tint].join(" ")}>
         <Icon className="size-5" />
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/55 truncate">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/55 truncate">
           {label}
         </p>
-        <p className="text-2xl font-extrabold text-[color:var(--istikbal-blue)] leading-none mt-1">{value}</p>
+        <p className="text-2xl font-extrabold text-[color:var(--brand-primary)] leading-none mt-1">{value}</p>
       </div>
     </div>
   );
@@ -529,42 +529,42 @@ function InviteModal({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-black/5">
           <div className="flex items-center gap-2">
-            <span className="size-8 grid place-items-center rounded-xl bg-[color:var(--istikbal-blue)] text-white">
+            <span className="size-8 grid place-items-center rounded-xl bg-[color:var(--brand-primary)] text-white">
               <Plus className="size-4" />
             </span>
-            <h3 className="text-sm font-extrabold text-[color:var(--istikbal-blue)]">{t("inviteTitle")}</h3>
+            <h3 className="text-sm font-extrabold text-[color:var(--brand-primary)]">{t("inviteTitle")}</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="size-8 grid place-items-center rounded-xl hover:bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)]"
+            className="size-8 grid place-items-center rounded-xl hover:bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
           >
             <X className="size-4" />
           </button>
         </div>
 
         <div className="p-6 space-y-4">
-          <p className="text-xs text-[color:var(--istikbal-blue)]/60 leading-relaxed">
+          <p className="text-xs text-[color:var(--brand-primary)]/60 leading-relaxed">
             {t("inviteHint")}
           </p>
           <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60">
               {t("emailLabel")}
             </span>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 placeholder={t("emailPlaceholder")}
-                className="w-full rounded-xl bg-[color:var(--istikbal-blue-soft)]/50 border border-transparent text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 pl-10 pr-4 py-2.5 outline-none focus:bg-white focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10"
+                className="w-full rounded-xl bg-[color:var(--brand-soft)]/50 border border-transparent text-sm text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35 pl-10 pr-4 py-2.5 outline-none focus:bg-white focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-primary)]/10"
               />
             </div>
           </label>
 
           <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60">
               {t("roleLabel")}
             </span>
             <div className="grid grid-cols-2 gap-2 mt-1.5">
@@ -579,13 +579,13 @@ function InviteModal({ onClose }: { onClose: () => void }) {
                     className={[
                       "rounded-xl p-3 text-left border-2 transition",
                       isActive
-                        ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue-soft)]"
-                        : "border-transparent bg-[color:var(--istikbal-blue-soft)]/40 hover:bg-[color:var(--istikbal-blue-soft)]",
+                        ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)]"
+                        : "border-transparent bg-[color:var(--brand-soft)]/40 hover:bg-[color:var(--brand-soft)]",
                     ].join(" ")}
                   >
-                    <Icon className="size-4 text-[color:var(--istikbal-blue)]" />
-                    <p className="text-xs font-bold text-[color:var(--istikbal-blue)] mt-2">{t(ROLE_META[r].labelKey)}</p>
-                    <p className="text-[10px] text-[color:var(--istikbal-blue)]/55 leading-tight mt-0.5">
+                    <Icon className="size-4 text-[color:var(--brand-primary)]" />
+                    <p className="text-xs font-bold text-[color:var(--brand-primary)] mt-2">{t(ROLE_META[r].labelKey)}</p>
+                    <p className="text-[10px] text-[color:var(--brand-primary)]/55 leading-tight mt-0.5">
                       {t(ROLE_META[r].descKey)}
                     </p>
                   </button>
@@ -595,18 +595,18 @@ function InviteModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-[color:var(--istikbal-blue-soft)]/30 border-t border-black/5">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-[color:var(--brand-soft)]/30 border-t border-black/5">
           <button
             type="button"
             onClick={onClose}
-            className="text-xs font-semibold px-4 py-2.5 rounded-xl text-[color:var(--istikbal-blue)]/70 hover:bg-white"
+            className="text-xs font-semibold px-4 py-2.5 rounded-xl text-[color:var(--brand-primary)]/70 hover:bg-white"
           >
             {tCommon("cancel")}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs font-semibold px-4 py-2.5 shadow-sm"
+            className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/90 text-white text-xs font-semibold px-4 py-2.5 shadow-sm"
           >
             <Mail className="size-3.5" /> {t("sendInvite")}
           </button>

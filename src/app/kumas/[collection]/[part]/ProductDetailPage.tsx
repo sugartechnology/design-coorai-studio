@@ -168,7 +168,7 @@ function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+      <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--brand-primary)]/60">
         <Loader2 className="size-8 animate-spin" />
         <p className="text-sm font-semibold">{t("productsLoading")}</p>
       </div>
@@ -264,7 +264,7 @@ function ProductDetailPage() {
               <button
                 type="button"
                 onClick={showInHome}
-                className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 inline-flex items-center gap-2 px-5 h-11 rounded-full bg-[color:var(--istikbal-blue)] text-white font-semibold text-sm shadow-lg hover:bg-[color:var(--istikbal-navy)] transition-colors"
+                className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 inline-flex items-center gap-2 px-5 h-11 rounded-full bg-[color:var(--brand-primary)] text-white font-semibold text-sm shadow-lg hover:bg-[color:var(--brand-primary-strong)] transition-colors"
               >
                 <Box className="size-4" /> {t("seeInYourHome")}
               </button>
@@ -273,7 +273,7 @@ function ProductDetailPage() {
               <button
                 type="button"
                 onClick={cycleGallery}
-                className="absolute top-5 right-5 z-10 size-10 grid place-items-center rounded-full bg-white/80 hover:bg-white text-[color:var(--istikbal-blue)] shadow-sm"
+                className="absolute top-5 right-5 z-10 size-10 grid place-items-center rounded-full bg-white/80 hover:bg-white text-[color:var(--brand-primary)] shadow-sm"
                 title={t("nextImageTitle")}
               >
                 <RotateCw className="size-4" />
@@ -290,12 +290,12 @@ function ProductDetailPage() {
                   onClick={() => setActiveGalleryIndex(i)}
                   className={`relative h-16 w-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
                     safeGalleryIndex === i
-                      ? "border-[color:var(--istikbal-yellow)] ring-2 ring-[color:var(--istikbal-yellow)]/30"
-                      : "border-transparent hover:border-[color:var(--istikbal-blue)]/20"
+                      ? "border-[color:var(--brand-accent)] ring-2 ring-[color:var(--brand-accent)]/30"
+                      : "border-transparent hover:border-[color:var(--brand-primary)]/20"
                   }`}
                 >
                   {item.kind === "3d" ? (
-                    <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[color:var(--istikbal-blue)]/5 text-[color:var(--istikbal-blue)]">
+                    <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)]">
                       <Box className="size-5" />
                       <span className="text-[10px] font-bold tracking-wide">
                         {t("gallery3d")}
@@ -317,15 +317,15 @@ function ProductDetailPage() {
 
         <aside className="flex min-h-0 flex-col rounded-3xl border border-black/5 bg-white p-6 shadow-sm lg:h-full lg:overflow-hidden">
           <div className="mb-4 shrink-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/45">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/45">
               {[product?.categoryName, collectionName].filter(Boolean).join(" · ") ||
                 collectionName}
             </p>
-            <h2 className="mt-1 text-xl font-extrabold text-[color:var(--istikbal-blue)] leading-tight">
+            <h2 className="mt-1 text-xl font-extrabold text-[color:var(--brand-primary)] leading-tight">
               {productTitle}
             </h2>
             {(zoneSku || product?.sku) && (
-              <p className="mt-1 text-xs text-[color:var(--istikbal-blue)]/50">
+              <p className="mt-1 text-xs text-[color:var(--brand-primary)]/50">
                 {t("skuLabel", { sku: zoneSku || product?.sku || "" })}
               </p>
             )}
@@ -406,7 +406,7 @@ function ProductDetailPage() {
             }}
           />
           {cartFlash ? (
-            <p className="mt-2 text-center text-xs font-semibold text-[color:var(--istikbal-blue)]">
+            <p className="mt-2 text-center text-xs font-semibold text-[color:var(--brand-primary)]">
               {tCommon("addedToCart")}
             </p>
           ) : null}

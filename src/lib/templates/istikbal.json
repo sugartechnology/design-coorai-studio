@@ -1,0 +1,29 @@
+{
+  "id": "istikbal",
+  "companySlug": "istikbal",
+  "displayName": "İstikbal",
+  "productName": "3D Tasarım Stüdyosu",
+  "hosts": [
+    "i-render.app",
+    "www.i-render.app",
+    "localhost",
+    "127.0.0.1"
+  ],
+  "colors": {
+    "primary": "#1f5fa8",
+    "primaryStrong": "#143d6b",
+    "accent": "#f5c518",
+    "background": "#f4f7fb",
+    "surface": "#ffffff",
+    "text": "#1f5fa8",
+    "muted": "#7892ae",
+    "border": "#dfe6ef",
+    "soft": "#e8f0fa",
+    "loginAsideFrom": "#f5c518",
+    "loginAsideTo": "#f0a400"
+  },
+  "assets": {
+    "logoUrl": "/brands/istikbal/logo.svg",
+    "faviconUrl": "/brands/istikbal/favicon.svg"
+  }
+}

@@ -1,7 +1,10 @@
 import "server-only";
 
+import { getPortalTemplate } from "@/lib/templates/provider";
+
 const crmApiUrl = process.env.CRM_API_URL;
 
+/** Env fallback only. Unauth CRM calls use the host template companySlug. */
 export const companySlug = process.env.CRM_COMPANY_SLUG ?? "istikbal";
 
 export function crmUrl(path: string) {
@@ -12,10 +15,16 @@ export function crmUrl(path: string) {
   return new URL(path.replace(/^\//, ""), `${crmApiUrl.replace(/\/$/, "")}/`);
 }
 
-export function crmHeaders(headers?: HeadersInit): HeadersInit {
+export async function resolveCompanySlug(): Promise<string> {
+  const template = await getPortalTemplate();
+  return template.companySlug || companySlug;
+}
+
+export async function crmHeaders(headers?: HeadersInit): Promise<HeadersInit> {
+  const slug = await resolveCompanySlug();
   return {
     Accept: "application/json",
-    "X-Company-Slug": companySlug,
+    "X-Company-Slug": slug,
     ...headers,
   };
 }
@@ -25,17 +34,13 @@ export async function crmFetch(
   init?: RequestInit & { companySlugOverride?: string },
 ) {
   const { companySlugOverride, headers, ...rest } = init ?? {};
+  const slug = companySlugOverride ?? (await resolveCompanySlug());
   return fetch(crmUrl(path), {
     ...rest,
-    headers: {
-      ...crmHeaders({
-        "Content-Type": "application/json",
-        ...(companySlugOverride
-          ? { "X-Company-Slug": companySlugOverride }
-          : {}),
-        ...headers,
-      }),
-    },
-    cache: "no-store",
+    headers: await crmHeaders({
+      "Content-Type": "application/json",
+      "X-Company-Slug": slug,
+      ...(headers ?? {}),
+    }),
   });
 }

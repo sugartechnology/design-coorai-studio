@@ -522,7 +522,7 @@ function OdaPage() {
   }, [addLines, buildQuoteFromScene]);
 
   return (
-    <div className="h-dvh bg-[color:var(--istikbal-bg)] flex flex-col overflow-hidden">
+    <div className="h-dvh bg-[color:var(--brand-bg)] flex flex-col overflow-hidden">
       <AppHeader
         title={(offerHeaderTitle || t("headerTitle")).toUpperCase()}
         backHref={offerId ? "/teklifler" : "/"}
@@ -532,7 +532,7 @@ function OdaPage() {
               type="button"
               disabled={quoteBusy || !designerEl}
               onClick={() => void addSceneToCart()}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold hover:bg-[color:var(--istikbal-navy)] disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-[color:var(--brand-primary)] text-white text-xs font-bold hover:bg-[color:var(--brand-primary-strong)] disabled:opacity-40"
             >
               {quoteBusy ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -545,7 +545,7 @@ function OdaPage() {
               type="button"
               disabled={quoteBusy || !designerEl}
               onClick={() => void openQuoteFromScene()}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-[color:var(--istikbal-blue)]/20 bg-white text-[color:var(--istikbal-blue)] text-xs font-bold hover:bg-[color:var(--istikbal-blue)]/5 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-[color:var(--brand-primary)]/20 bg-white text-[color:var(--brand-primary)] text-xs font-bold hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-40"
             >
               {quoteBusy ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -560,7 +560,7 @@ function OdaPage() {
 
       {cartFlash && (
         <div className="px-4 lg:px-8 pt-2">
-          <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]">
+          <p className="text-xs font-semibold text-[color:var(--brand-primary)]">
             {tCommon("addedToCart")}
           </p>
         </div>
@@ -569,7 +569,7 @@ function OdaPage() {
       {(offerImporting || offerBanner) && (
         <div className="px-4 lg:px-8 pt-3">
           {offerImporting && (
-            <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[color:var(--istikbal-blue)]/70 shadow-sm">
+            <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[color:var(--brand-primary)]/70 shadow-sm">
               <Loader2 className="size-3.5 animate-spin" />
               {tOffers("listTitle")}…
             </div>
@@ -585,9 +585,9 @@ function OdaPage() {
       <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 grid grid-cols-12 gap-4 overflow-y-auto lg:overflow-hidden">
         <aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto min-h-0 lg:h-full">
           <div className="bg-white rounded-2xl p-2 shadow-sm">
-            <div className="relative flex rounded-xl bg-[color:var(--istikbal-bg)] p-1">
+            <div className="relative flex rounded-xl bg-[color:var(--brand-bg)] p-1">
               <div
-                className={`absolute top-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-[color:var(--istikbal-blue)] transition-all duration-300 ease-out ${
+                className={`absolute top-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-[color:var(--brand-primary)] transition-all duration-300 ease-out ${
                   mode === "2D" ? "left-1" : "left-[calc(50%+2px)]"
                 }`}
               />
@@ -596,7 +596,7 @@ function OdaPage() {
                 className={`relative z-10 flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold transition-colors duration-300 ${
                   mode === "2D"
                     ? "text-white"
-                    : "text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)]"
+                    : "text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)]"
                 }`}
               >
                 <Layers className="size-4" />
@@ -607,7 +607,7 @@ function OdaPage() {
                 className={`relative z-10 flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold transition-colors duration-300 ${
                   mode === "3D"
                     ? "text-white"
-                    : "text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)]"
+                    : "text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)]"
                 }`}
               >
                 <Box className="size-4" />
@@ -620,7 +620,7 @@ function OdaPage() {
             <button
               disabled={!canUndo}
               onClick={() => withDesigner((el) => el.undo())}
-              className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--istikbal-blue)] ${
+              className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--brand-primary)] ${
                 canUndo ? "hover:bg-black/5" : "opacity-30"
               }`}
               title={t("undoTitle")}
@@ -631,7 +631,7 @@ function OdaPage() {
             <button
               disabled={!canRedo}
               onClick={() => withDesigner((el) => el.redo())}
-              className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--istikbal-blue)] ${
+              className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--brand-primary)] ${
                 canRedo ? "hover:bg-black/5" : "opacity-30"
               }`}
               title={t("redoTitle")}
@@ -644,7 +644,7 @@ function OdaPage() {
           <div className="bg-white rounded-2xl p-2 grid grid-cols-2 gap-1 shadow-sm">
             <button
               onClick={() => withDesigner((el) => void el.newScene())}
-              className="h-16 rounded-xl flex flex-col items-center justify-center gap-1 text-[color:var(--istikbal-blue)] hover:bg-black/5"
+              className="h-16 rounded-xl flex flex-col items-center justify-center gap-1 text-[color:var(--brand-primary)] hover:bg-black/5"
               title={t("resetTitle")}
             >
               <RotateCcw className="size-4" />
@@ -665,7 +665,7 @@ function OdaPage() {
           </div>
 
           <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2">
+            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2">
               {t("templates")}
             </h3>
             <div className="grid grid-cols-2 gap-2">
@@ -675,12 +675,12 @@ function OdaPage() {
                   onClick={() => applyTemplate(key)}
                   className={`aspect-square rounded-xl border-2 transition flex flex-col items-center justify-center gap-1 p-2 ${
                     template === key
-                      ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5"
+                      ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5"
                       : "border-black/5 hover:border-black/20"
                   }`}
                 >
                   <TemplateIcon kind={key} active={template === key} />
-                  <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]">
+                  <span className="text-[10px] font-semibold text-[color:var(--brand-primary)]">
                     {templateLabels[key]}
                   </span>
                 </button>
@@ -689,7 +689,7 @@ function OdaPage() {
           </div>
 
           <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2">
+            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2">
               {t("openings")}
             </h3>
             <div className="grid grid-cols-2 gap-2">
@@ -697,8 +697,8 @@ function OdaPage() {
                 onClick={() => toggleOpening("kapi")}
                 className={`h-16 rounded-xl border-2 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
                   addingOpening === "kapi"
-                    ? "border-[color:var(--istikbal-yellow)] bg-[color:var(--istikbal-yellow)]/10 text-[color:var(--istikbal-blue)]"
-                    : "border-black/5 hover:border-black/20 text-[color:var(--istikbal-blue)]"
+                    ? "border-[color:var(--brand-accent)] bg-[color:var(--brand-accent)]/10 text-[color:var(--brand-primary)]"
+                    : "border-black/5 hover:border-black/20 text-[color:var(--brand-primary)]"
                 }`}
               >
                 <DoorOpen className="size-4" /> {t("door")}
@@ -707,15 +707,15 @@ function OdaPage() {
                 onClick={() => toggleOpening("pencere")}
                 className={`h-16 rounded-xl border-2 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
                   addingOpening === "pencere"
-                    ? "border-[color:var(--istikbal-yellow)] bg-[color:var(--istikbal-yellow)]/10 text-[color:var(--istikbal-blue)]"
-                    : "border-black/5 hover:border-black/20 text-[color:var(--istikbal-blue)]"
+                    ? "border-[color:var(--brand-accent)] bg-[color:var(--brand-accent)]/10 text-[color:var(--brand-primary)]"
+                    : "border-black/5 hover:border-black/20 text-[color:var(--brand-primary)]"
                 }`}
               >
                 <AppWindow className="size-4" /> {t("window")}
               </button>
             </div>
             {addingOpening && (
-              <p className="mt-2 text-[10px] text-[color:var(--istikbal-blue)]/60">
+              <p className="mt-2 text-[10px] text-[color:var(--brand-primary)]/60">
                 {t("clickWallHint")}
               </p>
             )}
@@ -737,12 +737,12 @@ function OdaPage() {
           <div className="bg-white rounded-2xl p-3 shadow-sm flex flex-col min-h-0 flex-1">
             <div className="relative mb-3 shrink-0 flex items-center gap-2">
               <div className="relative flex-1 min-w-0">
-                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
+                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t("searchProductsPlaceholder")}
-                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
+                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--brand-primary)]/40 text-[color:var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]/20"
                 />
               </div>
               <ProductSearchFilterMenu
@@ -759,9 +759,9 @@ function OdaPage() {
                 filterAriaLabel={t("filters")}
               />
             </div>
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0">
+            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0">
               <span>{t("productsTitle")}</span>
-              <span className="text-[color:var(--istikbal-blue)]/40 normal-case font-medium">
+              <span className="text-[color:var(--brand-primary)]/40 normal-case font-medium">
                 {products.length}
               </span>
             </h3>
@@ -770,22 +770,22 @@ function OdaPage() {
               className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4"
             >
               {productsLoading && products.length === 0 && (
-                <p className="text-xs text-[color:var(--istikbal-blue)]/50 text-center py-6">
+                <p className="text-xs text-[color:var(--brand-primary)]/50 text-center py-6">
                   {tCommon("loading")}
                 </p>
               )}
               {!productsLoading && productsByCollection.length === 0 && (
-                  <div className="text-sm text-[color:var(--istikbal-blue)]/40 text-center py-6">
+                  <div className="text-sm text-[color:var(--brand-primary)]/40 text-center py-6">
                     {tCommon("noResults")}
                   </div>
                 )}
               {productsByCollection.map(([collection, items]) => (
                 <div key={collection}>
                   <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-1 mb-1.5 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-[color:var(--istikbal-blue)] uppercase tracking-wider">
+                    <span className="text-[11px] font-bold text-[color:var(--brand-primary)] uppercase tracking-wider">
                       {collection}
                     </span>
-                    <span className="text-[10px] text-[color:var(--istikbal-blue)]/40">
+                    <span className="text-[10px] text-[color:var(--brand-primary)]/40">
                       {items.length}
                     </span>
                   </div>
@@ -807,7 +807,7 @@ function OdaPage() {
                         onDragEnd={onProductDragEnd}
                         onClick={() => addProduct(p)}
                         disabled={!canPlace}
-                        className="group rounded-xl border border-black/5 hover:border-[color:var(--istikbal-blue)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                        className="group rounded-xl border border-black/5 hover:border-[color:var(--brand-primary)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                       >
                         <div className="aspect-square rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
                           {p.thumbnailUrl ? (
@@ -819,16 +819,16 @@ function OdaPage() {
                               className="w-full h-full object-cover group-hover:scale-[1.04] transition duration-300"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[color:var(--istikbal-blue)]/20 text-xs">
+                            <div className="w-full h-full flex items-center justify-center text-[color:var(--brand-primary)]/20 text-xs">
                               {tCommon("emDash")}
                             </div>
                           )}
                         </div>
-                        <div className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] leading-tight line-clamp-2">
+                        <div className="text-[11px] font-semibold text-[color:var(--brand-primary)] leading-tight line-clamp-2">
                           {p.name}
                         </div>
                         <div className="mt-1 flex items-center justify-end">
-                          <Plus className="size-3 text-[color:var(--istikbal-blue)]/40 group-hover:text-[color:var(--istikbal-blue)] shrink-0" />
+                          <Plus className="size-3 text-[color:var(--brand-primary)]/40 group-hover:text-[color:var(--brand-primary)] shrink-0" />
                         </div>
                       </button>
                       );
@@ -857,7 +857,7 @@ function OdaPage() {
 }
 
 function TemplateIcon({ kind, active }: { kind: TemplateKey; active: boolean }) {
-  const stroke = active ? "var(--istikbal-blue)" : "#9ca3af";
+  const stroke = active ? "var(--brand-primary)" : "#9ca3af";
   const fill = active ? "rgba(30,58,138,0.08)" : "transparent";
   const common = { fill, stroke, strokeWidth: 2 };
   return (
@@ -874,7 +874,7 @@ export default function OdaPageRoute() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-dvh items-center justify-center bg-[color:var(--istikbal-bg)] text-sm text-[color:var(--istikbal-blue)]/50">
+        <div className="flex h-dvh items-center justify-center bg-[color:var(--brand-bg)] text-sm text-[color:var(--brand-primary)]/50">
           <Loader2 className="size-6 animate-spin" />
         </div>
       }

@@ -43,7 +43,7 @@ function SosyalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
+    <div className="min-h-screen bg-[color:var(--brand-bg)]">
       <AppHeader title={t("headerTitle")} backHref="/" sticky />
 
       <main className="px-6 lg:px-10 py-8 space-y-8">
@@ -55,14 +55,14 @@ function SosyalPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-[color:var(--istikbal-blue)]">{t("connectTitle")}</h2>
+                <h2 className="text-lg font-bold text-[color:var(--brand-primary)]">{t("connectTitle")}</h2>
                 {connected && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                     <Check className="size-3" /> {tCommon("connected")}
                   </span>
                 )}
               </div>
-              <p className="text-sm text-[color:var(--istikbal-blue)]/60 mt-0.5">
+              <p className="text-sm text-[color:var(--brand-primary)]/60 mt-0.5">
                 {connected ? t("connectedHint") : t("disconnectedHint")}
               </p>
             </div>
@@ -70,8 +70,8 @@ function SosyalPage() {
               onClick={() => setConnected(c => !c)}
               className={`h-11 px-5 rounded-xl font-semibold text-sm transition flex items-center gap-2 ${
                 connected
-                  ? "bg-black/5 text-[color:var(--istikbal-blue)] hover:bg-black/10"
-                  : "bg-[color:var(--istikbal-blue)] text-white hover:opacity-90"
+                  ? "bg-black/5 text-[color:var(--brand-primary)] hover:bg-black/10"
+                  : "bg-[color:var(--brand-primary)] text-white hover:opacity-90"
               }`}
             >
               {connected ? t("disconnect") : <><Plus className="size-4" /> {t("connectAccount")}</>}
@@ -83,16 +83,16 @@ function SosyalPage() {
         <section>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div>
-              <h3 className="text-xl font-bold text-[color:var(--istikbal-blue)]">{t("galleryTitle")}</h3>
-              <p className="text-sm text-[color:var(--istikbal-blue)]/60">{t("gallerySubtitle")}</p>
+              <h3 className="text-xl font-bold text-[color:var(--brand-primary)]">{t("galleryTitle")}</h3>
+              <p className="text-sm text-[color:var(--brand-primary)]/60">{t("gallerySubtitle")}</p>
             </div>
             <div className="relative w-full sm:w-72">
-              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
+              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("searchPlaceholder")}
-                className="w-full h-10 pl-9 pr-3 rounded-xl bg-white border border-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
+                className="w-full h-10 pl-9 pr-3 rounded-xl bg-white border border-black/5 text-sm placeholder:text-[color:var(--brand-primary)]/40 text-[color:var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]/20"
               />
             </div>
           </div>
@@ -103,10 +103,10 @@ function SosyalPage() {
                 {/* Image */}
                 <div className="relative aspect-[4/5] bg-stone-100 overflow-hidden">
                   <img src={r.image} alt={r.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition duration-500" />
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/85 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-semibold text-[color:var(--istikbal-blue)]">
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/85 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-semibold text-[color:var(--brand-primary)]">
                     {t("aiRenderBadge")}
                   </div>
-                  <div className="absolute top-3 right-3 bg-white/85 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-semibold text-[color:var(--istikbal-blue)]/70">
+                  <div className="absolute top-3 right-3 bg-white/85 backdrop-blur px-2.5 py-1 rounded-full text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
                     {r.date}
                   </div>
                   {shared[r.id] && (
@@ -119,12 +119,12 @@ function SosyalPage() {
                 {/* Meta */}
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-bold text-[color:var(--istikbal-blue)] leading-tight">{r.title}</h4>
-                    <button className="text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]" title={t("downloadTitle")}>
+                    <h4 className="font-bold text-[color:var(--brand-primary)] leading-tight">{r.title}</h4>
+                    <button className="text-[color:var(--brand-primary)]/40 hover:text-[color:var(--brand-primary)]" title={t("downloadTitle")}>
                       <Download className="size-4" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-[color:var(--istikbal-blue)]/50">
+                  <div className="flex items-center gap-3 text-xs text-[color:var(--brand-primary)]/50">
                     <span className="flex items-center gap-1"><Heart className="size-3.5" /> 0</span>
                     <span className="flex items-center gap-1"><MessageCircle className="size-3.5" /> 0</span>
                     <span className="flex items-center gap-1"><Share2 className="size-3.5" /> 0</span>
@@ -151,7 +151,7 @@ function SosyalPage() {
           </div>
 
           {filtered.length === 0 && (
-            <div className="bg-white rounded-3xl p-12 text-center text-[color:var(--istikbal-blue)]/60">
+            <div className="bg-white rounded-3xl p-12 text-center text-[color:var(--brand-primary)]/60">
               {tCommon("noResults")}
             </div>
           )}

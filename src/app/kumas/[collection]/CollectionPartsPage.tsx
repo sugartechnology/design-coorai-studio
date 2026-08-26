@@ -35,11 +35,11 @@ function CollectionPartsPage() {
       <AppHeader title={collectionName.toUpperCase()} backHref="/kumas" />
       <main className="flex-1 min-h-0 overflow-y-auto px-6 lg:px-10 py-4 lg:py-6">
       <div className="mb-5">
-        <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">{t("collectionEyebrow")}</p>
-        <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
+        <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/50">{t("collectionEyebrow")}</p>
+        <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">
           {collectionName}
         </h1>
-        <p className="mt-1.5 text-[color:var(--istikbal-blue)]/60">
+        <p className="mt-1.5 text-[color:var(--brand-primary)]/60">
           {t("collectionPartsHint")}
         </p>
       </div>
@@ -55,8 +55,8 @@ function CollectionPartsPage() {
               <PartSilhouette type={p.silhouette} />
             </div>
             <div className="px-4 py-4 text-center">
-              <h3 className="font-bold text-[color:var(--istikbal-blue)]">{p.name}</h3>
-              <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t("fabricRegionCount", { count: p.regions })}</p>
+              <h3 className="font-bold text-[color:var(--brand-primary)]">{p.name}</h3>
+              <p className="text-xs text-[color:var(--brand-primary)]/55 mt-0.5">{t("fabricRegionCount", { count: p.regions })}</p>
             </div>
           </Link>
         ))}

@@ -70,7 +70,7 @@ function AyarlarPage() {
   const [active, setActive] = useState<SectionId>("magaza");
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
+    <div className="min-h-screen bg-[color:var(--brand-bg)]">
       <AppHeader title={t("headerTitle")} backHref="/" sticky />
 
       <div className="grid grid-cols-12 gap-6 px-4 md:px-8 py-8">
@@ -88,8 +88,8 @@ function AyarlarPage() {
                     className={[
                       "group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all",
                       isActive
-                        ? "bg-[color:var(--istikbal-blue)] text-white shadow-sm"
-                        : "text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue-soft)]",
+                        ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                        : "text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]",
                     ].join(" ")}
                   >
                     <span
@@ -97,7 +97,7 @@ function AyarlarPage() {
                         "flex items-center justify-center size-8 rounded-xl",
                         isActive
                           ? "bg-white/15 text-white"
-                          : "bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] group-hover:bg-white",
+                          : "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] group-hover:bg-white",
                       ].join(" ")}
                     >
                       <Icon className="size-4" />
@@ -109,7 +109,7 @@ function AyarlarPage() {
                       <span
                         className={[
                           "block text-[11px] truncate leading-tight mt-0.5",
-                          isActive ? "text-white/70" : "text-[color:var(--istikbal-blue)]/55",
+                          isActive ? "text-white/70" : "text-[color:var(--brand-primary)]/55",
                         ].join(" ")}
                       >
                         {t(s.descKey)}
@@ -118,7 +118,7 @@ function AyarlarPage() {
                     <ChevronRight
                       className={[
                         "size-4 shrink-0 transition-transform",
-                        isActive ? "text-white translate-x-0.5" : "text-[color:var(--istikbal-blue)]/30",
+                        isActive ? "text-white translate-x-0.5" : "text-[color:var(--brand-primary)]/30",
                       ].join(" ")}
                     />
                   </button>
@@ -161,11 +161,11 @@ function PanelCard({
     <section className="rounded-3xl bg-white border border-black/5 shadow-sm overflow-hidden">
       <header className="flex items-start justify-between gap-4 px-6 py-5 border-b border-black/5">
         <div>
-          <h2 className="text-base font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
+          <h2 className="text-base font-extrabold text-[color:var(--brand-primary)] tracking-tight">
             {title}
           </h2>
           {desc && (
-            <p className="text-xs text-[color:var(--istikbal-blue)]/60 mt-1">{desc}</p>
+            <p className="text-xs text-[color:var(--brand-primary)]/60 mt-1">{desc}</p>
           )}
         </div>
         {action}
@@ -192,12 +192,12 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60">
         {label}
       </span>
       <div className="relative">
         {icon && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40">
             {icon}
           </span>
         )}
@@ -207,10 +207,10 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className={[
-            "w-full rounded-xl bg-[color:var(--istikbal-blue-soft)]/50 border border-transparent",
-            "text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35",
-            "px-3.5 py-2.5 outline-none focus:bg-white focus:border-[color:var(--istikbal-blue)]/30",
-            "focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10 transition",
+            "w-full rounded-xl bg-[color:var(--brand-soft)]/50 border border-transparent",
+            "text-sm text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35",
+            "px-3.5 py-2.5 outline-none focus:bg-white focus:border-[color:var(--brand-primary)]/30",
+            "focus:ring-4 focus:ring-[color:var(--brand-primary)]/10 transition",
             icon ? "pl-10" : "",
           ].join(" ")}
         />
@@ -233,8 +233,8 @@ function Toggle({
       className={[
         "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors",
         checked
-          ? "bg-[color:var(--istikbal-blue)]"
-          : "bg-[color:var(--istikbal-blue-soft)] border border-[color:var(--istikbal-blue)]/15",
+          ? "bg-[color:var(--brand-primary)]"
+          : "bg-[color:var(--brand-soft)] border border-[color:var(--brand-primary)]/15",
       ].join(" ")}
     >
       <span
@@ -261,8 +261,8 @@ function ToggleRow({
   return (
     <div className="flex items-center justify-between gap-4 py-3 border-b border-black/5 last:border-0">
       <div>
-        <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{title}</p>
-        <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{desc}</p>
+        <p className="text-sm font-semibold text-[color:var(--brand-primary)]">{title}</p>
+        <p className="text-xs text-[color:var(--brand-primary)]/55 mt-0.5">{desc}</p>
       </div>
       <Toggle checked={checked} onChange={onChange} />
     </div>
@@ -273,7 +273,7 @@ function PrimaryBtn({ children, onClick }: { children: React.ReactNode; onClick?
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-sm font-semibold px-4 py-2.5 transition shadow-sm"
+      className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/90 text-white text-sm font-semibold px-4 py-2.5 transition shadow-sm"
     >
       {children}
     </button>
@@ -284,7 +284,7 @@ function GhostBtn({ children, onClick }: { children: React.ReactNode; onClick?: 
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/15 text-[color:var(--istikbal-blue)] text-sm font-semibold px-4 py-2.5 transition"
+      className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--brand-soft)] hover:bg-[color:var(--brand-primary)]/15 text-[color:var(--brand-primary)] text-sm font-semibold px-4 py-2.5 transition"
     >
       {children}
     </button>
@@ -308,17 +308,17 @@ function MagazaPanel() {
       action={<PrimaryBtn><Check className="size-4" /> {tCommon("save")}</PrimaryBtn>}
     >
       <div className="flex items-center gap-5 pb-6 mb-6 border-b border-black/5">
-        <div className="size-20 rounded-2xl bg-gradient-to-br from-[color:var(--istikbal-blue)] to-[color:var(--istikbal-blue)]/70 grid place-items-center text-white text-2xl font-black italic">
+        <div className="size-20 rounded-2xl bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary)]/70 grid place-items-center text-white text-2xl font-black italic">
           i
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t("storeLogo")}</p>
-          <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">
+          <p className="text-sm font-semibold text-[color:var(--brand-primary)]">{t("storeLogo")}</p>
+          <p className="text-xs text-[color:var(--brand-primary)]/55 mt-0.5">
             {t("storeLogoHint")}
           </p>
           <div className="flex gap-2 mt-3">
             <GhostBtn><Upload className="size-4" /> {tCommon("upload")}</GhostBtn>
-            <button className="text-xs font-semibold text-[color:var(--istikbal-blue)]/50 hover:text-[color:var(--istikbal-blue)] px-2">
+            <button className="text-xs font-semibold text-[color:var(--brand-primary)]/50 hover:text-[color:var(--brand-primary)] px-2">
               {tCommon("remove")}
             </button>
           </div>
@@ -367,7 +367,7 @@ function GorunumPanel() {
     <PanelCard title={t("appearanceTitle")} desc={t("appearanceDesc")}>
       <div className="space-y-6">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">{t("themeLabel")}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60 mb-2">{t("themeLabel")}</p>
           <div className="grid grid-cols-3 gap-3">
             {(["light", "dark", "auto"] as const).map((th) => {
               const isActive = theme === th;
@@ -378,8 +378,8 @@ function GorunumPanel() {
                   className={[
                     "rounded-2xl p-3 border-2 transition text-left",
                     isActive
-                      ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue-soft)]"
-                      : "border-transparent bg-[color:var(--istikbal-blue-soft)]/50 hover:bg-[color:var(--istikbal-blue-soft)]",
+                      ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)]"
+                      : "border-transparent bg-[color:var(--brand-soft)]/50 hover:bg-[color:var(--brand-soft)]",
                   ].join(" ")}
                 >
                   <div
@@ -390,7 +390,7 @@ function GorunumPanel() {
                       th === "auto" && "bg-gradient-to-r from-white via-white to-[#0d1424]",
                     ].filter(Boolean).join(" ")}
                   />
-                  <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]">{themeLabels[th]}</p>
+                  <p className="text-xs font-semibold text-[color:var(--brand-primary)]">{themeLabels[th]}</p>
                 </button>
               );
             })}
@@ -398,7 +398,7 @@ function GorunumPanel() {
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">{t("accentLabel")}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60 mb-2">{t("accentLabel")}</p>
           <div className="flex flex-wrap gap-2">
             {accents.map((c) => (
               <button
@@ -407,7 +407,7 @@ function GorunumPanel() {
                 style={{ background: c }}
                 className={[
                   "size-9 rounded-xl transition relative",
-                  accent === c ? "ring-2 ring-offset-2 ring-[color:var(--istikbal-blue)]" : "hover:scale-110",
+                  accent === c ? "ring-2 ring-offset-2 ring-[color:var(--brand-primary)]" : "hover:scale-110",
                 ].join(" ")}
               >
                 {accent === c && <Check className="size-4 text-white mx-auto" />}
@@ -417,8 +417,8 @@ function GorunumPanel() {
         </div>
 
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60 mb-2">{t("densityLabel")}</p>
-          <div className="inline-flex bg-[color:var(--istikbal-blue-soft)] rounded-xl p-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60 mb-2">{t("densityLabel")}</p>
+          <div className="inline-flex bg-[color:var(--brand-soft)] rounded-xl p-1">
             {(["compact", "cozy", "comfortable"] as const).map((d) => (
               <button
                 key={d}
@@ -426,8 +426,8 @@ function GorunumPanel() {
                 className={[
                   "px-4 py-1.5 rounded-lg text-xs font-semibold transition",
                   density === d
-                    ? "bg-white text-[color:var(--istikbal-blue)] shadow-sm"
-                    : "text-[color:var(--istikbal-blue)]/60",
+                    ? "bg-white text-[color:var(--brand-primary)] shadow-sm"
+                    : "text-[color:var(--brand-primary)]/60",
                 ].join(" ")}
               >
                 {densityLabels[d]}
@@ -504,12 +504,12 @@ function Select({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/60">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60">{label}</span>
       <select
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-xl bg-[color:var(--istikbal-blue-soft)]/50 border border-transparent text-sm text-[color:var(--istikbal-blue)] px-3.5 py-2.5 outline-none focus:bg-white focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/10 disabled:opacity-60"
+        className="rounded-xl bg-[color:var(--brand-soft)]/50 border border-transparent text-sm text-[color:var(--brand-primary)] px-3.5 py-2.5 outline-none focus:bg-white focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-primary)]/10 disabled:opacity-60"
       >
         {options.map((o) => (
           <option key={o.v} value={o.v} disabled={o.disabled}>
@@ -550,7 +550,7 @@ function OdemePanel() {
   const t = useTranslations("ayarlar");
   return (
     <PanelCard title={t("billingTitle")}>
-      <div className="rounded-2xl bg-gradient-to-br from-[color:var(--istikbal-blue)] to-[color:var(--istikbal-blue)]/80 text-white p-5 mb-6">
+      <div className="rounded-2xl bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary)]/80 text-white p-5 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-white/70">{t("activePlan")}</p>
@@ -570,14 +570,14 @@ function OdemePanel() {
           { date: "14 May 2026", n: "INV-2026-005", amt: "₺2.490" },
           { date: "14 Nis 2026", n: "INV-2026-004", amt: "₺2.490" },
         ].map((r) => (
-          <div key={r.n} className="flex items-center justify-between bg-[color:var(--istikbal-blue-soft)]/40 rounded-xl px-4 py-3">
+          <div key={r.n} className="flex items-center justify-between bg-[color:var(--brand-soft)]/40 rounded-xl px-4 py-3">
             <div>
-              <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{r.n}</p>
-              <p className="text-xs text-[color:var(--istikbal-blue)]/55">{r.date}</p>
+              <p className="text-sm font-semibold text-[color:var(--brand-primary)]">{r.n}</p>
+              <p className="text-xs text-[color:var(--brand-primary)]/55">{r.date}</p>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{t("invoicePaid")}</span>
-              <span className="text-sm font-bold text-[color:var(--istikbal-blue)]">{r.amt}</span>
+              <span className="text-sm font-bold text-[color:var(--brand-primary)]">{r.amt}</span>
             </div>
           </div>
         ))}
@@ -600,14 +600,14 @@ function EntegrasyonPanel() {
     <PanelCard title={t("integrationsTitle")} desc={t("integrationsDesc")}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {items.map((i) => (
-          <div key={i.name} className="rounded-2xl border border-black/5 bg-[color:var(--istikbal-blue-soft)]/40 p-4 flex items-start justify-between gap-3">
+          <div key={i.name} className="rounded-2xl border border-black/5 bg-[color:var(--brand-soft)]/40 p-4 flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-bold text-[color:var(--istikbal-blue)]">{i.name}</p>
-              <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{i.desc}</p>
+              <p className="text-sm font-bold text-[color:var(--brand-primary)]">{i.name}</p>
+              <p className="text-xs text-[color:var(--brand-primary)]/55 mt-0.5">{i.desc}</p>
               <span
                 className={[
                   "inline-block mt-2 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                  i.connected ? "bg-emerald-100 text-emerald-700" : "bg-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)]/60",
+                  i.connected ? "bg-emerald-100 text-emerald-700" : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]/60",
                 ].join(" ")}
               >
                 {i.connected ? tCommon("connected") : tCommon("notConnected")}
@@ -617,8 +617,8 @@ function EntegrasyonPanel() {
               className={[
                 "text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0",
                 i.connected
-                  ? "bg-white text-[color:var(--istikbal-blue)] border border-[color:var(--istikbal-blue)]/15 hover:bg-[color:var(--istikbal-blue-soft)]"
-                  : "bg-[color:var(--istikbal-blue)] text-white hover:opacity-90",
+                  ? "bg-white text-[color:var(--brand-primary)] border border-[color:var(--brand-primary)]/15 hover:bg-[color:var(--brand-soft)]"
+                  : "bg-[color:var(--brand-primary)] text-white hover:opacity-90",
               ].join(" ")}
             >
               {i.connected ? tCommon("manage") : tCommon("connect")}
@@ -636,17 +636,17 @@ function VeriPanel() {
   return (
     <PanelCard title={t("dataTitle")}>
       <div className="space-y-3">
-        <div className="flex items-center justify-between rounded-2xl bg-[color:var(--istikbal-blue-soft)]/40 p-4">
+        <div className="flex items-center justify-between rounded-2xl bg-[color:var(--brand-soft)]/40 p-4">
           <div>
-            <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t("exportAllTitle")}</p>
-            <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t("exportAllDesc")}</p>
+            <p className="text-sm font-semibold text-[color:var(--brand-primary)]">{t("exportAllTitle")}</p>
+            <p className="text-xs text-[color:var(--brand-primary)]/55 mt-0.5">{t("exportAllDesc")}</p>
           </div>
           <GhostBtn>{tCommon("download")}</GhostBtn>
         </div>
-        <div className="flex items-center justify-between rounded-2xl bg-[color:var(--istikbal-blue-soft)]/40 p-4">
+        <div className="flex items-center justify-between rounded-2xl bg-[color:var(--brand-soft)]/40 p-4">
           <div>
-            <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">{t("autoBackupTitle")}</p>
-            <p className="text-xs text-[color:var(--istikbal-blue)]/55 mt-0.5">{t("autoBackupDesc")}</p>
+            <p className="text-sm font-semibold text-[color:var(--brand-primary)]">{t("autoBackupTitle")}</p>
+            <p className="text-xs text-[color:var(--brand-primary)]/55 mt-0.5">{t("autoBackupDesc")}</p>
           </div>
           <Toggle checked={true} onChange={() => {}} />
         </div>

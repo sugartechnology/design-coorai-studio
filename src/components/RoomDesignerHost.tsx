@@ -177,7 +177,7 @@ export const RoomDesignerHost = forwardRef<
   return (
     <div className={className} style={{ position: "relative", minHeight: 0 }}>
       {!bundleReady && !failed && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-50 text-sm text-[color:var(--istikbal-blue)]/60">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-stone-50 text-sm text-[color:var(--brand-primary)]/60">
           {t("roomDesignerLoading")}
         </div>
       )}

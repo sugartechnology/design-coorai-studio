@@ -108,27 +108,27 @@ function OffersPage() {
   }, [debouncedQuery, router, t]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[color:var(--istikbal-bg)]">
+    <div className="flex min-h-dvh flex-col bg-[color:var(--brand-bg)]">
       <AppHeader title={t("listTitle").toUpperCase()} backHref="/" />
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
-        <p className="mb-4 text-sm text-[color:var(--istikbal-blue)]/60">
+        <p className="mb-4 text-sm text-[color:var(--brand-primary)]/60">
           {t("listSubtitle")}
         </p>
 
         <div className="relative mb-5">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("listSearchPlaceholder")}
-            className="h-11 w-full rounded-xl border border-black/10 bg-white pl-10 pr-4 text-sm text-[color:var(--istikbal-blue)] outline-none ring-[color:var(--istikbal-yellow)]/40 placeholder:text-[color:var(--istikbal-blue)]/40 focus:ring-2"
+            className="h-11 w-full rounded-xl border border-black/10 bg-white pl-10 pr-4 text-sm text-[color:var(--brand-primary)] outline-none ring-[color:var(--brand-accent)]/40 placeholder:text-[color:var(--brand-primary)]/40 focus:ring-2"
           />
         </div>
 
         {loading && (
-          <div className="flex flex-1 items-center justify-center gap-2 py-16 text-sm text-[color:var(--istikbal-blue)]/50">
+          <div className="flex flex-1 items-center justify-center gap-2 py-16 text-sm text-[color:var(--brand-primary)]/50">
             <Loader2 className="size-5 animate-spin" />
           </div>
         )}
@@ -141,8 +141,8 @@ function OffersPage() {
 
         {!loading && !error && offers.length === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center">
-            <FileText className="size-10 text-[color:var(--istikbal-blue)]/25" />
-            <p className="text-sm font-medium text-[color:var(--istikbal-blue)]/50">
+            <FileText className="size-10 text-[color:var(--brand-primary)]/25" />
+            <p className="text-sm font-medium text-[color:var(--brand-primary)]/50">
               {t("listEmpty")}
             </p>
           </div>
@@ -160,26 +160,26 @@ function OffersPage() {
                   className="rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[color:var(--istikbal-blue)]/5 text-[color:var(--istikbal-blue)]">
+                    <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)]">
                       <FileText className="size-4" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
-                        <p className="truncate text-sm font-bold text-[color:var(--istikbal-blue)]">
+                        <p className="truncate text-sm font-bold text-[color:var(--brand-primary)]">
                           {offer.title?.trim() || t("listUntitled")}
                         </p>
                         {offer.offerNumber && (
-                          <span className="shrink-0 text-[11px] font-semibold text-[color:var(--istikbal-blue)]/45">
+                          <span className="shrink-0 text-[11px] font-semibold text-[color:var(--brand-primary)]/45">
                             #{offer.offerNumber}
                           </span>
                         )}
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-[color:var(--istikbal-blue)]/55">
+                      <p className="mt-0.5 truncate text-xs text-[color:var(--brand-primary)]/55">
                         {offer.customerName?.trim() || t("listCustomerUnknown")}
                         {" · "}
                         {formatDate(offer.createdAt, bcp47)}
                       </p>
-                      <p className="mt-1 text-sm font-bold text-[color:var(--istikbal-blue)]">
+                      <p className="mt-1 text-sm font-bold text-[color:var(--brand-primary)]">
                         {formatMoney(offer.totalPrice, offer.currency, bcp47)}
                       </p>
                     </div>
@@ -190,7 +190,7 @@ function OffersPage() {
                         href={viewHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--istikbal-blue)]/15 bg-white px-2 text-xs font-bold text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/5"
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-2 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
                       >
                         <ExternalLink className="size-3.5 shrink-0" />
                         <span className="truncate">{t("listViewOffer")}</span>
@@ -199,7 +199,7 @@ function OffersPage() {
                       <button
                         type="button"
                         disabled
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--istikbal-blue)]/10 px-2 text-xs font-bold text-[color:var(--istikbal-blue)]/35"
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/10 px-2 text-xs font-bold text-[color:var(--brand-primary)]/35"
                       >
                         <ExternalLink className="size-3.5 shrink-0" />
                         <span className="truncate">{t("listViewOffer")}</span>
@@ -207,7 +207,7 @@ function OffersPage() {
                     )}
                     <Link
                       href={`/oda?offerId=${encodeURIComponent(offer.id)}`}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--istikbal-blue)] px-2 text-xs font-bold text-white hover:bg-[color:var(--istikbal-navy)]"
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--brand-primary)] px-2 text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)]"
                     >
                       <Sofa className="size-3.5 shrink-0" />
                       <span className="truncate">{t("listGoToDesign")}</span>

@@ -98,7 +98,7 @@ export function TutorialButton() {
       <button
         onClick={() => setOpen(true)}
         aria-label={t("ariaWatch")}
-        className="fixed bottom-6 right-6 z-[9998] flex items-center gap-2 rounded-full bg-[color:var(--istikbal-blue,#0066cc)] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/20 hover:scale-105 hover:shadow-xl active:scale-95"
+        className="fixed bottom-6 right-6 z-[9998] flex items-center gap-2 rounded-full bg-[color:var(--brand-primary,#0066cc)] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/20 hover:scale-105 hover:shadow-xl active:scale-95"
         style={{ transition: "transform 150ms, box-shadow 150ms" }}
       >
         <PlayCircle className="h-5 w-5" />

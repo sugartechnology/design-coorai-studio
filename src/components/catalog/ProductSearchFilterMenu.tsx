@@ -103,13 +103,13 @@ export function ProductSearchFilterMenu({
         onClick={() => onOpenChange(!open)}
         className={`relative size-10 rounded-xl border inline-flex items-center justify-center transition ${
           open || hasActiveFacets
-            ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)] shadow-sm"
-            : "bg-black/5 text-[color:var(--istikbal-blue)] border-transparent hover:border-black/10"
+            ? "bg-[color:var(--brand-primary)] text-white border-[color:var(--brand-primary)] shadow-sm"
+            : "bg-black/5 text-[color:var(--brand-primary)] border-transparent hover:border-black/10"
         }`}
       >
         <ListFilter className="size-4" />
         {activeFacetCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-white text-[color:var(--istikbal-blue)] text-[9px] font-extrabold inline-flex items-center justify-center border border-[color:var(--istikbal-blue)]">
+          <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-white text-[color:var(--brand-primary)] text-[9px] font-extrabold inline-flex items-center justify-center border border-[color:var(--brand-primary)]">
             {activeFacetCount}
           </span>
         )}
@@ -118,7 +118,7 @@ export function ProductSearchFilterMenu({
       {open && (
         <div className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-[min(22rem,calc(100vw-2rem))] max-h-[min(32rem,75vh)] overflow-hidden rounded-2xl border border-black/8 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_-24px_rgba(15,23,42,0.45)]">
           <div className="px-3.5 py-3 border-b border-black/5 flex items-center justify-between gap-2 bg-gradient-to-b from-black/[0.02] to-transparent">
-            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--istikbal-blue)]/55">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[color:var(--brand-primary)]/55">
               {filterAriaLabel}
             </span>
             <div className="flex items-center gap-1">
@@ -135,7 +135,7 @@ export function ProductSearchFilterMenu({
                   if (!hasActiveFacets) return;
                   onClear();
                 }}
-                className="h-7 px-2.5 rounded-lg text-[10px] font-semibold transition disabled:opacity-35 disabled:pointer-events-none text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/5"
+                className="h-7 px-2.5 rounded-lg text-[10px] font-semibold transition disabled:opacity-35 disabled:pointer-events-none text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
               >
                 {clearLabel}
               </button>
@@ -143,7 +143,7 @@ export function ProductSearchFilterMenu({
                 type="button"
                 aria-label="Close"
                 onClick={() => onOpenChange(false)}
-                className="size-7 rounded-lg hover:bg-black/5 inline-flex items-center justify-center text-[color:var(--istikbal-blue)]/45"
+                className="size-7 rounded-lg hover:bg-black/5 inline-flex items-center justify-center text-[color:var(--brand-primary)]/45"
               >
                 <X className="size-3.5" />
               </button>
@@ -152,7 +152,7 @@ export function ProductSearchFilterMenu({
 
           <div className="overflow-y-auto max-h-[min(28rem,65vh)] p-2.5 space-y-2">
             {facetFilters.length === 0 && (
-              <p className="text-xs text-[color:var(--istikbal-blue)]/45 text-center py-8">—</p>
+              <p className="text-xs text-[color:var(--brand-primary)]/45 text-center py-8">—</p>
             )}
             {facetFilters.map((facet) => {
               const sectionOpen = expandedSections[facet.field] ?? true;
@@ -168,17 +168,17 @@ export function ProductSearchFilterMenu({
                     className="w-full px-3 h-10 flex items-center justify-between gap-2 text-left hover:bg-black/[0.02] transition"
                   >
                     <span className="inline-flex items-center gap-2 min-w-0">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--istikbal-blue)]">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[color:var(--brand-primary)]">
                         {facetLabel(facet.field)}
                       </span>
                       {count > 0 && (
-                        <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-[color:var(--istikbal-blue)] text-white text-[10px] font-extrabold">
+                        <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white text-[10px] font-extrabold">
                           {count}
                         </span>
                       )}
                     </span>
                     <ChevronDown
-                      className={`size-4 text-[color:var(--istikbal-blue)]/40 transition-transform duration-200 ${
+                      className={`size-4 text-[color:var(--brand-primary)]/40 transition-transform duration-200 ${
                         sectionOpen ? "rotate-0" : "-rotate-90"
                       }`}
                     />
@@ -203,8 +203,8 @@ export function ProductSearchFilterMenu({
                                   onClick={() => onToggleOption(facet.field, option)}
                                   className={`rounded-xl border p-2 text-left transition ${
                                     active
-                                      ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue-soft)] shadow-sm"
-                                      : "border-black/8 hover:border-[color:var(--istikbal-blue)]/30"
+                                      ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)] shadow-sm"
+                                      : "border-black/8 hover:border-[color:var(--brand-primary)]/30"
                                   }`}
                                 >
                                   <div className="aspect-[4/3] rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
@@ -217,21 +217,21 @@ export function ProductSearchFilterMenu({
                                         className="absolute inset-0 h-full w-full object-cover"
                                       />
                                     ) : (
-                                      <div className="absolute inset-0 flex items-center justify-center text-[color:var(--istikbal-blue)]/20 text-[10px] font-bold">
+                                      <div className="absolute inset-0 flex items-center justify-center text-[color:var(--brand-primary)]/20 text-[10px] font-bold">
                                         {label.slice(0, 1)}
                                       </div>
                                     )}
                                     {active && (
-                                      <span className="absolute top-1 right-1 size-5 rounded-full bg-[color:var(--istikbal-blue)] text-white inline-flex items-center justify-center">
+                                      <span className="absolute top-1 right-1 size-5 rounded-full bg-[color:var(--brand-primary)] text-white inline-flex items-center justify-center">
                                         <Check className="size-3" />
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] leading-tight line-clamp-2">
+                                  <div className="text-[11px] font-semibold text-[color:var(--brand-primary)] leading-tight line-clamp-2">
                                     {label}
                                   </div>
                                   {typeof option.count === "number" && (
-                                    <div className="mt-0.5 text-[10px] text-[color:var(--istikbal-blue)]/45">
+                                    <div className="mt-0.5 text-[10px] text-[color:var(--brand-primary)]/45">
                                       {option.count}
                                     </div>
                                   )}
@@ -261,15 +261,15 @@ export function ProductSearchFilterMenu({
                                   style={{ paddingLeft: `${0.5 + depth * 0.75}rem` }}
                                   className={`w-full pr-2 py-1.5 rounded-lg text-left text-[12px] font-medium transition flex items-center gap-2 ${
                                     active
-                                      ? "bg-[color:var(--istikbal-blue)] text-white"
-                                      : "text-[color:var(--istikbal-blue)] hover:bg-black/[0.04]"
+                                      ? "bg-[color:var(--brand-primary)] text-white"
+                                      : "text-[color:var(--brand-primary)] hover:bg-black/[0.04]"
                                   }`}
                                 >
                                   <span
                                     className={`size-3.5 rounded border shrink-0 inline-flex items-center justify-center ${
                                       active
                                         ? "border-white/80 bg-white/15"
-                                        : "border-[color:var(--istikbal-blue)]/25"
+                                        : "border-[color:var(--brand-primary)]/25"
                                     }`}
                                   >
                                     {active && <Check className="size-2.5" />}
@@ -278,7 +278,7 @@ export function ProductSearchFilterMenu({
                                   {typeof option.count === "number" && (
                                     <span
                                       className={`text-[10px] shrink-0 ${
-                                        active ? "text-white/70" : "text-[color:var(--istikbal-blue)]/40"
+                                        active ? "text-white/70" : "text-[color:var(--brand-primary)]/40"
                                       }`}
                                     >
                                       {option.count}
@@ -346,7 +346,7 @@ function TypeCategoryTree({
               type="button"
               aria-label={expanded ? "Collapse" : "Expand"}
               onClick={() => onToggleNode(option.value)}
-              className="size-7 rounded-md inline-flex items-center justify-center text-[color:var(--istikbal-blue)]/40 hover:bg-black/[0.04] shrink-0"
+              className="size-7 rounded-md inline-flex items-center justify-center text-[color:var(--brand-primary)]/40 hover:bg-black/[0.04] shrink-0"
             >
               <ChevronDown
                 className={`size-3.5 transition-transform duration-200 ${expanded ? "rotate-0" : "-rotate-90"}`}
@@ -360,20 +360,20 @@ function TypeCategoryTree({
             onClick={() => onToggleOption(option)}
             className={`flex-1 min-w-0 pr-2 py-1.5 rounded-lg text-left text-[12px] font-medium transition flex items-center gap-2 ${
               active
-                ? "bg-[color:var(--istikbal-blue)] text-white"
-                : "text-[color:var(--istikbal-blue)] hover:bg-black/[0.04]"
+                ? "bg-[color:var(--brand-primary)] text-white"
+                : "text-[color:var(--brand-primary)] hover:bg-black/[0.04]"
             }`}
           >
             <span
               className={`size-3.5 rounded border shrink-0 inline-flex items-center justify-center ${
-                active ? "border-white/80 bg-white/15" : "border-[color:var(--istikbal-blue)]/25"
+                active ? "border-white/80 bg-white/15" : "border-[color:var(--brand-primary)]/25"
               }`}
             >
               {active && <Check className="size-2.5" />}
             </span>
             <span className="flex-1 min-w-0 truncate">{label}</span>
             {typeof option.count === "number" && (
-              <span className={`text-[10px] shrink-0 ${active ? "text-white/70" : "text-[color:var(--istikbal-blue)]/40"}`}>
+              <span className={`text-[10px] shrink-0 ${active ? "text-white/70" : "text-[color:var(--brand-primary)]/40"}`}>
                 {option.count}
               </span>
             )}

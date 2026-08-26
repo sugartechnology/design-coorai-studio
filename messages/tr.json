@@ -57,7 +57,7 @@
     "studioTagline": "3D Tasarım Stüdyosu"
   },
   "meta": {
-    "title": "İstikbal 3D Tasarım Stüdyosu",
+    "title": "{brand} {tagline}",
     "description": "Mobilya mağazaları için 3D tasarım, kumaş seçimi, yapay zeka destekli oda planlama ve modüler ürün yönetimi.",
     "ogDescription": "Kumaş seç, yapay zeka ile tasarla, oda planla ve mağazanı tek panelden yönet."
   },
@@ -108,8 +108,9 @@
     "featureDealerCode": "Bayi kodu",
     "featureSmsPin": "SMS pin",
     "featureSecure": "Güvenli",
-    "footerCopyright": "© {year} İstikbal · 3D Tasarım Stüdyosu",
+    "footerCopyright": "© {year} {brand} · {tagline}",
     "title": "Giriş Yap",
+    "metaDescription": "Bayi kodu ve SMS pin kodu ile {brand} bayi paneline güvenli giriş.",
     "tabCredentials": "Kullanıcı adı",
     "tabDealer": "Bayi kodu",
     "credentialsHint": "Kullanıcı adı (veya e-posta) ve şifrenizle giriş yapın.",

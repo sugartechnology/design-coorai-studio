@@ -150,17 +150,17 @@ function CategoryProductsPage() {
       <main className="flex-1 min-h-0 overflow-y-auto px-6 lg:px-10 py-4 lg:py-6">
       <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50">
+          <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/50">
             {t("categoryEyebrow")}
           </p>
-          <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
+          <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">
             {category?.name || tCommon("categoryFallback")}
           </h1>
-          <p className="mt-1.5 text-[color:var(--istikbal-blue)]/60">{subtitle}</p>
+          <p className="mt-1.5 text-[color:var(--brand-primary)]/60">{subtitle}</p>
         </div>
 
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -169,7 +169,7 @@ function CategoryProductsPage() {
                 ? t("searchCategoryPlaceholder")
                 : t("searchInCategoryPlaceholder")
             }
-            className="w-full h-11 pl-11 pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
+            className="w-full h-11 pl-11 pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-sm text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/40"
           />
         </div>
       </div>
@@ -181,13 +181,13 @@ function CategoryProductsPage() {
       )}
 
       {metaLoading ? (
-        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--brand-primary)]/60">
           <Loader2 className="size-8 animate-spin" />
           <p className="text-sm font-semibold">{t("categoriesLoading")}</p>
         </div>
       ) : showChildren ? (
         filteredChildren.length === 0 ? (
-          <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--istikbal-blue)]/60">
+          <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--brand-primary)]/60">
             {t("emptyCategories")}
           </div>
         ) : (
@@ -215,11 +215,11 @@ function CategoryProductsPage() {
                   )}
                 </div>
                 <div className="px-5 py-4 text-center">
-                  <h3 className="text-base font-bold text-[color:var(--istikbal-blue)]">
+                  <h3 className="text-base font-bold text-[color:var(--brand-primary)]">
                     {c.name}
                   </h3>
                   {c.productCount != null && (
-                    <p className="mt-1 text-xs text-[color:var(--istikbal-blue)]/55">
+                    <p className="mt-1 text-xs text-[color:var(--brand-primary)]/55">
                       {tCatalog("productCount", { count: c.productCount })}
                     </p>
                   )}
@@ -229,12 +229,12 @@ function CategoryProductsPage() {
           </div>
         )
       ) : productsLoading && products.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--brand-primary)]/60">
           <Loader2 className="size-8 animate-spin" />
           <p className="text-sm font-semibold">{t("productsLoading")}</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--brand-primary)]/60">
           {t("emptyCategoryProducts")}
         </div>
       ) : (
@@ -258,17 +258,17 @@ function CategoryProductsPage() {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-[color:var(--istikbal-blue)]/30">
+                      <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-[color:var(--brand-primary)]/30">
                         {tCommon("noImage")}
                       </div>
                     )}
                   </div>
                   <div className="px-3 py-3">
-                    <h3 className="text-sm font-bold text-[color:var(--istikbal-blue)] line-clamp-2">
+                    <h3 className="text-sm font-bold text-[color:var(--brand-primary)] line-clamp-2">
                       {p.name}
                     </h3>
                     {p.collectionName && (
-                      <p className="mt-1 text-[11px] text-[color:var(--istikbal-blue)]/50 truncate">
+                      <p className="mt-1 text-[11px] text-[color:var(--brand-primary)]/50 truncate">
                         {p.collectionName}
                       </p>
                     )}

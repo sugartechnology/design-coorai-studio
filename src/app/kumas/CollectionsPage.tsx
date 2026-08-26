@@ -124,10 +124,10 @@ function CollectionsPage() {
       <main className="flex-1 min-h-0 overflow-y-auto px-6 lg:px-10 py-4 lg:py-6">
       <div className="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">
             {t("categoriesTitle")}
           </h1>
-          <p className="mt-1.5 text-[color:var(--istikbal-blue)]/60">
+          <p className="mt-1.5 text-[color:var(--brand-primary)]/60">
             {loading
               ? t("categoriesLoading")
               : t("categoriesCountHint", { count: filtered.length })}
@@ -136,20 +136,20 @@ function CollectionsPage() {
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("searchCategoryPlaceholder")}
-              className="w-full h-11 pl-11 pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40 transition-all"
+              className="w-full h-11 pl-11 pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-sm text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/40 transition-all"
             />
           </div>
           <div className="relative">
-            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/50 pointer-events-none" />
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/50 pointer-events-none" />
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              className="h-11 pl-9 pr-8 rounded-full bg-white border border-black/5 text-sm font-semibold text-[color:var(--istikbal-blue)] outline-none focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 appearance-none cursor-pointer"
+              className="h-11 pl-9 pr-8 rounded-full bg-white border border-black/5 text-sm font-semibold text-[color:var(--brand-primary)] outline-none focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 appearance-none cursor-pointer"
             >
               <option value="default">{tCommon("defaultSort")}</option>
               <option value="name-asc">{tCommon("nameAsc")}</option>
@@ -166,12 +166,12 @@ function CollectionsPage() {
       )}
 
       {loading ? (
-        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-black/5 py-12 flex flex-col items-center gap-3 text-[color:var(--brand-primary)]/60">
           <Loader2 className="size-8 animate-spin" />
           <p className="text-sm font-semibold">{t("categoriesLoading")}</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--istikbal-blue)]/60">
+        <div className="rounded-2xl bg-white border border-dashed border-black/10 py-12 text-center text-[color:var(--brand-primary)]/60">
           {t("emptyCategories")}
         </div>
       ) : (
@@ -198,12 +198,12 @@ function CollectionsPage() {
                 </div>
 
                 <div className="px-5 py-5 text-center">
-                  <div className="mx-auto mb-2 size-8 rounded-full bg-[color:var(--istikbal-blue-soft)] flex items-center justify-center text-[color:var(--istikbal-blue)]/50">
+                  <div className="mx-auto mb-2 size-8 rounded-full bg-[color:var(--brand-soft)] flex items-center justify-center text-[color:var(--brand-primary)]/50">
                     <FolderOpen className="size-4" />
                   </div>
-                  <h3 className="text-base font-bold text-[color:var(--istikbal-blue)]">{c.name}</h3>
+                  <h3 className="text-base font-bold text-[color:var(--brand-primary)]">{c.name}</h3>
                   {c.productCount != null && (
-                    <p className="mt-2 text-xs text-[color:var(--istikbal-blue)]/55">
+                    <p className="mt-2 text-xs text-[color:var(--brand-primary)]/55">
                       {tCatalog("productCount", { count: c.productCount })}
                     </p>
                   )}

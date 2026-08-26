@@ -16,6 +16,9 @@ import {
   Lock,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { BrandLogo } from "@/components/BrandLogo";
+import { isLightHex } from "@/lib/templates/schema";
+import { usePortalTemplate } from "@/lib/templates/context";
 
 type AuthTab = "credentials" | "dealer";
 type Step = "code" | "phone" | "pin";
@@ -47,6 +50,9 @@ type LoginCompanyOption = {
 function LoginPage() {
   const router = useRouter();
   const t = useTranslations("login");
+  const tCommon = useTranslations("common");
+  const template = usePortalTemplate();
+  const asideIsLight = isLightHex(template.colors.loginAsideFrom);
   const [tab, setTab] = useState<AuthTab>("credentials");
   const [credentialsStep, setCredentialsStep] = useState<CredentialsStep>("form");
   const [username, setUsername] = useState("");
@@ -285,49 +291,62 @@ function LoginPage() {
             : t("stepPinHint");
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-[color:var(--istikbal-bg)]">
-      <aside className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[color:var(--istikbal-yellow)] via-[#f6c200] to-[#f0a400] text-[color:var(--istikbal-blue)]">
-        <div className="flex items-center gap-2">
-          <span className="text-4xl leading-none">≋</span>
-          <span className="text-3xl font-extrabold italic tracking-tight">istikbal</span>
+    <div className="min-h-screen grid lg:grid-cols-2 bg-[color:var(--brand-bg)]">
+      <aside
+        className={`relative hidden lg:flex flex-col justify-between p-12 overflow-hidden ${
+          asideIsLight ? "text-[color:var(--brand-primary)]" : "text-white"
+        }`}
+        style={{
+          backgroundImage: `linear-gradient(to bottom right, ${template.colors.loginAsideFrom}, ${template.colors.loginAsideTo})`,
+        }}
+      >
+        <div className="relative z-10">
+          <BrandLogo tone="onAside" className="h-9 sm:h-10" />
         </div>
 
-        <div className="pointer-events-none absolute -left-32 -bottom-32 w-[520px] h-[520px] rounded-full bg-white/70 blur-[2px]" />
+        <div
+          className={`pointer-events-none absolute -left-32 -bottom-32 w-[520px] h-[520px] rounded-full blur-[2px] ${
+            asideIsLight ? "bg-white/70" : "bg-white/10"
+          }`}
+        />
         <div className="pointer-events-none absolute right-10 top-32 w-40 h-40 rounded-full bg-white/30" />
-        <div className="pointer-events-none absolute right-32 bottom-40 w-24 h-24 rounded-full bg-[color:var(--istikbal-blue)]/15" />
+        <div className="pointer-events-none absolute right-32 bottom-40 w-24 h-24 rounded-full bg-white/20" />
 
         <div className="relative z-10 max-w-md">
           <h1 className="text-5xl font-extrabold leading-[1.05] tracking-tight whitespace-pre-line">
             {t("asideTitle")}
           </h1>
-          <p className="mt-5 text-lg text-[color:var(--istikbal-blue)]/70 leading-relaxed">
+          <p className="mt-5 text-lg leading-relaxed opacity-70">
             {t("asideBody")}
           </p>
-          <div className="mt-10 flex items-center gap-6 text-sm font-medium text-[color:var(--istikbal-blue)]/70">
+          <div className="mt-10 flex items-center gap-6 text-sm font-medium opacity-70">
             <span className="flex items-center gap-2"><CheckCircle2 className="size-4" /> {t("featureDealerCode")}</span>
             <span className="flex items-center gap-2"><CheckCircle2 className="size-4" /> {t("featureSmsPin")}</span>
             <span className="flex items-center gap-2"><ShieldCheck className="size-4" /> {t("featureSecure")}</span>
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-[color:var(--istikbal-blue)]/60">
-          {t("footerCopyright", { year: new Date().getFullYear() })}
+        <p className="relative z-10 text-xs opacity-60">
+          {t("footerCopyright", {
+            year: new Date().getFullYear(),
+            brand: template.displayName,
+            tagline: tCommon("studioTagline"),
+          })}
         </p>
       </aside>
 
       <section className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <span className="text-[color:var(--istikbal-yellow)] text-3xl leading-none">≋</span>
-            <span className="text-2xl font-extrabold italic text-[color:var(--istikbal-blue)] tracking-tight">istikbal</span>
+          <div className="lg:hidden mb-8">
+            <BrandLogo className="h-8" />
           </div>
 
           <div className="mb-6">
-            <h2 className="text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">{t("title")}</h2>
-            <p className="mt-2 text-[color:var(--istikbal-blue)]/60">{hint}</p>
+            <h2 className="text-3xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">{t("title")}</h2>
+            <p className="mt-2 text-[color:var(--brand-primary)]/60">{hint}</p>
           </div>
 
-          <div className="mb-6 p-1 rounded-2xl bg-[color:var(--istikbal-blue)]/5 flex gap-1">
+          <div className="mb-6 p-1 rounded-2xl bg-[color:var(--brand-primary)]/5 flex gap-1">
             {(
               [
                 { id: "credentials" as const, label: t("tabCredentials") },
@@ -343,8 +362,8 @@ function LoginPage() {
                   onClick={() => switchTab(item.id)}
                   className={`flex-1 h-11 rounded-xl text-sm font-bold tracking-wide transition-all disabled:opacity-60 ${
                     active
-                      ? "bg-white text-[color:var(--istikbal-blue)] shadow-sm"
-                      : "text-[color:var(--istikbal-blue)]/55 hover:text-[color:var(--istikbal-blue)]"
+                      ? "bg-white text-[color:var(--brand-primary)] shadow-sm"
+                      : "text-[color:var(--brand-primary)]/55 hover:text-[color:var(--brand-primary)]"
                   }`}
                 >
                   {item.label}
@@ -363,15 +382,15 @@ function LoginPage() {
                     <div
                       className={`size-7 rounded-full grid place-items-center text-xs font-bold transition-all ${
                         done
-                          ? "bg-[color:var(--istikbal-blue)] text-white"
+                          ? "bg-[color:var(--brand-primary)] text-white"
                           : active
-                          ? "bg-[color:var(--istikbal-yellow)] text-[color:var(--istikbal-blue)]"
-                          : "bg-[color:var(--istikbal-blue)]/10 text-[color:var(--istikbal-blue)]/50"
+                          ? "bg-[color:var(--brand-accent)] text-[color:var(--brand-primary)]"
+                          : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]/50"
                       }`}
                     >
                       {done ? <CheckCircle2 className="size-4" /> : i + 1}
                     </div>
-                    {i < 2 && <div className={`flex-1 h-0.5 ${done ? "bg-[color:var(--istikbal-blue)]" : "bg-[color:var(--istikbal-blue)]/10"}`} />}
+                    {i < 2 && <div className={`flex-1 h-0.5 ${done ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--brand-primary)]/10"}`} />}
                   </div>
                 );
               })}
@@ -387,11 +406,11 @@ function LoginPage() {
           {tab === "credentials" && credentialsStep === "form" && (
             <form onSubmit={submitCredentials} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
+                <label className="block text-sm font-semibold text-[color:var(--brand-primary)] mb-1.5">
                   {t("usernameLabel")}
                 </label>
                 <div className="relative">
-                  <UserRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
+                  <UserRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--brand-primary)]/40" />
                   <input
                     autoFocus
                     type="text"
@@ -399,24 +418,24 @@ function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder={t("usernamePlaceholder")}
-                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all font-semibold"
+                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--brand-primary)]/5 border border-transparent focus:bg-white focus:border-[color:var(--brand-primary)]/20 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35 transition-all font-semibold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
+                <label className="block text-sm font-semibold text-[color:var(--brand-primary)] mb-1.5">
                   {t("passwordLabel")}
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--brand-primary)]/40" />
                   <input
                     type="password"
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={t("passwordPlaceholder")}
-                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all font-semibold"
+                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--brand-primary)]/5 border border-transparent focus:bg-white focus:border-[color:var(--brand-primary)]/20 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35 transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -424,7 +443,7 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={busy || !username.trim() || !password}
-                className="group w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] active:scale-[0.99] shadow-lg shadow-[color:var(--istikbal-blue)]/25 transition-all disabled:opacity-60"
+                className="group w-full h-13 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] active:scale-[0.99] shadow-lg shadow-[color:var(--brand-primary)]/25 transition-all disabled:opacity-60"
               >
                 {busy ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -439,7 +458,7 @@ function LoginPage() {
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
-                className="w-full text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:underline"
+                className="w-full text-sm font-semibold text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:underline"
               >
                 {t("forgotPassword")}
               </button>
@@ -448,7 +467,7 @@ function LoginPage() {
 
           {tab === "credentials" && credentialsStep === "companies" && (
             <div className="space-y-4">
-              <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">
+              <p className="text-sm font-semibold text-[color:var(--brand-primary)]">
                 {t("chooseCompanyPrompt")}
               </p>
               <div className="space-y-2">
@@ -461,17 +480,17 @@ function LoginPage() {
                       type="button"
                       disabled={busy || !available}
                       onClick={() => selectCompany(company)}
-                      className="w-full text-left p-4 rounded-2xl border-2 border-[color:var(--istikbal-blue)]/10 hover:border-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/5 transition-all flex items-center gap-3 disabled:opacity-50"
+                      className="w-full text-left p-4 rounded-2xl border-2 border-[color:var(--brand-primary)]/10 hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 transition-all flex items-center gap-3 disabled:opacity-50"
                     >
-                      <div className="size-10 rounded-xl bg-[color:var(--istikbal-yellow)]/30 grid place-items-center shrink-0">
-                        <Store className="size-4.5 text-[color:var(--istikbal-blue)]" />
+                      <div className="size-10 rounded-xl bg-[color:var(--brand-accent)]/30 grid place-items-center shrink-0">
+                        <Store className="size-4.5 text-[color:var(--brand-primary)]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[color:var(--istikbal-blue)] text-sm truncate">
+                        <p className="font-semibold text-[color:var(--brand-primary)] text-sm truncate">
                           {company.name || company.slug || company.companyId}
                         </p>
                         {company.slug && (
-                          <p className="text-xs text-[color:var(--istikbal-blue)]/60 mt-0.5">
+                          <p className="text-xs text-[color:var(--brand-primary)]/60 mt-0.5">
                             {company.slug}
                           </p>
                         )}
@@ -482,9 +501,9 @@ function LoginPage() {
                         )}
                       </div>
                       {selecting ? (
-                        <Loader2 className="size-4 animate-spin text-[color:var(--istikbal-blue)]" />
+                        <Loader2 className="size-4 animate-spin text-[color:var(--brand-primary)]" />
                       ) : (
-                        <ArrowRight className="size-4 text-[color:var(--istikbal-blue)]/40" />
+                        <ArrowRight className="size-4 text-[color:var(--brand-primary)]/40" />
                       )}
                     </button>
                   );
@@ -497,7 +516,7 @@ function LoginPage() {
                   resetCredentialsFlow();
                   setError(null);
                 }}
-                className="flex items-center gap-1 text-sm font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+                className="flex items-center gap-1 text-sm font-semibold text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
               >
                 <ChevronLeft className="size-4" /> {t("backToCredentials")}
               </button>
@@ -507,11 +526,11 @@ function LoginPage() {
           {tab === "dealer" && step === "code" && (
             <form onSubmit={submitCode} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
+                <label className="block text-sm font-semibold text-[color:var(--brand-primary)] mb-1.5">
                   {t("dealerCodeLabel")}
                 </label>
                 <div className="relative">
-                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
+                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--brand-primary)]/40" />
                   <input
                     autoFocus
                     type="text"
@@ -520,17 +539,17 @@ function LoginPage() {
                     inputMode="numeric"
                     maxLength={13}
                     placeholder={t("dealerCodePlaceholder")}
-                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all tracking-wider font-semibold"
+                    className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--brand-primary)]/5 border border-transparent focus:bg-white focus:border-[color:var(--brand-primary)]/20 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35 transition-all tracking-wider font-semibold"
                   />
                 </div>
-                <p className="mt-1.5 text-xs text-[color:var(--istikbal-blue)]/50">
+                <p className="mt-1.5 text-xs text-[color:var(--brand-primary)]/50">
                   {t("dealerCodeHelp")}
                 </p>
               </div>
 
-              <div className="flex gap-2.5 p-3.5 rounded-2xl bg-[color:var(--istikbal-yellow)]/25 border border-[color:var(--istikbal-yellow)]/40">
-                <Info className="size-4.5 shrink-0 text-[color:var(--istikbal-blue)] mt-0.5" />
-                <p className="text-xs leading-relaxed text-[color:var(--istikbal-blue)]/80">
+              <div className="flex gap-2.5 p-3.5 rounded-2xl bg-[color:var(--brand-accent)]/25 border border-[color:var(--brand-accent)]/40">
+                <Info className="size-4.5 shrink-0 text-[color:var(--brand-primary)] mt-0.5" />
+                <p className="text-xs leading-relaxed text-[color:var(--brand-primary)]/80">
                   {t("passwordExpiryInfo")}
                 </p>
               </div>
@@ -538,7 +557,7 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={busy || !dealerCode.trim()}
-                className="group w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] active:scale-[0.99] shadow-lg shadow-[color:var(--istikbal-blue)]/25 transition-all disabled:opacity-60"
+                className="group w-full h-13 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] active:scale-[0.99] shadow-lg shadow-[color:var(--brand-primary)]/25 transition-all disabled:opacity-60"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : <>{t("continue")} <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" /></>}
               </button>
@@ -546,7 +565,7 @@ function LoginPage() {
               <button
                 type="button"
                 onClick={() => setForgotOpen(true)}
-                className="w-full text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:underline"
+                className="w-full text-sm font-semibold text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:underline"
               >
                 {t("forgotPassword")}
               </button>
@@ -555,12 +574,12 @@ function LoginPage() {
 
           {tab === "dealer" && step === "phone" && lookup && (
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-[color:var(--istikbal-blue)]/5">
-                <p className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">{t("dealerLabel")}</p>
-                <p className="mt-0.5 font-bold text-[color:var(--istikbal-blue)]">{lookup.dealerName}</p>
+              <div className="p-4 rounded-2xl bg-[color:var(--brand-primary)]/5">
+                <p className="text-xs font-semibold text-[color:var(--brand-primary)]/60 uppercase tracking-wider">{t("dealerLabel")}</p>
+                <p className="mt-0.5 font-bold text-[color:var(--brand-primary)]">{lookup.dealerName}</p>
               </div>
 
-              <p className="text-sm font-semibold text-[color:var(--istikbal-blue)]">
+              <p className="text-sm font-semibold text-[color:var(--brand-primary)]">
                 {t("choosePhonePrompt")}
               </p>
 
@@ -571,19 +590,19 @@ function LoginPage() {
                     type="button"
                     disabled={busy}
                     onClick={() => chooseAndSend(p)}
-                    className="w-full text-left p-4 rounded-2xl border-2 border-[color:var(--istikbal-blue)]/10 hover:border-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/5 transition-all flex items-center gap-3 disabled:opacity-50"
+                    className="w-full text-left p-4 rounded-2xl border-2 border-[color:var(--brand-primary)]/10 hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 transition-all flex items-center gap-3 disabled:opacity-50"
                   >
-                    <div className="size-10 rounded-xl bg-[color:var(--istikbal-yellow)]/30 grid place-items-center shrink-0">
-                      <Phone className="size-4.5 text-[color:var(--istikbal-blue)]" />
+                    <div className="size-10 rounded-xl bg-[color:var(--brand-accent)]/30 grid place-items-center shrink-0">
+                      <Phone className="size-4.5 text-[color:var(--brand-primary)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[color:var(--istikbal-blue)] text-sm truncate">{p.label}</p>
-                      <p className="text-xs text-[color:var(--istikbal-blue)]/60 mt-0.5 tracking-wider">{p.maskedNumber}</p>
+                      <p className="font-semibold text-[color:var(--brand-primary)] text-sm truncate">{p.label}</p>
+                      <p className="text-xs text-[color:var(--brand-primary)]/60 mt-0.5 tracking-wider">{p.maskedNumber}</p>
                     </div>
                     {busy && selectedPhone?.phoneId === p.phoneId ? (
-                      <Loader2 className="size-4 animate-spin text-[color:var(--istikbal-blue)]" />
+                      <Loader2 className="size-4 animate-spin text-[color:var(--brand-primary)]" />
                     ) : (
-                      <ArrowRight className="size-4 text-[color:var(--istikbal-blue)]/40" />
+                      <ArrowRight className="size-4 text-[color:var(--brand-primary)]/40" />
                     )}
                   </button>
                 ))}
@@ -595,7 +614,7 @@ function LoginPage() {
                   setStep("code");
                   setError(null);
                 }}
-                className="flex items-center gap-1 text-sm font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+                className="flex items-center gap-1 text-sm font-semibold text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
               >
                 <ChevronLeft className="size-4" /> {t("changeDealerCode")}
               </button>
@@ -604,19 +623,19 @@ function LoginPage() {
 
           {tab === "dealer" && step === "pin" && selectedPhone && (
             <form onSubmit={submitPin} className="space-y-4">
-              <div className="p-4 rounded-2xl bg-[color:var(--istikbal-yellow)]/25 border border-[color:var(--istikbal-yellow)]/40 flex gap-2.5">
-                <CheckCircle2 className="size-4.5 shrink-0 text-[color:var(--istikbal-blue)] mt-0.5" />
-                <p className="text-xs leading-relaxed text-[color:var(--istikbal-blue)]/80">
+              <div className="p-4 rounded-2xl bg-[color:var(--brand-accent)]/25 border border-[color:var(--brand-accent)]/40 flex gap-2.5">
+                <CheckCircle2 className="size-4.5 shrink-0 text-[color:var(--brand-primary)] mt-0.5" />
+                <p className="text-xs leading-relaxed text-[color:var(--brand-primary)]/80">
                   {t("pinSentNotice", { masked: selectedPhone.maskedNumber })}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[color:var(--istikbal-blue)] mb-1.5">
+                <label className="block text-sm font-semibold text-[color:var(--brand-primary)] mb-1.5">
                   {t("smsPinLabel")}
                 </label>
                 <div className="relative">
-                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--istikbal-blue)]/40" />
+                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--brand-primary)]/40" />
                   <input
                     autoFocus
                     inputMode="numeric"
@@ -624,7 +643,7 @@ function LoginPage() {
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
                     placeholder={t("smsPinPlaceholder")}
-                    className="w-full pl-11 pr-4 h-14 rounded-2xl bg-[color:var(--istikbal-blue)]/5 border border-transparent focus:bg-white focus:border-[color:var(--istikbal-blue)]/20 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/35 transition-all text-center text-2xl font-bold tracking-[0.5em]"
+                    className="w-full pl-11 pr-4 h-14 rounded-2xl bg-[color:var(--brand-primary)]/5 border border-transparent focus:bg-white focus:border-[color:var(--brand-primary)]/20 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35 transition-all text-center text-2xl font-bold tracking-[0.5em]"
                   />
                 </div>
               </div>
@@ -632,7 +651,7 @@ function LoginPage() {
               <button
                 type="submit"
                 disabled={busy || pin.length < 4}
-                className="group w-full h-13 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-navy)] active:scale-[0.99] shadow-lg shadow-[color:var(--istikbal-blue)]/25 transition-all disabled:opacity-60"
+                className="group w-full h-13 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] active:scale-[0.99] shadow-lg shadow-[color:var(--brand-primary)]/25 transition-all disabled:opacity-60"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : <>{t("submitLogin")} <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" /></>}
               </button>
@@ -644,7 +663,7 @@ function LoginPage() {
                     setStep("phone");
                     setError(null);
                   }}
-                  className="flex items-center gap-1 font-semibold text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+                  className="flex items-center gap-1 font-semibold text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
                 >
                   <ChevronLeft className="size-4" /> {t("changeNumber")}
                 </button>
@@ -652,7 +671,7 @@ function LoginPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => selectedPhone && chooseAndSend(selectedPhone)}
-                  className="font-semibold text-[color:var(--istikbal-blue)]/70 hover:text-[color:var(--istikbal-blue)] hover:underline disabled:opacity-50"
+                  className="font-semibold text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:underline disabled:opacity-50"
                 >
                   {t("resend")}
                 </button>
@@ -677,16 +696,16 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
         className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute left-4 top-4 flex items-center gap-1 text-sm text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]">
+        <button onClick={onClose} className="absolute left-4 top-4 flex items-center gap-1 text-sm text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]">
           <ChevronLeft className="size-4" /> {tCommon("close")}
         </button>
         <div className="mt-6 mb-5">
-          <h3 className="text-2xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight">{t("forgotTitle")}</h3>
-          <p className="mt-2 text-sm text-[color:var(--istikbal-blue)]/60 leading-relaxed">
+          <h3 className="text-2xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">{t("forgotTitle")}</h3>
+          <p className="mt-2 text-sm text-[color:var(--brand-primary)]/60 leading-relaxed">
             {t("forgotBody")}
           </p>
         </div>
-        <button onClick={onClose} className="w-full h-12 rounded-2xl bg-[color:var(--istikbal-blue)] text-white font-bold hover:bg-[color:var(--istikbal-navy)] transition-colors">
+        <button onClick={onClose} className="w-full h-12 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold hover:bg-[color:var(--brand-primary-strong)] transition-colors">
           {tCommon("done")}
         </button>
       </div>

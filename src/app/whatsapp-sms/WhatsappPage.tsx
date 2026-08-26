@@ -140,7 +140,7 @@ function WhatsappPage() {
   const total = Object.keys(statuses).length;
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)]">
+    <div className="min-h-screen bg-[color:var(--brand-bg)]">
       <AppHeader title={t("headerTitle")} backHref="/" sticky />
 
       <main className="px-4 lg:px-8 py-6 grid grid-cols-12 gap-4">
@@ -150,12 +150,12 @@ function WhatsappPage() {
           <div className="bg-white rounded-2xl shadow-sm p-4">
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-[220px]">
-                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--istikbal-blue)]/40" />
+                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t("searchPlaceholder")}
-                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--istikbal-blue)]/40 text-[color:var(--istikbal-blue)] focus:outline-none focus:ring-2 focus:ring-[color:var(--istikbal-blue)]/20"
+                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--brand-primary)]/40 text-[color:var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]/20"
                 />
               </div>
               <FilterChip
@@ -185,44 +185,44 @@ function WhatsappPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={toggleAll}
-                  className="size-5 rounded border-2 border-[color:var(--istikbal-blue)]/30 hover:border-[color:var(--istikbal-blue)] flex items-center justify-center"
+                  className="size-5 rounded border-2 border-[color:var(--brand-primary)]/30 hover:border-[color:var(--brand-primary)] flex items-center justify-center"
                 >
-                  {selected.size > 0 && selected.size === filtered.length && <Check className="size-3.5 text-[color:var(--istikbal-blue)]" />}
-                  {selected.size > 0 && selected.size < filtered.length && <span className="size-2 bg-[color:var(--istikbal-blue)] rounded-sm" />}
+                  {selected.size > 0 && selected.size === filtered.length && <Check className="size-3.5 text-[color:var(--brand-primary)]" />}
+                  {selected.size > 0 && selected.size < filtered.length && <span className="size-2 bg-[color:var(--brand-primary)] rounded-sm" />}
                 </button>
-                <span className="text-sm font-semibold text-[color:var(--istikbal-blue)]">
+                <span className="text-sm font-semibold text-[color:var(--brand-primary)]">
                   {selected.size > 0
                     ? t("selectedCount", { count: selected.size })
                     : t("customerCount", { count: filtered.length })}
                 </span>
               </div>
-              <Users className="size-4 text-[color:var(--istikbal-blue)]/40" />
+              <Users className="size-4 text-[color:var(--brand-primary)]/40" />
             </div>
             <div className="max-h-[640px] overflow-y-auto divide-y divide-black/5">
               {filtered.map(c => {
                 const isSel = selected.has(c.id);
                 return (
-                  <label key={c.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition hover:bg-black/[0.02] ${isSel ? "bg-[color:var(--istikbal-blue)]/[0.04]" : ""}`}>
-                    <input type="checkbox" checked={isSel} onChange={() => toggleOne(c.id)} className="size-4 accent-[color:var(--istikbal-blue)]" />
-                    <div className="size-10 rounded-full bg-gradient-to-br from-[color:var(--istikbal-blue)] to-[color:var(--istikbal-navy)] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  <label key={c.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition hover:bg-black/[0.02] ${isSel ? "bg-[color:var(--brand-primary)]/[0.04]" : ""}`}>
+                    <input type="checkbox" checked={isSel} onChange={() => toggleOne(c.id)} className="size-4 accent-[color:var(--brand-primary)]" />
+                    <div className="size-10 rounded-full bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary-strong)] text-white flex items-center justify-center text-xs font-bold shrink-0">
                       {c.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-[color:var(--istikbal-blue)] truncate">{c.name}</span>
+                        <span className="font-semibold text-sm text-[color:var(--brand-primary)] truncate">{c.name}</span>
                         <SegmentBadge s={c.segment} />
                       </div>
-                      <div className="text-xs text-[color:var(--istikbal-blue)]/50 truncate">{c.phone} · {c.city}</div>
+                      <div className="text-xs text-[color:var(--brand-primary)]/50 truncate">{c.phone} · {c.city}</div>
                     </div>
                     <div className="text-right hidden sm:block">
-                      <div className="text-xs text-[color:var(--istikbal-blue)]/60 font-semibold">{c.total.toLocaleString("tr-TR")} {tCommon("currencyTl")}</div>
-                      <div className="text-[11px] text-[color:var(--istikbal-blue)]/40">{c.lastOrder}</div>
+                      <div className="text-xs text-[color:var(--brand-primary)]/60 font-semibold">{c.total.toLocaleString("tr-TR")} {tCommon("currencyTl")}</div>
+                      <div className="text-[11px] text-[color:var(--brand-primary)]/40">{c.lastOrder}</div>
                     </div>
                   </label>
                 );
               })}
               {filtered.length === 0 && (
-                <div className="px-4 py-12 text-center text-sm text-[color:var(--istikbal-blue)]/50">
+                <div className="px-4 py-12 text-center text-sm text-[color:var(--brand-primary)]/50">
                   <Filter className="size-6 mx-auto mb-2 opacity-40" />
                   {t("emptyFiltered")}
                 </div>
@@ -237,13 +237,13 @@ function WhatsappPage() {
           <div className="bg-white rounded-2xl p-2 flex gap-1 shadow-sm">
             <button
               onClick={() => setChannel("whatsapp")}
-              className={`flex-1 h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${channel === "whatsapp" ? "bg-[#25D366] text-white" : "text-[color:var(--istikbal-blue)] hover:bg-black/5"}`}
+              className={`flex-1 h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${channel === "whatsapp" ? "bg-[#25D366] text-white" : "text-[color:var(--brand-primary)] hover:bg-black/5"}`}
             >
               <MessageCircle className="size-4" /> {t("channelWhatsapp")}
             </button>
             <button
               onClick={() => setChannel("sms")}
-              className={`flex-1 h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${channel === "sms" ? "bg-[color:var(--istikbal-blue)] text-white" : "text-[color:var(--istikbal-blue)] hover:bg-black/5"}`}
+              className={`flex-1 h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${channel === "sms" ? "bg-[color:var(--brand-primary)] text-white" : "text-[color:var(--brand-primary)] hover:bg-black/5"}`}
             >
               <Send className="size-4" /> {t("channelSms")}
             </button>
@@ -252,8 +252,8 @@ function WhatsappPage() {
           {/* Templates */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">{t("templateSection")}</h3>
-              <button className="text-[11px] font-semibold text-[color:var(--istikbal-blue)] flex items-center gap-1 hover:underline">
+              <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider">{t("templateSection")}</h3>
+              <button className="text-[11px] font-semibold text-[color:var(--brand-primary)] flex items-center gap-1 hover:underline">
                 <Sparkles className="size-3" /> {t("createWithAi")}
               </button>
             </div>
@@ -262,13 +262,13 @@ function WhatsappPage() {
                 <button
                   key={tmpl.id}
                   onClick={() => setTemplateId(tmpl.id)}
-                  className={`w-full text-left p-3 rounded-xl border-2 transition ${templateId === tmpl.id ? "border-[color:var(--istikbal-blue)] bg-[color:var(--istikbal-blue)]/5" : "border-black/5 hover:border-black/15"}`}
+                  className={`w-full text-left p-3 rounded-xl border-2 transition ${templateId === tmpl.id ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5" : "border-black/5 hover:border-black/15"}`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-sm text-[color:var(--istikbal-blue)]">{t(`${tmpl.prefix}Name`)}</span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color:var(--istikbal-yellow)]/30 text-[color:var(--istikbal-blue)]"><Tag className="size-2.5 inline -mt-0.5" /> {t(`${tmpl.prefix}Tag`)}</span>
+                    <span className="font-semibold text-sm text-[color:var(--brand-primary)]">{t(`${tmpl.prefix}Name`)}</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[color:var(--brand-accent)]/30 text-[color:var(--brand-primary)]"><Tag className="size-2.5 inline -mt-0.5" /> {t(`${tmpl.prefix}Tag`)}</span>
                   </div>
-                  <p className="text-xs text-[color:var(--istikbal-blue)]/60 line-clamp-2">{templateBodyPreview(tmpl.prefix)}</p>
+                  <p className="text-xs text-[color:var(--brand-primary)]/60 line-clamp-2">{templateBodyPreview(tmpl.prefix)}</p>
                 </button>
               ))}
             </div>
@@ -276,13 +276,13 @@ function WhatsappPage() {
 
           {/* Preview */}
           <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider mb-3">{t("preview")}</h3>
-            <div className={`rounded-2xl p-3 ${channel === "whatsapp" ? "bg-[#dcf8c6]" : "bg-[color:var(--istikbal-blue)]/10"}`}>
-              <div className="text-[11px] font-bold text-[color:var(--istikbal-blue)] mb-1">{templateSubject}</div>
-              <p className="text-sm text-[color:var(--istikbal-blue)] leading-snug whitespace-pre-line">
+            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-3">{t("preview")}</h3>
+            <div className={`rounded-2xl p-3 ${channel === "whatsapp" ? "bg-[#dcf8c6]" : "bg-[color:var(--brand-primary)]/10"}`}>
+              <div className="text-[11px] font-bold text-[color:var(--brand-primary)] mb-1">{templateSubject}</div>
+              <p className="text-sm text-[color:var(--brand-primary)] leading-snug whitespace-pre-line">
                 {templateBody}
               </p>
-              <div className="text-[10px] text-[color:var(--istikbal-blue)]/50 text-right mt-1">14:32 ✓✓</div>
+              <div className="text-[10px] text-[color:var(--brand-primary)]/50 text-right mt-1">14:32 ✓✓</div>
             </div>
           </div>
 
@@ -292,10 +292,10 @@ function WhatsappPage() {
             disabled={selected.size === 0 || sending}
             className={`w-full h-14 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition shadow-sm ${
               selected.size === 0
-                ? "bg-black/5 text-[color:var(--istikbal-blue)]/40 cursor-not-allowed"
+                ? "bg-black/5 text-[color:var(--brand-primary)]/40 cursor-not-allowed"
                 : channel === "whatsapp"
                   ? "bg-[#25D366] text-white hover:opacity-90"
-                  : "bg-[color:var(--istikbal-blue)] text-white hover:opacity-90"
+                  : "bg-[color:var(--brand-primary)] text-white hover:opacity-90"
             }`}
           >
             <Send className="size-4" />
@@ -311,15 +311,15 @@ function WhatsappPage() {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-bold text-[color:var(--istikbal-blue)]">
+                <h3 className="text-lg font-bold text-[color:var(--brand-primary)]">
                   {sending ? t("progressSending") : t("progressDone")}
                 </h3>
-                <p className="text-xs text-[color:var(--istikbal-blue)]/60 mt-0.5">
+                <p className="text-xs text-[color:var(--brand-primary)]/60 mt-0.5">
                   {channel === "whatsapp" ? t("channelWhatsapp") : t("channelSms")} · {templateName}
                 </p>
               </div>
               {!sending && (
-                <button onClick={() => { setShowProgress(false); setStatuses({}); }} className="size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--istikbal-blue)]">
+                <button onClick={() => { setShowProgress(false); setStatuses({}); }} className="size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--brand-primary)]">
                   <X className="size-4" />
                 </button>
               )}
@@ -327,7 +327,7 @@ function WhatsappPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-2 mb-4">
-              <Stat label={tCommon("total")} value={total} color="text-[color:var(--istikbal-blue)]" />
+              <Stat label={tCommon("total")} value={total} color="text-[color:var(--brand-primary)]" />
               <Stat label={tCommon("success")} value={sentCount} color="text-emerald-600" />
               <Stat label={tCommon("failed")} value={failedCount} color="text-rose-600" />
             </div>
@@ -335,7 +335,7 @@ function WhatsappPage() {
             {/* Progress bar */}
             <div className="h-2 bg-black/5 rounded-full overflow-hidden mb-3">
               <div
-                className={`h-full transition-all duration-300 ${channel === "whatsapp" ? "bg-[#25D366]" : "bg-[color:var(--istikbal-blue)]"}`}
+                className={`h-full transition-all duration-300 ${channel === "whatsapp" ? "bg-[#25D366]" : "bg-[color:var(--brand-primary)]"}`}
                 style={{ width: `${total ? ((sentCount + failedCount) / total) * 100 : 0}%` }}
               />
             </div>
@@ -347,12 +347,12 @@ function WhatsappPage() {
                 const s = statuses[id] ?? "pending";
                 return (
                   <div key={id} className="flex items-center gap-3 p-2 rounded-lg bg-stone-50">
-                    <div className="size-7 rounded-full bg-gradient-to-br from-[color:var(--istikbal-blue)] to-[color:var(--istikbal-navy)] text-white flex items-center justify-center text-[10px] font-bold">
+                    <div className="size-7 rounded-full bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary-strong)] text-white flex items-center justify-center text-[10px] font-bold">
                       {c.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-[color:var(--istikbal-blue)] truncate">{c.name}</div>
-                      <div className="text-[10px] text-[color:var(--istikbal-blue)]/50">{c.phone}</div>
+                      <div className="text-xs font-semibold text-[color:var(--brand-primary)] truncate">{c.name}</div>
+                      <div className="text-[10px] text-[color:var(--brand-primary)]/50">{c.phone}</div>
                     </div>
                     <StatusPill status={s} />
                   </div>
@@ -361,7 +361,7 @@ function WhatsappPage() {
             </div>
 
             {!sending && (
-              <button onClick={() => { setShowProgress(false); setStatuses({}); setSelected(new Set()); }} className="mt-4 w-full h-11 rounded-xl bg-[color:var(--istikbal-blue)] text-white font-semibold hover:opacity-90">
+              <button onClick={() => { setShowProgress(false); setStatuses({}); setSelected(new Set()); }} className="mt-4 w-full h-11 rounded-xl bg-[color:var(--brand-primary)] text-white font-semibold hover:opacity-90">
                 {tCommon("done")}
               </button>
             )}
@@ -375,8 +375,8 @@ function WhatsappPage() {
 // ---------- Sub-components ----------
 function FilterChip({ label, value, options, onChange }: { label: string; value: string; options: { v: string; l: string }[]; onChange: (v: string) => void }) {
   return (
-    <label className="flex items-center gap-2 h-10 px-3 rounded-xl bg-black/5 text-sm text-[color:var(--istikbal-blue)]">
-      <span className="text-xs font-semibold text-[color:var(--istikbal-blue)]/60">{label}:</span>
+    <label className="flex items-center gap-2 h-10 px-3 rounded-xl bg-black/5 text-sm text-[color:var(--brand-primary)]">
+      <span className="text-xs font-semibold text-[color:var(--brand-primary)]/60">{label}:</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} className="bg-transparent text-sm font-semibold focus:outline-none cursor-pointer">
         {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
       </select>
@@ -387,7 +387,7 @@ function FilterChip({ label, value, options, onChange }: { label: string; value:
 function SegmentBadge({ s }: { s: Segment }) {
   const t = useTranslations("whatsappSms");
   const styles: Record<Segment, string> = {
-    vip:     "bg-[color:var(--istikbal-yellow)]/30 text-[color:var(--istikbal-blue)]",
+    vip:     "bg-[color:var(--brand-accent)]/30 text-[color:var(--brand-primary)]",
     hot:     "bg-orange-100 text-orange-700",
     new:     "bg-emerald-100 text-emerald-700",
     passive: "bg-zinc-200 text-zinc-600",
@@ -399,15 +399,15 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
   return (
     <div className="rounded-xl bg-stone-50 p-3 text-center">
       <div className={`text-2xl font-extrabold ${color}`}>{value}</div>
-      <div className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]/60 uppercase tracking-wider">{label}</div>
+      <div className="text-[10px] font-semibold text-[color:var(--brand-primary)]/60 uppercase tracking-wider">{label}</div>
     </div>
   );
 }
 
 function StatusPill({ status }: { status: SendStatus }) {
   const tCommon = useTranslations("common");
-  if (status === "pending") return <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)]/40 px-2 py-1 rounded-full bg-white">{tCommon("pending")}</span>;
-  if (status === "sending") return <span className="text-[10px] font-semibold text-[color:var(--istikbal-blue)] px-2 py-1 rounded-full bg-[color:var(--istikbal-blue)]/10 flex items-center gap-1"><span className="size-1.5 bg-[color:var(--istikbal-blue)] rounded-full animate-pulse" /> {tCommon("sending")}</span>;
+  if (status === "pending") return <span className="text-[10px] font-semibold text-[color:var(--brand-primary)]/40 px-2 py-1 rounded-full bg-white">{tCommon("pending")}</span>;
+  if (status === "sending") return <span className="text-[10px] font-semibold text-[color:var(--brand-primary)] px-2 py-1 rounded-full bg-[color:var(--brand-primary)]/10 flex items-center gap-1"><span className="size-1.5 bg-[color:var(--brand-primary)] rounded-full animate-pulse" /> {tCommon("sending")}</span>;
   if (status === "sent") return <span className="text-[10px] font-semibold text-emerald-700 px-2 py-1 rounded-full bg-emerald-50 flex items-center gap-1"><Check className="size-3" /> {tCommon("sent")}</span>;
   return <span className="text-[10px] font-semibold text-rose-700 px-2 py-1 rounded-full bg-rose-50 flex items-center gap-1"><X className="size-3" /> {tCommon("failed")}</span>;
 }

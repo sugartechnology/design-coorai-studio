@@ -102,9 +102,9 @@ const FALLBACK_THUMB = "from-stone-200 to-stone-100";
 const chipBase =
   "h-9 rounded-full border text-xs font-bold transition inline-flex items-center justify-center gap-1.5 px-3";
 const chipActive =
-  "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)]";
+  "bg-[color:var(--brand-primary)] text-white border-[color:var(--brand-primary)]";
 const chipIdle =
-  "bg-white text-[color:var(--istikbal-blue)] border-black/10 hover:border-[color:var(--istikbal-blue)]/30";
+  "bg-white text-[color:var(--brand-primary)] border-black/10 hover:border-[color:var(--brand-primary)]/30";
 
 function formatGalleryTimestamp(item: AiGalleryItem, fallback: string) {
   if (!item.createdAt) return fallback;
@@ -721,7 +721,7 @@ function AiStudioPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[color:var(--istikbal-bg)] flex flex-col">
+    <div className="min-h-screen bg-[color:var(--brand-bg)] flex flex-col">
       <AppHeader title={t("headerTitle")} backHref="/" />
 
       <div className="flex flex-1 min-h-0">
@@ -758,7 +758,7 @@ function AiStudioPage() {
               open={openSections.products}
               onToggle={() => toggle("products")}
             >
-              <div className="grid grid-cols-3 gap-1 mb-3 bg-[color:var(--istikbal-blue-soft)] rounded-full p-1">
+              <div className="grid grid-cols-3 gap-1 mb-3 bg-[color:var(--brand-soft)] rounded-full p-1">
                 {([
                   ["all", "tabAll"],
                   ["categories", "tabCategory"],
@@ -769,8 +769,8 @@ function AiStudioPage() {
                     onClick={() => setProductTab(k)}
                     className={`h-8 min-w-0 rounded-full text-[10.5px] font-bold tracking-tight leading-none px-1 truncate transition ${
                       productTab === k
-                        ? "bg-[color:var(--istikbal-blue)] text-white"
-                        : "text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"
+                        ? "bg-[color:var(--brand-primary)] text-white"
+                        : "text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
                     }`}
                   >
                     {t(labelKey).toUpperCase()}
@@ -780,14 +780,14 @@ function AiStudioPage() {
 
               <button
                 onClick={() => openPicker()}
-                className="w-full h-10 rounded-full border border-dashed border-black/15 text-sm font-semibold text-[color:var(--istikbal-blue)]/70 hover:border-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)] flex items-center justify-center gap-2 transition"
+                className="w-full h-10 rounded-full border border-dashed border-black/15 text-sm font-semibold text-[color:var(--brand-primary)]/70 hover:border-[color:var(--brand-primary)]/40 hover:text-[color:var(--brand-primary)] flex items-center justify-center gap-2 transition"
               >
                 <Upload className="size-4" /> {t("selectProduct")}
               </button>
 
               {selected.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-[10px] font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]/45">
+                  <p className="text-[10px] font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/45">
                     {mode === "manual" ? t("selectedProductsManualHint") : t("selectedProducts")}
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -806,7 +806,7 @@ function AiStudioPage() {
                           );
                           e.dataTransfer.effectAllowed = "copyMove";
                         }}
-                        className={`relative rounded-xl border border-black/5 bg-[color:var(--istikbal-blue-soft)]/40 p-2 ${
+                        className={`relative rounded-xl border border-black/5 bg-[color:var(--brand-soft)]/40 p-2 ${
                           mode === "manual" ? "cursor-grab active:cursor-grabbing" : ""
                         }`}
                         title={
@@ -818,7 +818,7 @@ function AiStudioPage() {
                         <button
                           type="button"
                           onClick={() => removeSelected(item.uid)}
-                          className="absolute top-1 right-1 z-10 size-6 rounded-full bg-white/90 border border-black/10 text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)] inline-flex items-center justify-center"
+                          className="absolute top-1 right-1 z-10 size-6 rounded-full bg-white/90 border border-black/10 text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)] inline-flex items-center justify-center"
                           title={tCommon("remove")}
                         >
                           <X className="size-3" />
@@ -834,7 +834,7 @@ function AiStudioPage() {
                             />
                           ) : null}
                         </div>
-                        <p className="mt-1.5 text-[10px] font-bold text-[color:var(--istikbal-blue)] line-clamp-2 text-center">
+                        <p className="mt-1.5 text-[10px] font-bold text-[color:var(--brand-primary)] line-clamp-2 text-center">
                           {item.product.name}
                         </p>
                       </div>
@@ -845,7 +845,7 @@ function AiStudioPage() {
                       type="button"
                       disabled={quoteBusy}
                       onClick={() => void addSelectedToCart()}
-                      className="h-10 rounded-full bg-[color:var(--istikbal-blue)] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[color:var(--istikbal-navy)] disabled:opacity-50 px-2"
+                      className="h-10 rounded-full bg-[color:var(--brand-primary)] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[color:var(--brand-primary-strong)] disabled:opacity-50 px-2"
                     >
                       {quoteBusy ? (
                         <Loader2 className="size-4 animate-spin" />
@@ -858,7 +858,7 @@ function AiStudioPage() {
                       type="button"
                       disabled={quoteBusy}
                       onClick={() => void openQuoteFromSelected()}
-                      className="h-10 rounded-full border border-[color:var(--istikbal-blue)]/20 bg-white text-[color:var(--istikbal-blue)] text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[color:var(--istikbal-blue)]/5 disabled:opacity-50 px-2"
+                      className="h-10 rounded-full border border-[color:var(--brand-primary)]/20 bg-white text-[color:var(--brand-primary)] text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-50 px-2"
                     >
                       {quoteBusy ? (
                         <Loader2 className="size-4 animate-spin" />
@@ -869,7 +869,7 @@ function AiStudioPage() {
                     </button>
                   </div>
                   {cartFlash ? (
-                    <p className="mt-2 text-center text-[10px] font-semibold text-[color:var(--istikbal-blue)]">
+                    <p className="mt-2 text-center text-[10px] font-semibold text-[color:var(--brand-primary)]">
                       {tCommon("addedToCart")}
                     </p>
                   ) : null}
@@ -878,7 +878,7 @@ function AiStudioPage() {
 
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {filtersLoading && (
-                  <div className="col-span-2 text-xs text-[color:var(--istikbal-blue)]/50 py-2">
+                  <div className="col-span-2 text-xs text-[color:var(--brand-primary)]/50 py-2">
                     {productTab === "collections" ? t("collectionsLoading") : t("categoriesLoading")}
                   </div>
                 )}
@@ -888,9 +888,9 @@ function AiStudioPage() {
                         key={c.id}
                         type="button"
                         onClick={() => openPicker({ collectionId: c.id })}
-                        className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--istikbal-blue)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)] transition truncate"
+                        className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--brand-primary)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--brand-primary)] transition truncate"
                       >
-                        <span className="text-[color:var(--istikbal-blue)]/50">▦</span>
+                        <span className="text-[color:var(--brand-primary)]/50">▦</span>
                         <span className="truncate">{c.name}</span>
                       </button>
                     ))
@@ -900,9 +900,9 @@ function AiStudioPage() {
                           key={c.id}
                           type="button"
                           onClick={() => openPicker({ categoryId: c.id })}
-                          className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--istikbal-blue)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)] transition truncate"
+                          className="h-10 px-3 rounded-lg border border-black/5 bg-white hover:border-[color:var(--brand-primary)]/30 flex items-center gap-2 text-xs font-bold text-[color:var(--brand-primary)] transition truncate"
                         >
-                          <span className="text-[color:var(--istikbal-blue)]/50">▦</span>
+                          <span className="text-[color:var(--brand-primary)]/50">▦</span>
                           <span className="truncate">{c.name}</span>
                         </button>
                       ))
@@ -912,7 +912,7 @@ function AiStudioPage() {
               <button
                 type="button"
                 onClick={() => openPicker()}
-                className="w-full mt-3 h-9 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] transition"
+                className="w-full mt-3 h-9 rounded-full bg-[color:var(--brand-soft)] hover:bg-[color:var(--brand-primary)]/10 text-xs font-bold text-[color:var(--brand-primary)] transition"
               >
                 {t("loadMore")}
               </button>
@@ -948,7 +948,7 @@ function AiStudioPage() {
                     const next = LIGHTING_OPTIONS[Number(e.target.value)]?.key;
                     if (next) setLightingMode(next);
                   }}
-                  className="w-full accent-[color:var(--istikbal-blue)]"
+                  className="w-full accent-[color:var(--brand-primary)]"
                 />
               </div>
             </Section>
@@ -956,7 +956,7 @@ function AiStudioPage() {
             <Section title={t("sectionPeople")} icon={<Users className="size-4" />} open={openSections.people} onToggle={() => toggle("people")}>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("genderLabel")}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]/50 mb-1.5">{t("genderLabel")}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {PEOPLE_GENDER_OPTIONS.map((opt) => (
                       <button
@@ -971,7 +971,7 @@ function AiStudioPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("ageLabel")}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]/50 mb-1.5">{t("ageLabel")}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {PEOPLE_AGE_OPTIONS.map((opt) => (
                       <button
@@ -989,7 +989,7 @@ function AiStudioPage() {
                   type="button"
                   onClick={addPersonToScene}
                   disabled={!peopleGender || !peopleAgeGroup}
-                  className="w-full h-10 rounded-full bg-[color:var(--istikbal-blue-soft)] hover:bg-[color:var(--istikbal-blue)]/10 text-xs font-bold text-[color:var(--istikbal-blue)] disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                  className="w-full h-10 rounded-full bg-[color:var(--brand-soft)] hover:bg-[color:var(--brand-primary)]/10 text-xs font-bold text-[color:var(--brand-primary)] disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                 >
                   <Plus className="size-3.5" /> {t("addToScene")}
                 </button>
@@ -1003,7 +1003,7 @@ function AiStudioPage() {
                         key={`${person.gender}-${person.ageGroup}`}
                         className="flex items-center gap-2 rounded-xl border border-black/5 bg-white px-2.5 py-2"
                       >
-                        <span className="flex-1 text-xs font-semibold text-[color:var(--istikbal-blue)] truncate">
+                        <span className="flex-1 text-xs font-semibold text-[color:var(--brand-primary)] truncate">
                           {t("peopleComboLabel", {
                             age: ageOpt ? t(ageOpt.labelKey) : person.ageGroup,
                             gender: genderOpt ? t(genderOpt.labelKey) : person.gender,
@@ -1013,17 +1013,17 @@ function AiStudioPage() {
                           <button
                             type="button"
                             onClick={() => updatePersonQuantity(index, -1)}
-                            className="size-7 rounded-full border border-black/10 hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center"
+                            className="size-7 rounded-full border border-black/10 hover:bg-[color:var(--brand-soft)] inline-flex items-center justify-center"
                           >
                             <Minus className="size-3.5" />
                           </button>
-                          <span className="w-5 text-center text-xs font-bold text-[color:var(--istikbal-blue)]">
+                          <span className="w-5 text-center text-xs font-bold text-[color:var(--brand-primary)]">
                             {person.quantity}
                           </span>
                           <button
                             type="button"
                             onClick={() => updatePersonQuantity(index, 1)}
-                            className="size-7 rounded-full border border-black/10 hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center"
+                            className="size-7 rounded-full border border-black/10 hover:bg-[color:var(--brand-soft)] inline-flex items-center justify-center"
                           >
                             <Plus className="size-3.5" />
                           </button>
@@ -1064,7 +1064,7 @@ function AiStudioPage() {
             <Section title={t("sectionResolution")} icon={<Settings2 className="size-4" />} open={openSections.resolution} onToggle={() => toggle("resolution")}>
               <div className="space-y-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("resolutionLabel")}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]/50 mb-1.5">{t("resolutionLabel")}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {IMAGE_SIZE_OPTIONS.map((opt) => (
                       <button
@@ -1076,7 +1076,7 @@ function AiStudioPage() {
                         }`}
                       >
                         <div className="text-sm font-extrabold">{opt.label}</div>
-                        <div className={`text-[10px] mt-0.5 ${imageSize === opt.key ? "text-white/80" : "text-[color:var(--istikbal-blue)]/50"}`}>
+                        <div className={`text-[10px] mt-0.5 ${imageSize === opt.key ? "text-white/80" : "text-[color:var(--brand-primary)]/50"}`}>
                           {opt.multiplier}
                         </div>
                       </button>
@@ -1084,7 +1084,7 @@ function AiStudioPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--istikbal-blue)]/50 mb-1.5">{t("aspectRatioLabel")}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]/50 mb-1.5">{t("aspectRatioLabel")}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {ASPECT_RATIO_OPTIONS.map((opt) => (
                       <button
@@ -1123,7 +1123,7 @@ function AiStudioPage() {
                 <button
                   key={key}
                   onClick={() => { setOpenSections((s) => ({ ...s, [key]: true })); setMobileOpen(true); }}
-                  className="size-11 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--istikbal-blue)]/70 hover:bg-[color:var(--istikbal-blue-soft)] hover:text-[color:var(--istikbal-blue)] transition"
+                  className="size-11 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--brand-primary)]/70 hover:bg-[color:var(--brand-soft)] hover:text-[color:var(--brand-primary)] transition"
                   title={label}
                 >
                   <Icon className="size-4" />
@@ -1139,8 +1139,8 @@ function AiStudioPage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="sticky top-0 z-10 px-4 h-12 bg-white border-b border-black/5 flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-[0.18em] text-[color:var(--istikbal-blue)]/70">{t("mobileSettings")}</span>
-                    <button onClick={() => setMobileOpen(false)} className="text-[color:var(--istikbal-blue)]/50 hover:text-[color:var(--istikbal-blue)]">
+                    <span className="text-xs font-bold tracking-[0.18em] text-[color:var(--brand-primary)]/70">{t("mobileSettings")}</span>
+                    <button onClick={() => setMobileOpen(false)} className="text-[color:var(--brand-primary)]/50 hover:text-[color:var(--brand-primary)]">
                       <X className="size-4" />
                     </button>
                   </div>
@@ -1153,15 +1153,15 @@ function AiStudioPage() {
             <main className="flex-1 flex flex-col min-w-0">
               <div className="px-3 sm:px-5 lg:px-8 pt-3 lg:pt-8 pb-2 lg:pb-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl lg:text-3xl font-extrabold text-[color:var(--istikbal-blue)] tracking-tight truncate">{t("pageTitle")}</h1>
-                  <p className="hidden md:block mt-1.5 text-sm text-[color:var(--istikbal-blue)]/60">
+                  <h1 className="text-lg sm:text-xl lg:text-3xl font-extrabold text-[color:var(--brand-primary)] tracking-tight truncate">{t("pageTitle")}</h1>
+                  <p className="hidden md:block mt-1.5 text-sm text-[color:var(--brand-primary)]/60">
                     {t("pageSubtitle")}
                   </p>
                 </div>
                 {/*<button
                   type="button"
                   onClick={() => setIsGalleryOpen((prev) => !prev)}
-                  className="hidden lg:inline-flex shrink-0 h-10 px-4 rounded-full border border-black/10 bg-white text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue-soft)]"
+                  className="hidden lg:inline-flex shrink-0 h-10 px-4 rounded-full border border-black/10 bg-white text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
                 >
                   {isGalleryOpen ? t("galleryHide") : t("galleryShow")}
                 </button>*/}
@@ -1173,7 +1173,7 @@ function AiStudioPage() {
                     <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
                   )}
                   {!error && statusMessage && (
-                    <div className="rounded-xl border border-[color:var(--istikbal-blue)]/15 bg-white px-3 py-2 text-sm text-[color:var(--istikbal-blue)]/70">
+                    <div className="rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-3 py-2 text-sm text-[color:var(--brand-primary)]/70">
                       {statusMessage}
                     </div>
                   )}
@@ -1195,20 +1195,20 @@ function AiStudioPage() {
                 >
                   {!roomPreviewUrl && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-                      <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-[color:var(--istikbal-blue-soft)] flex items-center justify-center mb-4 lg:mb-6">
-                        <ImageIcon className="size-7 lg:size-10 text-[color:var(--istikbal-blue)]/30" strokeWidth={1.5} />
+                      <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-[color:var(--brand-soft)] flex items-center justify-center mb-4 lg:mb-6">
+                        <ImageIcon className="size-7 lg:size-10 text-[color:var(--brand-primary)]/30" strokeWidth={1.5} />
                       </div>
-                      <h2 className="text-sm lg:text-lg font-extrabold tracking-[0.14em] text-[color:var(--istikbal-blue)]">
+                      <h2 className="text-sm lg:text-lg font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]">
                         {t("emptyCanvasTitle")}
                       </h2>
-                      <p className="hidden sm:block mt-3 max-w-xl text-sm text-[color:var(--istikbal-blue)]/60">
+                      <p className="hidden sm:block mt-3 max-w-xl text-sm text-[color:var(--brand-primary)]/60">
                         {t("emptyCanvasHint")}
                       </p>
                       <div className="mt-4 lg:mt-6 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
                         <button
                           disabled={isBusy}
                           onClick={() => roomInputRef.current?.click()}
-                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue)]/90 text-white text-xs lg:text-sm font-bold inline-flex items-center gap-2 disabled:opacity-60"
+                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/90 text-white text-xs lg:text-sm font-bold inline-flex items-center gap-2 disabled:opacity-60"
                         >
                           {busy === "upload" ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
                           {t("uploadRoom")}
@@ -1216,14 +1216,14 @@ function AiStudioPage() {
                         <button
                           disabled={isBusy}
                           onClick={() => setQrOpen(true)}
-                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)] disabled:opacity-60"
+                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--brand-primary)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--brand-soft)] disabled:opacity-60"
                         >
                           <QrCode className="size-4" /> {t("uploadViaQr")}
                         </button>
                         <button
                           disabled={isBusy || !sessionReady || creditsDepleted}
                           onClick={() => void handleGenerateReference()}
-                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)] disabled:opacity-60"
+                          className="h-10 lg:h-11 px-4 lg:px-5 rounded-full bg-white border border-black/10 text-[color:var(--brand-primary)] text-xs lg:text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--brand-soft)] disabled:opacity-60"
                         >
                           {busy === "reference" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                           {t("generateRoom")}
@@ -1241,7 +1241,7 @@ function AiStudioPage() {
                       onDragEnd={(e) => { movePlaced(it.uid, e); setDraggingId(null); }}
                       onClick={(e) => { e.stopPropagation(); setSelectedUid(it.uid); }}
                       className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none ${
-                        selectedUid === it.uid ? "ring-2 ring-[color:var(--istikbal-blue)] ring-offset-2" : ""
+                        selectedUid === it.uid ? "ring-2 ring-[color:var(--brand-primary)] ring-offset-2" : ""
                       } ${draggingId === it.uid ? "opacity-50" : ""} rounded-xl`}
                       style={{ left: `${it.x}%`, top: `${it.y}%`, transform: `translate(-50%,-50%) scale(${it.scale})` }}
                     >
@@ -1250,15 +1250,15 @@ function AiStudioPage() {
                         <div className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-black/10 rounded-full shadow-md px-1 py-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); setPlaced((p) => p.map((x) => x.uid === it.uid ? { ...x, scale: Math.max(0.4, x.scale - 0.1) } : x)); }}
-                            className="size-7 rounded-full hover:bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] text-sm font-bold"
+                            className="size-7 rounded-full hover:bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] text-sm font-bold"
                           >−</button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setPlaced((p) => p.map((x) => x.uid === it.uid ? { ...x, scale: Math.min(2.5, x.scale + 0.1) } : x)); }}
-                            className="size-7 rounded-full hover:bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] text-sm font-bold"
+                            className="size-7 rounded-full hover:bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] text-sm font-bold"
                           >+</button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setPlaced((p) => p.filter((x) => x.uid !== it.uid)); setSelectedUid(null); }}
-                            className="size-7 rounded-full hover:bg-[color:var(--istikbal-blue-soft)] text-[color:var(--istikbal-blue)] inline-flex items-center justify-center"
+                            className="size-7 rounded-full hover:bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] inline-flex items-center justify-center"
                           ><Trash2 className="size-3.5" /></button>
                         </div>
                       )}
@@ -1275,7 +1275,7 @@ function AiStudioPage() {
                         setSelectedUid(null);
                         setStatusMessage(null);
                       }}
-                      className="absolute top-3 right-3 h-9 px-3 rounded-full bg-white/90 backdrop-blur border border-black/10 text-xs font-bold text-[color:var(--istikbal-blue)] inline-flex items-center gap-1.5 hover:bg-white"
+                      className="absolute top-3 right-3 h-9 px-3 rounded-full bg-white/90 backdrop-blur border border-black/10 text-xs font-bold text-[color:var(--brand-primary)] inline-flex items-center gap-1.5 hover:bg-white"
                     >
                       <RotateCcw className="size-3.5" /> {t("resetScene")}
                     </button>
@@ -1297,28 +1297,28 @@ function AiStudioPage() {
                 )}
                 <div className="flex items-center gap-2 lg:gap-3">
                   <div className="flex-1 relative min-w-0">
-                    <Wand2 className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+                    <Wand2 className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
                     <input
                       value={promptNotes}
                       onChange={(e) => setPromptNotes(e.target.value)}
                       placeholder={t("promptPlaceholder")}
-                      className="w-full h-11 lg:h-12 pl-9 lg:pl-11 pr-3 lg:pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-yellow)]/30 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
+                      className="w-full h-11 lg:h-12 pl-9 lg:pl-11 pr-3 lg:pr-4 rounded-full bg-white border border-black/5 focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-sm text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/40"
                     />
                   </div>
-                  <div className="hidden md:inline-flex h-11 lg:h-12 px-3 lg:px-4 rounded-full bg-white border border-black/5 items-center gap-2 text-xs font-bold text-[color:var(--istikbal-blue)]">
-                    <Coins className="size-4 text-[color:var(--istikbal-yellow)]" />
-                    <span className="text-[color:var(--istikbal-blue)]/50">{t("balanceLabel")}</span>
+                  <div className="hidden md:inline-flex h-11 lg:h-12 px-3 lg:px-4 rounded-full bg-white border border-black/5 items-center gap-2 text-xs font-bold text-[color:var(--brand-primary)]">
+                    <Coins className="size-4 text-[color:var(--brand-accent)]" />
+                    <span className="text-[color:var(--brand-primary)]/50">{t("balanceLabel")}</span>
                     <span className="text-base">{balanceDisplay}</span>
-                    <span className="text-[color:var(--istikbal-blue)]/25">·</span>
-                    <span className="text-[color:var(--istikbal-blue)]/50">{t("costLabel")}</span>
+                    <span className="text-[color:var(--brand-primary)]/25">·</span>
+                    <span className="text-[color:var(--brand-primary)]/50">{t("costLabel")}</span>
                     <span className="text-base">{estimatedCost}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsGalleryOpen(true)}
-                    className="hidden lg:flex shrink-0 items-center gap-2.5 h-11 lg:h-12 px-2 rounded-full bg-white border border-black/5 hover:bg-[color:var(--istikbal-blue-soft)] transition"
+                    className="hidden lg:flex shrink-0 items-center gap-2.5 h-11 lg:h-12 px-2 rounded-full bg-white border border-black/5 hover:bg-[color:var(--brand-soft)] transition"
                   >
-                    <div className="size-10 overflow-hidden rounded-xl border border-black/5 bg-[color:var(--istikbal-blue-soft)]">
+                    <div className="size-10 overflow-hidden rounded-xl border border-black/5 bg-[color:var(--brand-soft)]">
                       {latestGalleryThumbnail ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -1328,18 +1328,18 @@ function AiStudioPage() {
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
-                          <ImageIcon className="size-4 text-[color:var(--istikbal-blue)]/40" />
+                          <ImageIcon className="size-4 text-[color:var(--brand-primary)]/40" />
                         </div>
                       )}
                     </div>
-                    <span className="pr-2 text-left text-[10px] font-bold uppercase leading-tight tracking-[0.14em] text-[color:var(--istikbal-blue)]/60">
+                    <span className="pr-2 text-left text-[10px] font-bold uppercase leading-tight tracking-[0.14em] text-[color:var(--brand-primary)]/60">
                       {t("galleryButton")}
                     </span>
                   </button>
                   <button
                     disabled={renderDisabled}
                     onClick={() => void handleRender()}
-                    className="h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-[color:var(--istikbal-blue)] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--istikbal-blue)]/90 shrink-0 disabled:opacity-60"
+                    className="h-11 lg:h-12 px-4 lg:px-6 rounded-full bg-[color:var(--brand-primary)] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[color:var(--brand-primary)]/90 shrink-0 disabled:opacity-60"
                   >
                     {busy === "render" ? <Loader2 className="size-4 animate-spin" /> : null}
                     <span className="hidden sm:inline">{t("render")}</span> <ArrowUp className="size-4" />
@@ -1351,16 +1351,16 @@ function AiStudioPage() {
             {showRenderGallery ? (
               <aside className="mt-2 mx-3 sm:mx-5 lg:mx-0 lg:mt-0 mb-3 lg:mb-0 flex max-h-[min(360px,52vh)] w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm lg:h-full lg:max-h-none lg:w-[280px] lg:rounded-none lg:border-0 lg:border-l lg:shadow-none">
                 <div className="flex items-center justify-between px-4 py-4">
-                  <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[color:var(--istikbal-blue)]">
+                  <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
                     {t("galleryTitle")}
                   </h2>
                   {isDesktopViewport ? (
                     <button
                       type="button"
                       onClick={() => setIsGalleryOpen(false)}
-                      className="rounded-lg p-1 transition-colors hover:bg-[color:var(--istikbal-blue-soft)]"
+                      className="rounded-lg p-1 transition-colors hover:bg-[color:var(--brand-soft)]"
                     >
-                      <X className="size-4 text-[color:var(--istikbal-blue)]/50" />
+                      <X className="size-4 text-[color:var(--brand-primary)]/50" />
                     </button>
                   ) : null}
                 </div>
@@ -1376,12 +1376,12 @@ function AiStudioPage() {
                   className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-4"
                 >
                   {galleryLoading && historyPanelItems.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--istikbal-blue)]/50">
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--brand-primary)]/50">
                       <Loader2 className="mb-2 size-6 animate-spin opacity-60" />
                       <p className="text-xs">{t("galleryLoading")}</p>
                     </div>
                   ) : historyPanelItems.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--istikbal-blue)]/50">
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--brand-primary)]/50">
                       <Eye className="mb-2 size-8 opacity-40" />
                       <p className="text-xs">{t("galleryEmpty")}</p>
                     </div>
@@ -1398,7 +1398,7 @@ function AiStudioPage() {
                         <div
                           key={item.id || `${previewUrl}-${index}`}
                           className={`group relative overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-all ${
-                            isDone ? "cursor-pointer hover:border-[color:var(--istikbal-blue)]/30" : ""
+                            isDone ? "cursor-pointer hover:border-[color:var(--brand-primary)]/30" : ""
                           }`}
                           onClick={() => {
                             if (isDone) applyGalleryItem(item);
@@ -1414,26 +1414,26 @@ function AiStudioPage() {
                               />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
                                 <div className="rounded-full bg-white/95 p-2 shadow-lg">
-                                  <Eye className="size-4 text-[color:var(--istikbal-blue)]" />
+                                  <Eye className="size-4 text-[color:var(--brand-primary)]" />
                                 </div>
                               </div>
                             </>
                           ) : (
-                            <div className="relative flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-[color:var(--istikbal-blue-soft)] px-4 text-center">
-                              <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-[color:var(--istikbal-blue)]/10 via-transparent to-transparent" />
-                              <div className="relative flex size-14 items-center justify-center rounded-2xl bg-[color:var(--istikbal-blue)]/10">
-                                <Sparkles className="size-7 text-[color:var(--istikbal-blue)]" />
+                            <div className="relative flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-[color:var(--brand-soft)] px-4 text-center">
+                              <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-[color:var(--brand-primary)]/10 via-transparent to-transparent" />
+                              <div className="relative flex size-14 items-center justify-center rounded-2xl bg-[color:var(--brand-primary)]/10">
+                                <Sparkles className="size-7 text-[color:var(--brand-primary)]" />
                                 {isProcessing ? (
-                                  <Loader2 className="absolute -right-1 -top-1 size-4 animate-spin text-[color:var(--istikbal-blue)]" />
+                                  <Loader2 className="absolute -right-1 -top-1 size-4 animate-spin text-[color:var(--brand-primary)]" />
                                 ) : null}
                               </div>
                               <div className="relative">
-                                <p className="text-xs font-bold text-[color:var(--istikbal-blue)]">
+                                <p className="text-xs font-bold text-[color:var(--brand-primary)]">
                                   {isProcessing
                                     ? t("galleryProcessing")
                                     : t("galleryFailed")}
                                 </p>
-                                <p className="mt-0.5 text-[10px] text-[color:var(--istikbal-blue)]/55">
+                                <p className="mt-0.5 text-[10px] text-[color:var(--brand-primary)]/55">
                                   {status === "PENDING"
                                     ? t("galleryQueued")
                                     : status === "FAILED" ||
@@ -1448,10 +1448,10 @@ function AiStudioPage() {
 
                           <div className="flex items-center justify-between gap-3 px-3 py-2.5">
                             <div className="min-w-0">
-                              <div className="truncate text-[11px] font-semibold text-[color:var(--istikbal-blue)]">
+                              <div className="truncate text-[11px] font-semibold text-[color:var(--brand-primary)]">
                                 {item.prompt || t("galleryUntitled")}
                               </div>
-                              <div className="text-[10px] text-[color:var(--istikbal-blue)]/50">
+                              <div className="text-[10px] text-[color:var(--brand-primary)]/50">
                                 {formatGalleryTimestamp(item, t("galleryJustNow"))}
                               </div>
                             </div>
@@ -1464,9 +1464,9 @@ function AiStudioPage() {
                                     e.stopPropagation();
                                     applyGalleryItem(item);
                                   }}
-                                  className="rounded-lg p-2 transition-colors hover:bg-[color:var(--istikbal-blue-soft)]"
+                                  className="rounded-lg p-2 transition-colors hover:bg-[color:var(--brand-soft)]"
                                 >
-                                  <Eye className="size-4 text-[color:var(--istikbal-blue)]/50" />
+                                  <Eye className="size-4 text-[color:var(--brand-primary)]/50" />
                                 </button>
                                 <a
                                   href={previewUrl}
@@ -1474,16 +1474,16 @@ function AiStudioPage() {
                                   target="_blank"
                                   rel="noreferrer"
                                   title={t("galleryDownload")}
-                                  className="rounded-lg p-2 transition-colors hover:bg-[color:var(--istikbal-blue-soft)]"
+                                  className="rounded-lg p-2 transition-colors hover:bg-[color:var(--brand-soft)]"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Download className="size-4 text-[color:var(--istikbal-blue)]/50" />
+                                  <Download className="size-4 text-[color:var(--brand-primary)]/50" />
                                 </a>
                               </div>
                             ) : null}
                           </div>
 
-                          <div className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full border border-black/10 bg-white/85 text-[10px] font-bold text-[color:var(--istikbal-blue)]/60 backdrop-blur-sm">
+                          <div className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full border border-black/10 bg-white/85 text-[10px] font-bold text-[color:var(--brand-primary)]/60 backdrop-blur-sm">
                             {index + 1}
                           </div>
                         </div>
@@ -1529,15 +1529,15 @@ function AiStudioPage() {
           <div className="bg-white rounded-2xl w-full max-w-md p-6 relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setQrOpen(false)}
-              className="absolute top-3 right-3 size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--istikbal-blue)]/60"
+              className="absolute top-3 right-3 size-8 rounded-full hover:bg-black/5 flex items-center justify-center text-[color:var(--brand-primary)]/60"
             >
               <X className="size-5" />
             </button>
             <div className="flex items-center gap-2 mb-1">
-              <Smartphone className="size-4 text-[color:var(--istikbal-blue)]" />
-              <h3 className="text-xs font-extrabold tracking-[0.18em] text-[color:var(--istikbal-blue)]">{t("qrTitle")}</h3>
+              <Smartphone className="size-4 text-[color:var(--brand-primary)]" />
+              <h3 className="text-xs font-extrabold tracking-[0.18em] text-[color:var(--brand-primary)]">{t("qrTitle")}</h3>
             </div>
-            <p className="text-xs text-[color:var(--istikbal-blue)]/60">
+            <p className="text-xs text-[color:var(--brand-primary)]/60">
               {t("qrHint")}
             </p>
             <div className="mt-5 flex flex-col items-center">
@@ -1545,14 +1545,14 @@ function AiStudioPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrImageUrl} alt={t("qrAlt")} width={240} height={240} className="block" />
               </div>
-              <div className="mt-3 text-[10px] font-mono text-[color:var(--istikbal-blue)]/50 break-all text-center px-2">
+              <div className="mt-3 text-[10px] font-mono text-[color:var(--brand-primary)]/50 break-all text-center px-2">
                 {mobileUploadUrl}
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-black/5">
               <button
                 onClick={() => qrUploadInputRef.current?.click()}
-                className="w-full h-11 rounded-full bg-white border border-black/10 text-[color:var(--istikbal-blue)] text-xs font-bold inline-flex items-center justify-center gap-2 hover:bg-[color:var(--istikbal-blue-soft)]"
+                className="w-full h-11 rounded-full bg-white border border-black/10 text-[color:var(--brand-primary)] text-xs font-bold inline-flex items-center justify-center gap-2 hover:bg-[color:var(--brand-soft)]"
               >
                 <Upload className="size-4" /> {t("qrManualUpload")}
               </button>
@@ -1595,13 +1595,13 @@ function Section({
     <div className="rounded-xl border border-black/5 bg-white">
       <button
         onClick={onToggle}
-        className="w-full px-4 h-12 flex items-center justify-between text-sm font-bold text-[color:var(--istikbal-blue)]"
+        className="w-full px-4 h-12 flex items-center justify-between text-sm font-bold text-[color:var(--brand-primary)]"
       >
         <span className="inline-flex items-center gap-2">
           {icon}
           {title}
           {badge != null && badge > 0 && (
-            <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-[color:var(--istikbal-blue)] text-white text-[10px] font-extrabold">
+            <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white text-[10px] font-extrabold">
               {badge}
             </span>
           )}
@@ -1621,15 +1621,15 @@ function ModeCard({
       onClick={onClick}
       className={`rounded-xl px-3 py-4 text-center transition border ${
         active
-          ? "bg-[color:var(--istikbal-blue)] text-white border-[color:var(--istikbal-blue)] shadow-sm"
-          : "bg-white text-[color:var(--istikbal-blue)] border-black/5 hover:border-[color:var(--istikbal-blue)]/30"
+          ? "bg-[color:var(--brand-primary)] text-white border-[color:var(--brand-primary)] shadow-sm"
+          : "bg-white text-[color:var(--brand-primary)] border-black/5 hover:border-[color:var(--brand-primary)]/30"
       }`}
     >
-      <div className={`mx-auto mb-2 size-9 rounded-full flex items-center justify-center ${active ? "bg-white/20" : "bg-[color:var(--istikbal-blue-soft)]"}`}>
+      <div className={`mx-auto mb-2 size-9 rounded-full flex items-center justify-center ${active ? "bg-white/20" : "bg-[color:var(--brand-soft)]"}`}>
         {icon}
       </div>
       <div className="text-[11px] font-extrabold tracking-[0.12em]">{title}</div>
-      <div className={`mt-1 text-[10px] ${active ? "text-white/80" : "text-[color:var(--istikbal-blue)]/55"}`}>{subtitle}</div>
+      <div className={`mt-1 text-[10px] ${active ? "text-white/80" : "text-[color:var(--brand-primary)]/55"}`}>{subtitle}</div>
     </button>
   );
 }
@@ -1644,7 +1644,7 @@ function ProductThumb({ product, size = 80 }: { product: CatalogProduct; size?: 
         // eslint-disable-next-line @next/next/no-img-element
         <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
       ) : null}
-      <div className="absolute inset-x-1 bottom-1 rounded-md bg-white/70 px-1.5 py-0.5 text-[9px] font-bold text-[color:var(--istikbal-blue)] truncate text-center">
+      <div className="absolute inset-x-1 bottom-1 rounded-md bg-white/70 px-1.5 py-0.5 text-[9px] font-bold text-[color:var(--brand-primary)] truncate text-center">
         {product.name}
       </div>
     </div>
@@ -1741,22 +1741,22 @@ function ProductPicker({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-5 border-b border-black/5 flex items-start justify-between gap-4">
-          <p className="text-sm text-[color:var(--istikbal-blue)]/80 max-w-2xl">
+          <p className="text-sm text-[color:var(--brand-primary)]/80 max-w-2xl">
             {helpText}
           </p>
-          <button onClick={onClose} className="size-9 rounded-full border border-black/10 text-[color:var(--istikbal-blue)] hover:bg-[color:var(--istikbal-blue-soft)] inline-flex items-center justify-center">
+          <button onClick={onClose} className="size-9 rounded-full border border-black/10 text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)] inline-flex items-center justify-center">
             <X className="size-4" />
           </button>
         </div>
 
         <div className="px-6 pt-5">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--istikbal-blue)]/40" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full h-12 pl-11 pr-4 rounded-xl bg-[color:var(--istikbal-blue-soft)] border border-black/5 focus:border-[color:var(--istikbal-blue)]/30 focus:ring-4 focus:ring-[color:var(--istikbal-blue)]/20 outline-none text-sm text-[color:var(--istikbal-blue)] placeholder:text-[color:var(--istikbal-blue)]/40"
+              className="w-full h-12 pl-11 pr-4 rounded-xl bg-[color:var(--brand-soft)] border border-black/5 focus:border-[color:var(--brand-primary)]/30 focus:ring-4 focus:ring-[color:var(--brand-primary)]/20 outline-none text-sm text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/40"
             />
           </div>
         </div>
@@ -1792,12 +1792,12 @@ function ProductPicker({
             </div>
           )}
           {((loading && products.length === 0) || filtersLoading) ? (
-            <div className="py-16 flex flex-col items-center gap-3 text-sm text-[color:var(--istikbal-blue)]/60">
+            <div className="py-16 flex flex-col items-center gap-3 text-sm text-[color:var(--brand-primary)]/60">
               <Loader2 className="size-6 animate-spin" />
               {t("productsLoading")}
             </div>
           ) : products.length === 0 ? (
-            <div className="py-16 text-center text-sm text-[color:var(--istikbal-blue)]/60">
+            <div className="py-16 text-center text-sm text-[color:var(--brand-primary)]/60">
               {t("noMatchingProducts")}
             </div>
           ) : (
@@ -1818,7 +1818,7 @@ function ProductPicker({
               />
             </>
           )}
-          <p className="mt-6 text-xs text-[color:var(--istikbal-blue)]/50 text-center">
+          <p className="mt-6 text-xs text-[color:var(--brand-primary)]/50 text-center">
             {t("pickerTip")}
           </p>
         </div>
@@ -1838,18 +1838,18 @@ function FilterRow({
 }) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <span className="text-[10px] font-extrabold tracking-[0.18em] text-[color:var(--istikbal-blue)]/40 w-24 shrink-0">{label}:</span>
+      <span className="text-[10px] font-extrabold tracking-[0.18em] text-[color:var(--brand-primary)]/40 w-24 shrink-0">{label}:</span>
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className={`text-xs font-bold px-2 py-1 rounded ${active === null ? "text-[color:var(--istikbal-blue)] underline" : "text-[color:var(--istikbal-blue)]/40 hover:text-[color:var(--istikbal-blue)]"}`}
+        className={`text-xs font-bold px-2 py-1 rounded ${active === null ? "text-[color:var(--brand-primary)] underline" : "text-[color:var(--brand-primary)]/40 hover:text-[color:var(--brand-primary)]"}`}
       >{allLabel}</button>
       {items.map((it) => (
         <button
           key={it.id}
           type="button"
           onClick={() => onSelect(it.id === active ? null : it.id)}
-          className={`text-xs font-bold px-2 py-1 rounded ${active === it.id ? "text-[color:var(--istikbal-blue)] underline" : "text-[color:var(--istikbal-blue)]/60 hover:text-[color:var(--istikbal-blue)]"}`}
+          className={`text-xs font-bold px-2 py-1 rounded ${active === it.id ? "text-[color:var(--brand-primary)] underline" : "text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"}`}
         >{it.label}</button>
       ))}
     </div>
@@ -1892,7 +1892,7 @@ function PickerCard({
       className="group rounded-xl border border-black/5 bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer text-left w-full"
       title={t("pickerCardTitle")}
     >
-      <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative flex items-center justify-center text-[color:var(--istikbal-blue)]/30 text-xs font-semibold`}>
+      <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative flex items-center justify-center text-[color:var(--brand-primary)]/30 text-xs font-semibold`}>
         {product.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
@@ -1900,7 +1900,7 @@ function PickerCard({
           tCommon("noImage")
         )}
       </div>
-      <div className="mt-3 text-center text-xs font-bold text-[color:var(--istikbal-blue)] line-clamp-2 min-h-[2.5rem]">
+      <div className="mt-3 text-center text-xs font-bold text-[color:var(--brand-primary)] line-clamp-2 min-h-[2.5rem]">
         {product.name}
       </div>
     </button>

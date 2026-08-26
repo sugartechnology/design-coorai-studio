@@ -62,11 +62,11 @@
 }
 
 :root {
-  --istikbal-blue: #1f5fa8;
-  --istikbal-navy: #143d6b;
-  --istikbal-yellow: #f5c518;
-  --istikbal-blue-soft: #e8f0fa;
-  --istikbal-bg: #f4f7fb;
+  --brand-primary: #1f5fa8;
+  --brand-primary-strong: #143d6b;
+  --brand-accent: #f5c518;
+  --brand-soft: #e8f0fa;
+  --brand-bg: #f4f7fb;
 
   --radius: 0.625rem;
   --background: oklch(1 0 0);
