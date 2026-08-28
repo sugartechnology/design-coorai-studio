@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BrandLogo } from "@/components/BrandLogo";
+import { logoutPlannerAuth } from "@/lib/planner-auth-storage";
 
 type SessionUser = {
   displayName: string;
@@ -277,6 +278,7 @@ function Home() {
   }, []);
 
   const logout = async () => {
+    await logoutPlannerAuth();
     await fetch("/api/auth/logout", { method: "POST" });
     setSession({ authenticated: false });
     router.refresh();

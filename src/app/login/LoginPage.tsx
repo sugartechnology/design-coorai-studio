@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Store,
   Phone,
@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BrandLogo } from "@/components/BrandLogo";
+import { PlannerRecaptcha, type PlannerRecaptchaHandle } from "@/components/PlannerRecaptcha";
+import { obtainAndPersistPlannerTicket } from "@/lib/planner-auth-storage";
 import { isLightHex } from "@/lib/templates/schema";
 import { usePortalTemplate } from "@/lib/templates/context";
 
@@ -69,6 +71,8 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const recaptchaRef = useRef<PlannerRecaptchaHandle>(null);
+  const recaptchaTokenRef = useRef<string>("");
 
   const resetCredentialsFlow = () => {
     setCredentialsStep("form");
@@ -94,6 +98,18 @@ function LoginPage() {
     router.refresh();
   };
 
+  const persistPlannerAfterCrm = async (companyId?: string | null) => {
+    const recaptchaToken =
+      recaptchaRef.current?.getToken() || recaptchaTokenRef.current || undefined;
+    await obtainAndPersistPlannerTicket({
+      identifier: username.trim(),
+      password,
+      recaptchaToken,
+      companyId,
+    });
+    recaptchaRef.current?.reset();
+  };
+
   const submitCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password || busy) return;
@@ -110,6 +126,7 @@ function LoginPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (data.status === "COMPANY_SELECTION_REQUIRED" && data.selectionToken) {
+        recaptchaTokenRef.current = recaptchaRef.current?.getToken() || "";
         setSelectionToken(data.selectionToken);
         setCompanies(
           Array.isArray(data.companies)
@@ -130,6 +147,9 @@ function LoginPage() {
         );
         return;
       }
+      await persistPlannerAfterCrm(
+        typeof data.companyId === "string" ? data.companyId : null,
+      );
       finishAuthenticated();
     } catch {
       setError(t("errorLoginUnreachable"));
@@ -166,6 +186,7 @@ function LoginPage() {
         }
         return;
       }
+      await persistPlannerAfterCrm(company.companyId);
       finishAuthenticated();
     } catch {
       setError(t("errorLoginUnreachable"));
@@ -439,6 +460,8 @@ function LoginPage() {
                   />
                 </div>
               </div>
+
+              <PlannerRecaptcha ref={recaptchaRef} />
 
               <button
                 type="submit"

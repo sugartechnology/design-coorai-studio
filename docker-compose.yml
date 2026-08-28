@@ -14,6 +14,7 @@ services:
       PORT: 3000
       HOSTNAME: 0.0.0.0
       CRM_API_URL: ${CRM_API_URL:-http://host.docker.internal:9495/api}
+      PLANNER_API_URL: ${PLANNER_API_URL:-http://host.docker.internal:8080/api/planner}
       CRM_COMPANY_SLUG: ${CRM_COMPANY_SLUG:-istikbal}
       PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:-change-me-portal-session-secret}
       NEXT_PUBLIC_CRM_WEB_ORIGIN: ${NEXT_PUBLIC_CRM_WEB_ORIGIN:-http://localhost:3001}

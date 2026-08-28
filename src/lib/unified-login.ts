@@ -180,6 +180,7 @@ export function portalSessionSuccessResponse(session: PortalSession) {
       displayName: `${session.user.firstName} ${session.user.lastName}`.trim(),
     },
     companySlug: session.companySlug,
+    companyId: session.companyId,
   });
   response.cookies.set(
     PORTAL_SESSION_COOKIE,
