@@ -5,7 +5,7 @@ const loadCache = new Map<string, Promise<void>>();
 /** Bundles that register the same Lit tags (sugar-light, sugar-viewport, …). */
 const EXCLUSIVE_VENDOR_SRCS = [
   "/vendor/sugar-model-viewer.js",
-  "/vendor/sugar-room-designer.js",
+  "https://s3.eu-central-1.amazonaws.com/cdn.sugartech/mottobucket/CDN/sugar-planner/sugar-room-designer.js",
 ] as const;
 
 /** Tags registered by both exclusive vendor bundles. */

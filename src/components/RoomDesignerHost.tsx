@@ -11,7 +11,8 @@ import { useTranslations } from "next-intl";
 import { loadVendorCustomElement } from "@/lib/load-vendor-element";
 import { clearRoomDesignerLastScene } from "@/lib/offers";
 
-const SCRIPT_SRC = "/vendor/sugar-room-designer.js";
+const SCRIPT_SRC =
+  "https://s3.eu-central-1.amazonaws.com/cdn.sugartech/mottobucket/CDN/sugar-planner/sugar-room-designer.js";
 const TAG_NAME = "sugar-room-designer";
 
 export type SugarRoomDesignerElement = HTMLElement & {
