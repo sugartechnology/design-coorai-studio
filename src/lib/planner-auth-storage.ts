@@ -73,6 +73,10 @@ export async function obtainAndPersistPlannerTicket(opts: {
   recaptchaToken?: string;
   companyId?: string | null;
 }): Promise<void> {
+  if (!opts.recaptchaToken?.trim()) {
+    console.warn("[planner-auth] skipped: recaptcha token required");
+    return;
+  }
   try {
     const loginRes = await fetch("/api/planner/auth/login", {
       method: "POST",

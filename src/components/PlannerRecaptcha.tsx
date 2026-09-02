@@ -5,7 +5,6 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
 } from "react";
 
 const SCRIPT_ID = "sugar-recaptcha-api";
@@ -47,6 +46,13 @@ async function loadRecaptchaScript(): Promise<void> {
         }
         resolve();
       };
+      const existing = document.getElementById(SCRIPT_ID);
+      if (existing) {
+        if (window.grecaptcha?.ready) {
+          window.grecaptcha.ready(() => resolve());
+        }
+        return;
+      }
       const script = document.createElement("script");
       script.id = SCRIPT_ID;
       script.src =
@@ -69,56 +75,81 @@ export type PlannerRecaptchaHandle = {
   reset: () => void;
 };
 
-export const PlannerRecaptcha = forwardRef<PlannerRecaptchaHandle>(
-  function PlannerRecaptcha(_props, ref) {
-    const hostRef = useRef<HTMLDivElement>(null);
-    const widgetIdRef = useRef<number | null>(null);
-    const [hasWidget, setHasWidget] = useState(false);
+type PlannerRecaptchaProps = {
+  onStatusChange?: (status: "loading" | "ready" | "unavailable") => void;
+  onSolvedChange?: (solved: boolean) => void;
+};
 
-    useEffect(() => {
-      let cancelled = false;
-      void (async () => {
-        try {
-          const response = await fetch("/api/planner/auth/recaptcha");
-          const data = (await response.json().catch(() => ({}))) as {
-            siteKey?: string;
-          };
-          const siteKey = data.siteKey?.trim() || "";
-          if (!siteKey || cancelled || !hostRef.current) return;
-          await loadRecaptchaScript();
-          if (cancelled || !hostRef.current || !window.grecaptcha?.render) return;
-          hostRef.current.replaceChildren();
-          widgetIdRef.current = window.grecaptcha.render(hostRef.current, {
-            sitekey: siteKey,
-          });
-          setHasWidget(true);
-        } catch (error) {
-          console.warn("[planner-auth] recaptcha unavailable", error);
+export const PlannerRecaptcha = forwardRef<
+  PlannerRecaptchaHandle,
+  PlannerRecaptchaProps
+>(function PlannerRecaptcha({ onStatusChange, onSolvedChange }, ref) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<number | null>(null);
+  const onStatusChangeRef = useRef(onStatusChange);
+  const onSolvedChangeRef = useRef(onSolvedChange);
+  onStatusChangeRef.current = onStatusChange;
+  onSolvedChangeRef.current = onSolvedChange;
+
+  useEffect(() => {
+    let cancelled = false;
+    onStatusChangeRef.current?.("loading");
+    void (async () => {
+      try {
+        const response = await fetch("/api/planner/auth/recaptcha");
+        const data = (await response.json().catch(() => ({}))) as {
+          siteKey?: string;
+        };
+        const siteKey = data.siteKey?.trim() || "";
+        if (!siteKey || cancelled) {
+          if (!cancelled) {
+            onStatusChangeRef.current?.("unavailable");
+          }
+          return;
         }
-      })();
-      return () => {
-        cancelled = true;
-      };
-    }, []);
-
-    useImperativeHandle(ref, () => ({
-      getToken: () => {
-        if (widgetIdRef.current == null || !window.grecaptcha?.getResponse) {
-          return "";
+        await loadRecaptchaScript();
+        if (cancelled || !hostRef.current || !window.grecaptcha?.render) {
+          if (!cancelled) {
+            onStatusChangeRef.current?.("unavailable");
+          }
+          return;
         }
-        return window.grecaptcha.getResponse(widgetIdRef.current) || "";
-      },
-      reset: () => {
-        if (widgetIdRef.current == null || !window.grecaptcha?.reset) return;
-        window.grecaptcha.reset(widgetIdRef.current);
-      },
-    }));
+        hostRef.current.replaceChildren();
+        widgetIdRef.current = window.grecaptcha.render(hostRef.current, {
+          sitekey: siteKey,
+          callback: () => onSolvedChangeRef.current?.(true),
+          "expired-callback": () => onSolvedChangeRef.current?.(false),
+        });
+        onStatusChangeRef.current?.("ready");
+      } catch (error) {
+        console.warn("[planner-auth] recaptcha unavailable", error);
+        if (!cancelled) {
+          onStatusChangeRef.current?.("unavailable");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    return (
-      <div
-        ref={hostRef}
-        className={hasWidget ? "flex justify-center min-h-[78px]" : "hidden"}
-      />
-    );
-  },
-);
+  useImperativeHandle(ref, () => ({
+    getToken: () => {
+      if (widgetIdRef.current == null || !window.grecaptcha?.getResponse) {
+        return "";
+      }
+      return window.grecaptcha.getResponse(widgetIdRef.current) || "";
+    },
+    reset: () => {
+      onSolvedChangeRef.current?.(false);
+      if (widgetIdRef.current == null || !window.grecaptcha?.reset) return;
+      window.grecaptcha.reset(widgetIdRef.current);
+    },
+  }));
+
+  return (
+    <div className="flex justify-center min-h-[78px]">
+      <div ref={hostRef} />
+    </div>
+  );
+});

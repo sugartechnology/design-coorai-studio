@@ -73,6 +73,10 @@ function LoginPage() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const recaptchaRef = useRef<PlannerRecaptchaHandle>(null);
   const recaptchaTokenRef = useRef<string>("");
+  const [recaptchaStatus, setRecaptchaStatus] = useState<
+    "loading" | "ready" | "unavailable"
+  >("loading");
+  const [recaptchaSolved, setRecaptchaSolved] = useState(false);
 
   const resetCredentialsFlow = () => {
     setCredentialsStep("form");
@@ -100,7 +104,11 @@ function LoginPage() {
 
   const persistPlannerAfterCrm = async (companyId?: string | null) => {
     const recaptchaToken =
-      recaptchaRef.current?.getToken() || recaptchaTokenRef.current || undefined;
+      recaptchaRef.current?.getToken() || recaptchaTokenRef.current || "";
+    if (!recaptchaToken) {
+      console.warn("[planner-auth] skipped: recaptcha not solved");
+      return;
+    }
     await obtainAndPersistPlannerTicket({
       identifier: username.trim(),
       password,
@@ -108,11 +116,28 @@ function LoginPage() {
       companyId,
     });
     recaptchaRef.current?.reset();
+    setRecaptchaSolved(false);
+  };
+
+  const requireRecaptchaToken = (): string | null => {
+    if (recaptchaStatus === "unavailable") {
+      setError(t("errorRecaptchaUnavailable"));
+      return null;
+    }
+    const token =
+      recaptchaRef.current?.getToken() || recaptchaTokenRef.current || "";
+    if (!token) {
+      setError(t("errorRecaptchaRequired"));
+      return null;
+    }
+    recaptchaTokenRef.current = token;
+    return token;
   };
 
   const submitCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password || busy) return;
+    if (!requireRecaptchaToken()) return;
     setBusy(true);
     setError(null);
     try {
@@ -126,7 +151,8 @@ function LoginPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (data.status === "COMPANY_SELECTION_REQUIRED" && data.selectionToken) {
-        recaptchaTokenRef.current = recaptchaRef.current?.getToken() || "";
+        recaptchaTokenRef.current =
+          recaptchaRef.current?.getToken() || recaptchaTokenRef.current;
         setSelectionToken(data.selectionToken);
         setCompanies(
           Array.isArray(data.companies)
@@ -162,6 +188,7 @@ function LoginPage() {
     if (!selectionToken || !company.companyId || busy || company.available === false) {
       return;
     }
+    if (!requireRecaptchaToken()) return;
     setSelectingCompanyId(company.companyId);
     setBusy(true);
     setError(null);
@@ -461,11 +488,27 @@ function LoginPage() {
                 </div>
               </div>
 
-              <PlannerRecaptcha ref={recaptchaRef} />
+              <PlannerRecaptcha
+                ref={recaptchaRef}
+                onStatusChange={(next) => {
+                  setRecaptchaStatus(next);
+                  if (next !== "ready") setRecaptchaSolved(false);
+                }}
+                onSolvedChange={setRecaptchaSolved}
+              />
+              {recaptchaStatus === "unavailable" ? (
+                <p className="text-sm text-red-700">{t("errorRecaptchaUnavailable")}</p>
+              ) : null}
 
               <button
                 type="submit"
-                disabled={busy || !username.trim() || !password}
+                disabled={
+                  busy ||
+                  !username.trim() ||
+                  !password ||
+                  recaptchaStatus !== "ready" ||
+                  !recaptchaSolved
+                }
                 className="group w-full h-13 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] active:scale-[0.99] shadow-lg shadow-[color:var(--brand-primary)]/25 transition-all disabled:opacity-60"
               >
                 {busy ? (

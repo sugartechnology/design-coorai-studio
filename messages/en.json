@@ -125,6 +125,8 @@
     "passwordPlaceholder": "••••••••",
     "errorCredentialsInvalid": "Invalid credentials.",
     "errorLoginUnreachable": "Login service unreachable.",
+    "errorRecaptchaRequired": "Check “I’m not a robot” to continue.",
+    "errorRecaptchaUnavailable": "Verification failed to load. Refresh the page and try again.",
     "stepCodeHint": "Start with your dealer code.",
     "stepPhoneProvisionHint": "Select the admin phone to register the dealer.",
     "stepPhoneReadyHint": "Choose the number to receive the SMS PIN.",

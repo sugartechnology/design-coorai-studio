@@ -125,6 +125,8 @@
     "passwordPlaceholder": "••••••••",
     "errorCredentialsInvalid": "Giriş bilgileri hatalı.",
     "errorLoginUnreachable": "Giriş servisine ulaşılamıyor.",
+    "errorRecaptchaRequired": "Devam etmek için “Ben robot değilim” kutusunu işaretleyin.",
+    "errorRecaptchaUnavailable": "Doğrulama yüklenemedi. Sayfayı yenileyip tekrar deneyin.",
     "stepCodeHint": "Bayi kodunuzla başlayın.",
     "stepPhoneProvisionHint": "Bayi kaydı için admin telefonunu seçin.",
     "stepPhoneReadyHint": "SMS pin kodunun gönderileceği numarayı seçin.",
