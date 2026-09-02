@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { TutorialButton } from "@/components/TutorialButton";
+// import { TutorialButton } from "@/components/TutorialButton";
 import { CartProvider } from "@/lib/cart";
 import { getPortalTemplate, templateCssVars } from "@/lib/branding";
 import { PortalTemplateProvider } from "@/lib/templates/context";
@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <PortalTemplateProvider template={template}>
             <CartProvider>
               {children}
-              <TutorialButton />
+              {/* <TutorialButton /> */}
             </CartProvider>
           </PortalTemplateProvider>
         </NextIntlClientProvider>

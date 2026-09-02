@@ -19,9 +19,31 @@ export function BrandLogo({ className, tone = "brand" }: BrandLogoProps) {
   const template = usePortalTemplate();
   const { logoUrl } = template.assets;
   const raster = isRasterLogo(logoUrl);
-  const asideIsDark =
+  const onDarkAside =
     tone === "onAside" && !isLightHex(template.colors.loginAsideFrom);
-  const invertRaster = raster && asideIsDark;
+
+  if (raster && !onDarkAside) {
+    return (
+      <span
+        role="img"
+        aria-label={template.displayName}
+        className={cn(
+          "block h-8 w-auto aspect-[392/58] bg-[color:var(--brand-primary)] sm:h-9",
+          className,
+        )}
+        style={{
+          WebkitMaskImage: `url(${logoUrl})`,
+          maskImage: `url(${logoUrl})`,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          WebkitMaskPosition: "left center",
+          maskPosition: "left center",
+        }}
+      />
+    );
+  }
 
   return (
     <img
@@ -29,7 +51,6 @@ export function BrandLogo({ className, tone = "brand" }: BrandLogoProps) {
       alt={template.displayName}
       className={cn(
         "block h-8 w-auto object-contain object-left sm:h-9",
-        invertRaster && "brightness-0 invert",
         className,
       )}
     />
