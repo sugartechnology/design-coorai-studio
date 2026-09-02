@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BrandLogo } from "@/components/BrandLogo";
 import { logoutPlannerAuth } from "@/lib/planner-auth-storage";
+import { usePortalTemplate } from "@/lib/templates/context";
+import { isLightHex } from "@/lib/templates/schema";
 
 type SessionUser = {
   displayName: string;
@@ -187,7 +189,9 @@ function Home() {
   const router = useRouter();
   const t = useTranslations("home");
   const tCommon = useTranslations("common");
+  const template = usePortalTemplate();
   const [session, setSession] = useState<SessionPayload | null>(null);
+  const aiTileOnLightAccent = isLightHex(template.colors.accent);
 
   const tiles: Tile[] = [
     {
@@ -205,8 +209,9 @@ function Home() {
       subtitle: t("tileAiSubtitle"),
       icon: Sparkles,
       to: "/ai",
-      className:
-        "bg-gradient-to-br from-[color:var(--brand-accent)] to-[color:var(--brand-accent)] text-[color:var(--brand-primary)] col-span-2 sm:col-span-3 row-span-2",
+      className: aiTileOnLightAccent
+        ? "bg-gradient-to-br from-[color:var(--brand-accent)] to-[color:var(--brand-accent)] text-[color:var(--brand-primary)] col-span-2 sm:col-span-3 row-span-2"
+        : "bg-gradient-to-br from-[color:var(--brand-accent)] to-[color:var(--brand-primary-strong)] text-white col-span-2 sm:col-span-3 row-span-2",
       size: "lg",
       decoration: AiIllustration,
     },
