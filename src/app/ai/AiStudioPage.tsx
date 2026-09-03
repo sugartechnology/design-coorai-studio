@@ -1182,36 +1182,26 @@ function AiStudioPage() {
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
             <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-              <div className="px-3 sm:px-5 lg:px-8 pt-3 lg:pt-8 pb-2 lg:pb-4 flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl lg:text-3xl font-extrabold text-[color:var(--brand-primary)] tracking-tight truncate">{t("pageTitle")}</h1>
-                  <p className="hidden md:block mt-1.5 text-sm text-[color:var(--brand-primary)]/60">
-                    {t("pageSubtitle")}
-                  </p>
-                </div>
-                {/*<button
-                  type="button"
-                  onClick={() => setIsGalleryOpen((prev) => !prev)}
-                  className="hidden lg:inline-flex shrink-0 h-10 px-4 rounded-full border border-black/10 bg-white text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
-                >
-                  {isGalleryOpen ? t("galleryHide") : t("galleryShow")}
-                </button>*/}
+              <div className="flex shrink-0 items-center px-2 pt-2 pb-1 lg:px-3">
+                <h1 className="min-w-0 truncate text-sm font-extrabold tracking-tight text-[color:var(--brand-primary)] lg:text-base">
+                  {t("pageTitle")}
+                </h1>
               </div>
 
               {(error || statusMessage) && (
-                <div className="px-3 sm:px-5 lg:px-8 pb-2">
+                <div className="shrink-0 px-2 pb-1 lg:px-3">
                   {error && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700">{error}</div>
                   )}
                   {!error && statusMessage && (
-                    <div className="rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-3 py-2 text-sm text-[color:var(--brand-primary)]/70">
+                    <div className="rounded-lg border border-[color:var(--brand-primary)]/15 bg-white px-2 py-1.5 text-xs text-[color:var(--brand-primary)]/70">
                       {statusMessage}
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="flex-1 px-3 sm:px-5 lg:px-8 pb-3 lg:pb-6 min-h-0">
+              <div className="min-h-0 flex-1 p-1 lg:p-1.5">
                 <div
                   ref={canvasRef}
                   onDragOver={(e) => {
@@ -1221,22 +1211,20 @@ function AiStudioPage() {
                   }}
                   onDrop={handleCanvasDrop}
                   onClick={(e) => { if (e.target === e.currentTarget) setSelectedUid(null); }}
-                  className={`relative w-full h-full min-h-[240px] lg:min-h-0 rounded-2xl border border-black/5 shadow-sm overflow-hidden ${
+                  className={`relative h-full w-full min-h-0 overflow-hidden rounded-xl border border-black/5 ${
                     roomPreviewUrl ? "bg-[color:var(--brand-soft)]" : "bg-white"
                   }`}
                 >
                   {roomPreviewUrl ? (
-                    <div className="absolute inset-0 flex items-center justify-center p-5 lg:p-8 pointer-events-none">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={roomPreviewUrl}
-                        alt=""
-                        className="max-h-full max-w-full w-auto object-contain"
-                      />
-                    </div>
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={roomPreviewUrl}
+                      alt=""
+                      className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+                    />
                   ) : null}
                   {!roomPreviewUrl && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
                       <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-[color:var(--brand-soft)] flex items-center justify-center mb-4 lg:mb-6">
                         <ImageIcon className="size-7 lg:size-10 text-[color:var(--brand-primary)]/30" strokeWidth={1.5} />
                       </div>
@@ -1325,10 +1313,10 @@ function AiStudioPage() {
                 </div>
               </div>
 
-              <div className="px-3 sm:px-5 lg:px-8 pb-3 lg:pb-6">
+              <div className="shrink-0 px-2 pb-2 lg:px-3">
                 {(lowCredit || creditsDepleted) && (
                   <div
-                    className={`mb-2 rounded-xl px-3 py-2 text-xs font-semibold ${
+                    className={`mb-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold ${
                       creditsDepleted
                         ? "border border-red-200 bg-red-50 text-red-700"
                         : "border border-amber-200 bg-amber-50 text-amber-800"
