@@ -335,6 +335,7 @@
     "galleryButton": "Render Gallery",
     "galleryLatestAlt": "Latest render",
     "galleryOpen": "Apply to scene",
+    "galleryPreview": "Preview",
     "galleryDownload": "Download",
     "galleryLoading": "Loading gallery…",
     "render": "RENDER",

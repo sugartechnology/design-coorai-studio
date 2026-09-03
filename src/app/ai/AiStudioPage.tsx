@@ -35,6 +35,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppHeader } from "@/components/AppHeader";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import { useCart } from "@/lib/cart";
 import {
@@ -251,6 +257,10 @@ function AiStudioPage() {
   const [personalizeOptions, setPersonalizeOptions] = useState<PersonalizeOptionKey[]>([]);
   const [imageSize, setImageSize] = useState<ImageSizeKey>(DEFAULT_IMAGE_SIZE);
   const [aspectRatio, setAspectRatio] = useState<AspectRatioKey>(DEFAULT_ASPECT_RATIO);
+  const [galleryPreview, setGalleryPreview] = useState<{
+    url: string;
+    caption?: string;
+  } | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
@@ -680,7 +690,7 @@ function AiStudioPage() {
       }
       const url = resolveGenerationImageUrl(done);
       if (!url) throw new Error(t("errorRenderImageMissing"));
-      setRoomPreviewUrl(url);
+      setGalleryPreview({ url, caption: promptNotes || undefined });
       setPlaced([]);
       setSelected([]);
       setSelectedUid(null);
@@ -712,12 +722,18 @@ function AiStudioPage() {
         : "—";
   const renderDisabled = isBusy || !sessionReady || creditsDepleted;
 
-  const applyGalleryItem = (item: AiGalleryItem) => {
+  const openGalleryPreview = (item: AiGalleryItem) => {
     const url = resolveGenerationImageUrl(item);
     if (!url) return;
     const status = (item.status ?? "").toUpperCase();
     if (status && status !== "COMPLETED") return;
-    setRoomPreviewUrl(url);
+    setGalleryPreview({ url, caption: item.prompt || undefined });
+  };
+
+  const applyPreviewToScene = () => {
+    if (!galleryPreview?.url) return;
+    setRoomPreviewUrl(galleryPreview.url);
+    setGalleryPreview(null);
   };
 
   return (
@@ -1190,9 +1206,18 @@ function AiStudioPage() {
                   }}
                   onDrop={handleCanvasDrop}
                   onClick={(e) => { if (e.target === e.currentTarget) setSelectedUid(null); }}
-                  className="relative w-full h-full min-h-[360px] lg:min-h-[520px] rounded-2xl bg-white border border-black/5 shadow-sm overflow-hidden"
-                  style={roomPreviewUrl ? { backgroundImage: `url(${roomPreviewUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+                  className={`relative w-full h-full min-h-[360px] lg:min-h-[520px] rounded-2xl border border-black/5 shadow-sm overflow-hidden ${
+                    roomPreviewUrl ? "bg-[color:var(--brand-soft)]" : "bg-white"
+                  }`}
                 >
+                  {roomPreviewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={roomPreviewUrl}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-contain pointer-events-none"
+                    />
+                  ) : null}
                   {!roomPreviewUrl && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
                       <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-[color:var(--brand-soft)] flex items-center justify-center mb-4 lg:mb-6">
@@ -1240,7 +1265,7 @@ function AiStudioPage() {
                       onDragStart={() => setDraggingId(it.uid)}
                       onDragEnd={(e) => { movePlaced(it.uid, e); setDraggingId(null); }}
                       onClick={(e) => { e.stopPropagation(); setSelectedUid(it.uid); }}
-                      className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none ${
+                      className={`group absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none ${
                         selectedUid === it.uid ? "ring-2 ring-[color:var(--brand-primary)] ring-offset-2" : ""
                       } ${draggingId === it.uid ? "opacity-50" : ""} rounded-xl`}
                       style={{ left: `${it.x}%`, top: `${it.y}%`, transform: `translate(-50%,-50%) scale(${it.scale})` }}
@@ -1275,7 +1300,7 @@ function AiStudioPage() {
                         setSelectedUid(null);
                         setStatusMessage(null);
                       }}
-                      className="absolute top-3 right-3 h-9 px-3 rounded-full bg-white/90 backdrop-blur border border-black/10 text-xs font-bold text-[color:var(--brand-primary)] inline-flex items-center gap-1.5 hover:bg-white"
+                      className="absolute top-3 right-3 z-10 h-9 px-3 rounded-full bg-white/90 backdrop-blur border border-black/10 text-xs font-bold text-[color:var(--brand-primary)] inline-flex items-center gap-1.5 hover:bg-white"
                     >
                       <RotateCcw className="size-3.5" /> {t("resetScene")}
                     </button>
@@ -1401,7 +1426,7 @@ function AiStudioPage() {
                             isDone ? "cursor-pointer hover:border-[color:var(--brand-primary)]/30" : ""
                           }`}
                           onClick={() => {
-                            if (isDone) applyGalleryItem(item);
+                            if (isDone) openGalleryPreview(item);
                           }}
                         >
                           {isDone ? (
@@ -1459,10 +1484,10 @@ function AiStudioPage() {
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
-                                  title={t("galleryOpen")}
+                                  title={t("galleryPreview")}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    applyGalleryItem(item);
+                                    openGalleryPreview(item);
                                   }}
                                   className="rounded-lg p-2 transition-colors hover:bg-[color:var(--brand-soft)]"
                                 >
@@ -1471,8 +1496,6 @@ function AiStudioPage() {
                                 <a
                                   href={previewUrl}
                                   download
-                                  target="_blank"
-                                  rel="noreferrer"
                                   title={t("galleryDownload")}
                                   className="rounded-lg p-2 transition-colors hover:bg-[color:var(--brand-soft)]"
                                   onClick={(e) => e.stopPropagation()}
@@ -1504,6 +1527,48 @@ function AiStudioPage() {
         );
       })()}
       </div>
+
+      {galleryPreview && (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setGalleryPreview(null);
+          }}
+        >
+          <DialogContent className="max-h-[90vh] w-auto max-w-[min(92vw,1100px)] gap-3 overflow-hidden border-black/10 bg-white p-3 sm:rounded-2xl">
+            <DialogTitle className="sr-only">
+              {galleryPreview.caption || t("galleryTitle")}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              {t("galleryPreview")}
+            </DialogDescription>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={galleryPreview.url}
+              alt={galleryPreview.caption || t("galleryTitle")}
+              className="mx-auto max-h-[min(78vh,820px)] max-w-full object-contain"
+            />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={applyPreviewToScene}
+                className="h-9 rounded-full border border-black/10 bg-white px-3 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
+              >
+                {t("galleryOpen")}
+              </button>
+              <a
+                href={galleryPreview.url}
+                download
+                title={t("galleryDownload")}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[color:var(--brand-primary)] px-3 text-xs font-bold text-white hover:bg-[color:var(--brand-primary)]/90"
+              >
+                <Download className="size-3.5" />
+                {t("galleryDownload")}
+              </a>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {pickerOpen && (
         <ProductPicker
