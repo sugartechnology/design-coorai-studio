@@ -746,10 +746,10 @@ function AiStudioPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[color:var(--brand-bg)] flex flex-col">
+    <div className="h-dvh overflow-hidden bg-[color:var(--brand-bg)] flex flex-col">
       <AppHeader title={t("headerTitle")} backHref="/" />
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
       {(() => {
         const sectionsContent = (
           <div className="p-4 lg:p-5 space-y-4">
@@ -1139,7 +1139,7 @@ function AiStudioPage() {
 
         return (
           <>
-            <aside className="hidden lg:block w-[360px] shrink-0 border-r border-black/5 bg-white overflow-y-auto">
+            <aside className="hidden lg:block w-[360px] shrink-0 min-h-0 overflow-y-auto border-r border-black/5 bg-white">
               {sectionsContent}
             </aside>
 
@@ -1174,8 +1174,8 @@ function AiStudioPage() {
               </div>
             )}
 
-            <div className="flex-1 flex flex-col lg:flex-row min-w-0 min-h-0">
-            <main className="flex-1 flex flex-col min-w-0">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
               <div className="px-3 sm:px-5 lg:px-8 pt-3 lg:pt-8 pb-2 lg:pb-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h1 className="text-lg sm:text-xl lg:text-3xl font-extrabold text-[color:var(--brand-primary)] tracking-tight truncate">{t("pageTitle")}</h1>
@@ -1215,7 +1215,7 @@ function AiStudioPage() {
                   }}
                   onDrop={handleCanvasDrop}
                   onClick={(e) => { if (e.target === e.currentTarget) setSelectedUid(null); }}
-                  className={`relative w-full h-full min-h-[360px] lg:min-h-[520px] rounded-2xl border border-black/5 shadow-sm overflow-hidden ${
+                  className={`relative w-full h-full min-h-[240px] lg:min-h-0 rounded-2xl border border-black/5 shadow-sm overflow-hidden ${
                     roomPreviewUrl ? "bg-[color:var(--brand-soft)]" : "bg-white"
                   }`}
                 >
@@ -1225,7 +1225,7 @@ function AiStudioPage() {
                       <img
                         src={roomPreviewUrl}
                         alt=""
-                        className="max-h-[min(100%,420px)] max-w-full w-auto object-contain"
+                        className="max-h-full max-w-full w-auto object-contain"
                       />
                     </div>
                   ) : null}
@@ -1385,7 +1385,7 @@ function AiStudioPage() {
             </main>
 
             {showRenderGallery ? (
-              <aside className="mt-2 mx-3 sm:mx-5 lg:mx-0 lg:mt-0 mb-3 lg:mb-0 flex max-h-[min(360px,52vh)] w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm lg:h-full lg:max-h-none lg:w-[280px] lg:rounded-none lg:border-0 lg:border-l lg:shadow-none">
+              <aside className="mt-2 mx-3 mb-3 flex max-h-[min(280px,40vh)] min-h-0 w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm sm:mx-5 lg:mx-0 lg:mb-0 lg:mt-0 lg:h-full lg:max-h-full lg:w-[280px] lg:rounded-none lg:border-0 lg:border-l lg:shadow-none">
                 <div className="flex items-center justify-between px-4 py-4">
                   <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
                     {t("galleryTitle")}
