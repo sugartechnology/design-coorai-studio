@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { loadVendorCustomElement } from "@/lib/load-vendor-element";
 
-const SCRIPT_SRC = "/vendor/sugar-model-viewer.js?v=20260903-fabric";
+const SCRIPT_SRC = "/vendor/sugar-model-viewer.js?v=20260903-settings";
 const TAG_NAME = "sugar-model-viewer";
 /** Fallback when host does not pass companyId. Prefer template `rrCompanyId`. */
 export const SUGAR_MODEL_VIEWER_COMPANY_ID = 42;
@@ -78,6 +78,8 @@ type ModelViewerHostProps = {
    * `host` — panel hidden; host applies via CustomEvent.
    */
   materialUi?: "panel" | "host";
+  /** Sol altta render settings menüsü. */
+  settings?: boolean;
   /** Called when the custom element is in the DOM and defined. */
   onElementReady?: (el: SugarModelViewerElement) => void;
 };
@@ -172,6 +174,7 @@ export function ModelViewerHost({
   className,
   ar = true,
   materialUi = "panel",
+  settings = true,
   onElementReady,
 }: ModelViewerHostProps) {
   const t = useTranslations("hosts");
@@ -198,7 +201,7 @@ export function ModelViewerHost({
   useEffect(() => {
     if (!ready || !elRef.current) return;
     onElementReady?.(elRef.current);
-  }, [ready, sugarProductId, stockCode, companyId, materialUi, onElementReady]);
+  }, [ready, sugarProductId, stockCode, companyId, materialUi, settings, onElementReady]);
 
   return (
     <div className={className} style={{ position: "relative", minHeight: 0 }}>
@@ -224,6 +227,7 @@ export function ModelViewerHost({
           company-id={String(companyId)}
           material-ui={materialUi}
           {...(ar ? { ar: true } : {})}
+          {...(settings ? { settings: true } : {})}
           style={{ display: "block", width: "100%", height: "100%" }}
         />
       )}
