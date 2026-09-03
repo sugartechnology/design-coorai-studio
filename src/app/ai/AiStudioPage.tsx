@@ -53,6 +53,7 @@ import { defaultLocale, isAppLocale } from "@/i18n/config";
 import {
   ASPECT_RATIO_OPTIONS,
   DEFAULT_ASPECT_RATIO,
+  
   DEFAULT_IMAGE_SIZE,
   DEFAULT_LIGHTING_MODE,
   generateRoomDesign,
