@@ -837,14 +837,14 @@ function OdaPage() {
                               disabled={!canPlace}
                               className="group rounded-xl border border-black/5 hover:border-[color:var(--brand-primary)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                             >
-                              <div className="aspect-square rounded-lg overflow-hidden bg-stone-100 mb-1.5 relative">
+                              <div className="aspect-square rounded-lg overflow-hidden bg-white mb-1.5 relative">
                                 {p.thumbnailUrl ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={p.thumbnailUrl}
                                     alt={p.name}
                                     loading="lazy"
-                                    className="w-full h-full object-cover group-hover:scale-[1.04] transition duration-300"
+                                    className="absolute inset-0 h-full w-full object-contain p-1 group-hover:scale-[1.04] transition duration-300"
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-[color:var(--brand-primary)]/20 text-xs">

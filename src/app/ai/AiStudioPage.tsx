@@ -854,13 +854,13 @@ function AiStudioPage() {
                         >
                           <X className="size-3" />
                         </button>
-                        <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative`}>
+                        <div className="aspect-square rounded-lg bg-white overflow-hidden relative">
                           {item.product.thumbnailUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={item.product.thumbnailUrl}
                               alt={item.product.name}
-                              className="absolute inset-0 h-full w-full object-cover"
+                              className="absolute inset-0 h-full w-full object-contain p-1"
                               draggable={false}
                             />
                           ) : null}
@@ -1712,12 +1712,12 @@ function ModeCard({
 function ProductThumb({ product, size = 80 }: { product: CatalogProduct; size?: number }) {
   return (
     <div
-      className={`rounded-xl bg-gradient-to-br ${FALLBACK_THUMB} border border-white shadow-md overflow-hidden relative`}
+      className={`rounded-xl bg-white border border-white shadow-md overflow-hidden relative`}
       style={{ width: size, height: size }}
     >
       {product.thumbnailUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
+        <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-contain p-1" />
       ) : null}
       <div className="absolute inset-x-1 bottom-1 rounded-md bg-white/70 px-1.5 py-0.5 text-[9px] font-bold text-[color:var(--brand-primary)] truncate text-center">
         {product.name}
@@ -1967,10 +1967,10 @@ function PickerCard({
       className="group rounded-xl border border-black/5 bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer text-left w-full"
       title={t("pickerCardTitle")}
     >
-      <div className={`aspect-square rounded-lg bg-gradient-to-br ${FALLBACK_THUMB} overflow-hidden relative flex items-center justify-center text-[color:var(--brand-primary)]/30 text-xs font-semibold`}>
+      <div className="aspect-square rounded-lg bg-white overflow-hidden relative flex items-center justify-center text-[color:var(--brand-primary)]/30 text-xs font-semibold">
         {product.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
+          <img src={product.thumbnailUrl} alt={product.name} className="absolute inset-0 h-full w-full object-contain p-1.5" />
         ) : (
           tCommon("noImage")
         )}
