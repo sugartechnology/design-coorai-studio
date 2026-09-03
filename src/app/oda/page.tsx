@@ -193,6 +193,10 @@ function OdaPage() {
     hasMore: productsHasMore,
     loadMore: loadMoreProducts,
     facetFilters,
+    categoryFacet,
+    setCategoryFacet,
+    hasCompanyCategoryFacet,
+    hasTypeCategoryFacet,
     hasActiveFacets,
     toggleFacetOption,
     clearFacets,
@@ -261,7 +265,8 @@ function OdaPage() {
   const facetLabel = useCallback(
     (field: string) => {
       if (field === "catalogs") return t("facetCatalogs");
-      if (field === "typeCategories" || field === "categories") return t("facetCategories");
+      if (field === "typeCategories") return t("facetTypeCategories");
+      if (field === "categories") return t("facetCategories");
       if (field === "collections") return t("facetCollections");
       return field;
     },
@@ -896,6 +901,32 @@ function OdaPage() {
                 </button>
               )}
             </div>
+            {hasCompanyCategoryFacet && hasTypeCategoryFacet && (
+              <div className="mb-2 shrink-0 grid grid-cols-2 gap-1 rounded-xl bg-black/5 p-1">
+                <button
+                  type="button"
+                  onClick={() => setCategoryFacet("categories")}
+                  className={`h-8 rounded-lg text-[10px] font-bold uppercase tracking-wide transition ${
+                    categoryFacet === "categories"
+                      ? "bg-white text-[color:var(--brand-primary)] shadow-sm"
+                      : "text-[color:var(--brand-primary)]/50 hover:text-[color:var(--brand-primary)]"
+                  }`}
+                >
+                  {t("facetCategories")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCategoryFacet("typeCategories")}
+                  className={`h-8 rounded-lg text-[10px] font-bold uppercase tracking-wide transition ${
+                    categoryFacet === "typeCategories"
+                      ? "bg-white text-[color:var(--brand-primary)] shadow-sm"
+                      : "text-[color:var(--brand-primary)]/50 hover:text-[color:var(--brand-primary)]"
+                  }`}
+                >
+                  {t("facetTypeCategories")}
+                </button>
+              </div>
+            )}
             <div className="flex-1 min-h-0 overflow-y-auto pr-1">
               <ProductSearchFilterList
                 facetFilters={facetFilters}

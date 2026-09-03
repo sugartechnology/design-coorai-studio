@@ -29,5 +29,6 @@ export {
 
 export { useCatalogFilters } from "./use-catalog-filters";
 export { useCatalogProductSearch } from "./use-catalog-product-search";
+export type { CategoryFacetKind } from "./use-catalog-product-search";
 export { useProductSearch } from "./use-product-search";
 export { useInfiniteScroll } from "@/lib/hooks/use-infinite-scroll";

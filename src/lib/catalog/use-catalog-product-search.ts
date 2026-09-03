@@ -65,9 +65,27 @@ function readPersistedSelection(key: string | null | undefined): CatalogFacetSel
   return emptySelection();
 }
 
+function isCategoryFacet(value: unknown): value is CategoryFacetKind {
+  return value === "categories" || value === "typeCategories";
+}
+
+function readPersistedCategoryFacet(key: string | null | undefined): CategoryFacetKind {
+  if (!key || typeof window === "undefined") return "categories";
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return "categories";
+    const parsed = JSON.parse(raw) as { categoryFacet?: unknown };
+    if (isCategoryFacet(parsed.categoryFacet)) return parsed.categoryFacet;
+  } catch {
+    // ignore
+  }
+  return "categories";
+}
+
 function writePersistedSelection(
   key: string | null | undefined,
   selection: CatalogFacetSelection,
+  categoryFacet: CategoryFacetKind,
 ) {
   if (!key || typeof window === "undefined") return;
   try {
@@ -85,7 +103,7 @@ function writePersistedSelection(
     }
     window.localStorage.setItem(
       key,
-      JSON.stringify({ ...prev, selection }),
+      JSON.stringify({ ...prev, selection, categoryFacet }),
     );
   } catch {
     // ignore quota
@@ -166,6 +184,8 @@ function stripAncestorTypeCategories(
   );
 }
 
+export type CategoryFacetKind = "categories" | "typeCategories";
+
 export type CatalogFacetSelection = {
   catalogIds: string[];
   typeCategoryIds: string[];
@@ -203,6 +223,7 @@ export function useCatalogProductSearch(input: {
   const [aggregations, setAggregations] = useState<SearchFilter[]>([]);
   const [catalogUniverse, setCatalogUniverse] = useState<SearchFilter | null>(null);
   const [selection, setSelection] = useState<CatalogFacetSelection>(emptySelection);
+  const [categoryFacet, setCategoryFacetState] = useState<CategoryFacetKind>("categories");
   const [persistHydrated, setPersistHydrated] = useState(!persistKey);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -217,8 +238,11 @@ export function useCatalogProductSearch(input: {
   const totalRef = useRef(0);
   const productsLenRef = useRef(0);
   const typeCategoryOptionsRef = useRef<SearchFilterOption[]>([]);
+  const categoryOptionsRef = useRef<SearchFilterOption[]>([]);
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
+  const categoryFacetRef = useRef(categoryFacet);
+  categoryFacetRef.current = categoryFacet;
 
   useEffect(() => {
     if (!persistKey) {
@@ -226,13 +250,14 @@ export function useCatalogProductSearch(input: {
       return;
     }
     setSelection(readPersistedSelection(persistKey));
+    setCategoryFacetState(readPersistedCategoryFacet(persistKey));
     setPersistHydrated(true);
   }, [persistKey]);
 
   useEffect(() => {
     if (!persistHydrated) return;
-    writePersistedSelection(persistKey, selection);
-  }, [persistKey, persistHydrated, selection]);
+    writePersistedSelection(persistKey, selection, categoryFacet);
+  }, [persistKey, persistHydrated, selection, categoryFacet]);
 
   useEffect(() => {
     if (!enabled || !companyId) return;
@@ -265,8 +290,10 @@ export function useCatalogProductSearch(input: {
   }, [channel, companyId, currency, enabled, router]);
 
   useEffect(() => {
-    const facet = aggregations.find((filter) => filter.field === "typeCategories");
-    typeCategoryOptionsRef.current = facet?.options ?? [];
+    categoryOptionsRef.current =
+      aggregations.find((filter) => filter.field === "categories")?.options ?? [];
+    typeCategoryOptionsRef.current =
+      aggregations.find((filter) => filter.field === "typeCategories")?.options ?? [];
   }, [aggregations]);
 
   useEffect(() => {
@@ -311,15 +338,26 @@ export function useCatalogProductSearch(input: {
       const currentSelection = selectionRef.current;
       setError(null);
       try {
-        const typeCategoryIds = stripAncestorTypeCategories(
-          currentSelection.typeCategoryIds,
-          typeCategoryOptionsRef.current,
-        );
         const extraCategoryId = input.categoryId?.trim() || "";
         const extraCollectionId = input.collectionId?.trim() || "";
+        const tree = categoryFacetRef.current;
+        const typeCategoryIds =
+          tree === "typeCategories"
+            ? stripAncestorTypeCategories(
+                currentSelection.typeCategoryIds,
+                typeCategoryOptionsRef.current,
+              )
+            : [];
+        const selectedCategoryIds =
+          tree === "categories"
+            ? stripAncestorTypeCategories(
+                currentSelection.categoryIds,
+                categoryOptionsRef.current,
+              )
+            : [];
         const categoryIds = extraCategoryId
-          ? Array.from(new Set([...currentSelection.categoryIds, extraCategoryId]))
-          : currentSelection.categoryIds;
+          ? Array.from(new Set([...selectedCategoryIds, extraCategoryId]))
+          : selectedCategoryIds;
         const collectionIds = extraCollectionId
           ? Array.from(new Set([...currentSelection.collectionIds, extraCollectionId]))
           : currentSelection.collectionIds;
@@ -426,6 +464,7 @@ export function useCatalogProductSearch(input: {
     selection.collectionNames,
     input.categoryId,
     input.collectionId,
+    categoryFacet,
   ]);
 
   useEffect(() => {
@@ -487,9 +526,18 @@ export function useCatalogProductSearch(input: {
       }
       if (field === "categories" || field === "categoryId" || field === "category") {
         if (isUuid(value)) {
+          const adding = !prev.categoryIds.includes(value);
+          let nextIds = toggleValue(prev.categoryIds, value);
+          if (adding) {
+            nextIds = pruneAfterTypeCategoryToggle(
+              nextIds,
+              value,
+              categoryOptionsRef.current,
+            );
+          }
           return {
             ...prev,
-            categoryIds: toggleValue(prev.categoryIds, value),
+            categoryIds: nextIds,
             categoryNames: [],
             typeCategoryIds: [],
           };
@@ -552,15 +600,17 @@ export function useCatalogProductSearch(input: {
     [selection],
   );
 
+  const setCategoryFacet = useCallback((next: CategoryFacetKind) => {
+    setCategoryFacetState(next);
+    setSelection((prev) =>
+      next === "typeCategories"
+        ? { ...prev, categoryIds: [], categoryNames: [] }
+        : { ...prev, typeCategoryIds: [] },
+    );
+  }, []);
+
   const facetFilters = useMemo(() => {
-    const hasTypeCategories = aggregations.some(
-      (f) => f.field === "typeCategories" && (f.options?.length ?? 0) > 0,
-    );
-    const allowed = new Set(
-      hasTypeCategories
-        ? ["typeCategories", "collections"]
-        : ["categories", "collections"],
-    );
+    const allowed = new Set([categoryFacet, "collections"]);
     const rest = aggregations.filter(
       (f) => f.field && allowed.has(f.field) && (f.options?.length ?? 0) > 0,
     );
@@ -571,13 +621,20 @@ export function useCatalogProductSearch(input: {
             (f) => f.field === "catalogs" && (f.options?.length ?? 0) > 0,
           );
     return catalogs ? [catalogs, ...rest] : rest;
-  }, [aggregations, catalogUniverse]);
+  }, [aggregations, catalogUniverse, categoryFacet]);
+
+  const hasCompanyCategoryFacet = aggregations.some(
+    (f) => f.field === "categories" && (f.options?.length ?? 0) > 0,
+  );
+  const hasTypeCategoryFacet = aggregations.some(
+    (f) => f.field === "typeCategories" && (f.options?.length ?? 0) > 0,
+  );
 
   const activeFacetCount =
     selection.catalogIds.length +
-    selection.typeCategoryIds.length +
-    selection.categoryIds.length +
-    selection.categoryNames.length +
+    (categoryFacet === "typeCategories"
+      ? selection.typeCategoryIds.length
+      : selection.categoryIds.length + selection.categoryNames.length) +
     selection.collectionIds.length +
     selection.collectionNames.length;
 
@@ -594,6 +651,10 @@ export function useCatalogProductSearch(input: {
     error,
     loadMore,
     facetFilters,
+    categoryFacet,
+    setCategoryFacet,
+    hasCompanyCategoryFacet,
+    hasTypeCategoryFacet,
     selection,
     hasActiveFacets: activeFacetCount > 0,
     activeFacetCount,

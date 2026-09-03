@@ -248,7 +248,7 @@ function CategoryProductsPage() {
                   href={`/kumas/${collectionSeg}/${p.id}?kategori=${encodeURIComponent(categoryId)}`}
                   className="group rounded-2xl bg-white shadow-sm hover:shadow-xl border border-black/5 overflow-hidden transition-all hover:-translate-y-1"
                 >
-                  <div className="relative aspect-[4/5] bg-stone-100">
+                  <div className="relative aspect-[4/5] bg-white">
                     {p.thumbnailUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img

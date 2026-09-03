@@ -162,7 +162,7 @@ export function ProductSearchFilterList({
                         );
                       })}
                     </div>
-                  ) : facet.field === "typeCategories" ? (
+                  ) : facet.field === "typeCategories" || facet.field === "categories" ? (
                     <TypeCategoryTree
                       options={facet.options ?? []}
                       isOptionSelected={(option) => isOptionSelected(facet.field, option)}
