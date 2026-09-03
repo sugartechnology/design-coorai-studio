@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { loadVendorCustomElement } from "@/lib/load-vendor-element";
 
-const SCRIPT_SRC = "/vendor/sugar-model-viewer.js?v=20260903-settings";
+const SCRIPT_SRC = "/vendor/sugar-model-viewer.js?v=20260903-byid";
 const TAG_NAME = "sugar-model-viewer";
 /** Fallback when host does not pass companyId. Prefer template `rrCompanyId`. */
 export const SUGAR_MODEL_VIEWER_COMPANY_ID = 42;
