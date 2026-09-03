@@ -35,12 +35,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppHeader } from "@/components/AppHeader";
 import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import { useCart } from "@/lib/cart";
 import {
@@ -205,11 +199,9 @@ function AiStudioPage() {
     if (hasNewerCompleted) setPendingHistoryItem(null);
   }, [galleryItems, pendingHistoryItem]);
 
-  const showMobileGallery =
-    !isDesktopViewport &&
-    (historyPanelItems.length > 0 ||
-      Boolean(pendingHistoryItem) ||
-      galleryLoadingMore);
+  const showRenderGallery = isDesktopViewport
+    ? isGalleryOpen
+    : historyPanelItems.length > 0 || Boolean(pendingHistoryItem) || galleryLoadingMore;
 
   const latestGalleryThumbnail = useMemo(() => {
     const latest = historyPanelItems.find((item) => {
@@ -751,7 +743,6 @@ function AiStudioPage() {
     if (!galleryPreview?.url) return;
     setRoomPreviewUrl(galleryPreview.url);
     setGalleryPreview(null);
-    setIsGalleryOpen(false);
   };
 
   return (
@@ -1393,222 +1384,21 @@ function AiStudioPage() {
               </div>
             </main>
 
-            {showMobileGallery || (isDesktopViewport && isGalleryOpen) ? (
-              isDesktopViewport ? (
-                <div
-                  className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4"
-                  onClick={() => {
-                    setGalleryPreview(null);
-                    setIsGalleryOpen(false);
-                  }}
-                >
-                  <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="renders-gallery-title"
-                    className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-lg"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center justify-between px-4 py-4">
-                      <h2
-                        id="renders-gallery-title"
-                        className="text-xs font-extrabold uppercase tracking-[0.18em] text-[color:var(--brand-primary)]"
-                      >
-                        {t("galleryTitle")}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setGalleryPreview(null);
-                          setIsGalleryOpen(false);
-                        }}
-                        className="rounded-lg p-1 transition-colors hover:bg-[color:var(--brand-soft)]"
-                      >
-                        <X className="size-4 text-[color:var(--brand-primary)]/50" />
-                      </button>
-                    </div>
-                    {galleryPreview ? (
-                      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-4 pb-4">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={galleryPreview.url}
-                          alt={galleryPreview.caption || t("galleryTitle")}
-                          className="mx-auto max-h-[min(62vh,640px)] max-w-full object-contain"
-                        />
-                        <div className="flex flex-wrap items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setGalleryPreview(null)}
-                            className="h-9 rounded-full border border-black/10 bg-white px-3 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
-                          >
-                            {t("galleryTitle")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={applyPreviewToScene}
-                            className="h-9 rounded-full border border-black/10 bg-white px-3 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
-                          >
-                            {t("galleryOpen")}
-                          </button>
-                          <a
-                            href={galleryPreview.url}
-                            download
-                            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[color:var(--brand-primary)] px-3 text-xs font-bold text-white hover:bg-[color:var(--brand-primary)]/90"
-                          >
-                            <Download className="size-3.5" />
-                            {t("galleryDownload")}
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {galleryError && (
-                          <div className="mx-3 mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                            {galleryError}
-                          </div>
-                        )}
-                        <div
-                          ref={setGalleryScrollEl}
-                          className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-4"
-                        >
-                          {galleryLoading && historyPanelItems.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--brand-primary)]/50">
-                              <Loader2 className="mb-2 size-6 animate-spin opacity-60" />
-                              <p className="text-xs">{t("galleryLoading")}</p>
-                            </div>
-                          ) : historyPanelItems.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--brand-primary)]/50">
-                              <Eye className="mb-2 size-8 opacity-40" />
-                              <p className="text-xs">{t("galleryEmpty")}</p>
-                            </div>
-                          ) : (
-                            historyPanelItems.map((item, index) => {
-                              const previewUrl =
-                                resolveGenerationImageUrl(item) ||
-                                item.thumbnailUrl ||
-                                "";
-                              const status = (item.status ?? "").toUpperCase();
-                              const isDone =
-                                status === "COMPLETED" && Boolean(previewUrl);
-                              const isProcessing =
-                                status === "PENDING" || status === "PROCESSING";
-
-                              return (
-                                <div
-                                  key={item.id || `${previewUrl}-${index}`}
-                                  className={`group relative overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-all ${
-                                    isDone
-                                      ? "cursor-pointer hover:border-[color:var(--brand-primary)]/30"
-                                      : ""
-                                  }`}
-                                  onClick={() => {
-                                    if (isDone) openGalleryPreview(item);
-                                  }}
-                                >
-                                  {isDone ? (
-                                    <>
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        src={previewUrl}
-                                        alt={item.caption || t("galleryTitle")}
-                                        className="aspect-[4/3] w-full object-cover"
-                                      />
-                                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
-                                        <div className="rounded-full bg-white/95 p-2 shadow-lg">
-                                          <Eye className="size-4 text-[color:var(--brand-primary)]" />
-                                        </div>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="relative flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-[color:var(--brand-soft)] px-4 text-center">
-                                      <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-[color:var(--brand-primary)]/10 via-transparent to-transparent" />
-                                      <div className="relative flex size-14 items-center justify-center rounded-2xl bg-[color:var(--brand-primary)]/10">
-                                        <Sparkles className="size-7 text-[color:var(--brand-primary)]" />
-                                        {isProcessing ? (
-                                          <Loader2 className="absolute -right-1 -top-1 size-4 animate-spin text-[color:var(--brand-primary)]" />
-                                        ) : null}
-                                      </div>
-                                      <div className="relative">
-                                        <p className="text-xs font-bold text-[color:var(--brand-primary)]">
-                                          {isProcessing
-                                            ? t("galleryProcessing")
-                                            : t("galleryFailed")}
-                                        </p>
-                                        <p className="mt-0.5 text-[10px] text-[color:var(--brand-primary)]/55">
-                                          {status === "PENDING"
-                                            ? t("galleryQueued")
-                                            : status === "FAILED" ||
-                                                status === "ERROR" ||
-                                                status === "CANCELLED"
-                                              ? t("galleryFailedHint")
-                                              : t("galleryProcessingHint")}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                                    <div className="min-w-0">
-                                      <div className="truncate text-[11px] font-semibold text-[color:var(--brand-primary)]">
-                                        {item.prompt || t("galleryUntitled")}
-                                      </div>
-                                      <div className="text-[10px] text-[color:var(--brand-primary)]/50">
-                                        {formatGalleryTimestamp(
-                                          item,
-                                          t("galleryJustNow"),
-                                        )}
-                                      </div>
-                                    </div>
-                                    {isDone && previewUrl ? (
-                                      <div className="flex items-center gap-1">
-                                        <button
-                                          type="button"
-                                          title={t("galleryPreview")}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            openGalleryPreview(item);
-                                          }}
-                                          className="rounded-lg p-2 transition-colors hover:bg-[color:var(--brand-soft)]"
-                                        >
-                                          <Eye className="size-4 text-[color:var(--brand-primary)]/50" />
-                                        </button>
-                                        <a
-                                          href={previewUrl}
-                                          download
-                                          title={t("galleryDownload")}
-                                          className="rounded-lg p-2 transition-colors hover:bg-[color:var(--brand-soft)]"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <Download className="size-4 text-[color:var(--brand-primary)]/50" />
-                                        </a>
-                                      </div>
-                                    ) : null}
-                                  </div>
-
-                                  <div className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full border border-black/10 bg-white/85 text-[10px] font-bold text-[color:var(--brand-primary)]/60 backdrop-blur-sm">
-                                    {index + 1}
-                                  </div>
-                                </div>
-                              );
-                            })
-                          )}
-
-                          <InfiniteScrollSentinel
-                            sentinelRef={gallerySentinelRef}
-                            hasMore={galleryHasMore}
-                            loadingMore={galleryLoadingMore}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ) : (
-              <aside className="mt-2 mx-3 sm:mx-5 mb-3 flex max-h-[min(360px,52vh)] w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
+            {showRenderGallery ? (
+              <aside className="mt-2 mx-3 sm:mx-5 lg:mx-0 lg:mt-0 mb-3 lg:mb-0 flex max-h-[min(360px,52vh)] w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm lg:h-full lg:max-h-none lg:w-[280px] lg:rounded-none lg:border-0 lg:border-l lg:shadow-none">
                 <div className="flex items-center justify-between px-4 py-4">
                   <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
                     {t("galleryTitle")}
                   </h2>
+                  {isDesktopViewport ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsGalleryOpen(false)}
+                      className="rounded-lg p-1 transition-colors hover:bg-[color:var(--brand-soft)]"
+                    >
+                      <X className="size-4 text-[color:var(--brand-primary)]/50" />
+                    </button>
+                  ) : null}
                 </div>
 
                 {galleryError && (
@@ -1742,7 +1532,6 @@ function AiStudioPage() {
                   />
                 </div>
               </aside>
-              )
             ) : null}
             </div>
           </>
@@ -1750,25 +1539,30 @@ function AiStudioPage() {
       })()}
       </div>
 
-      {galleryPreview && !isDesktopViewport && (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setGalleryPreview(null);
-          }}
+      {galleryPreview && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setGalleryPreview(null)}
         >
-          <DialogContent className="max-h-[90vh] w-auto max-w-[min(92vw,1100px)] gap-3 overflow-hidden border-black/10 bg-white p-3 sm:rounded-2xl">
-            <DialogTitle className="sr-only">
-              {galleryPreview.caption || t("galleryTitle")}
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              {t("galleryPreview")}
-            </DialogDescription>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative flex max-h-[90vh] w-full max-w-4xl flex-col gap-3 rounded-2xl bg-white p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setGalleryPreview(null)}
+              className="absolute right-3 top-3 size-8 rounded-full text-[color:var(--brand-primary)]/60 hover:bg-black/5"
+              aria-label={tCommon("close")}
+            >
+              <X className="size-5" />
+            </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={galleryPreview.url}
               alt={galleryPreview.caption || t("galleryTitle")}
-              className="mx-auto max-h-[min(78vh,820px)] max-w-full object-contain"
+              className="mx-auto max-h-[min(78vh,760px)] max-w-full object-contain"
             />
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button
@@ -1788,8 +1582,8 @@ function AiStudioPage() {
                 {t("galleryDownload")}
               </a>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       )}
 
       {pickerOpen && (
