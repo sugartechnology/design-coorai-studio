@@ -258,6 +258,11 @@ function AiStudioPage() {
   } | null>(null);
 
   useEffect(() => {
+    document.documentElement.classList.add("ai-studio-lock");
+    return () => document.documentElement.classList.remove("ai-studio-lock");
+  }, []);
+
+  useEffect(() => {
     if (!isGalleryOpen && !galleryPreview) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -747,7 +752,7 @@ function AiStudioPage() {
   };
 
   return (
-    <div className="h-dvh overflow-hidden bg-[color:var(--brand-bg)] flex flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--brand-bg)]">
       <AppHeader title={t("headerTitle")} backHref="/" />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">

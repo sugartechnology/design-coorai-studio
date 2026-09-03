@@ -147,4 +147,11 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+
+  html.ai-studio-lock,
+  html.ai-studio-lock body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
 }
