@@ -254,7 +254,7 @@ function CategoryProductsPage() {
                       <img
                         src={p.thumbnailUrl}
                         alt={p.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
+                        className="absolute inset-0 h-full w-full object-contain p-3 transition-transform group-hover:scale-[1.03]"
                         loading="lazy"
                       />
                     ) : (
