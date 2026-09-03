@@ -2,6 +2,10 @@
 
 const loadCache = new Map<string, Promise<void>>();
 
+function vendorPath(src: string): string {
+  return src.split("?")[0] ?? src;
+}
+
 /** Bundles that register the same Lit tags (sugar-light, sugar-viewport, …). */
 const EXCLUSIVE_VENDOR_SRCS = [
   "/vendor/sugar-model-viewer.js",
@@ -26,8 +30,9 @@ const RELOAD_GUARD_KEY = "__sugar_ce_vendor_reload";
 function hasConflictingVendor(scriptSrc: string, tagName: string): boolean {
   if (customElements.get(tagName)) return false;
 
+  const incoming = vendorPath(scriptSrc);
   for (const src of EXCLUSIVE_VENDOR_SRCS) {
-    if (src === scriptSrc) continue;
+    if (src === incoming) continue;
     if (
       document.querySelector(`script[data-sugar-vendor="${CSS.escape(src)}"]`)
     ) {
@@ -110,8 +115,9 @@ export function loadVendorCustomElement(
     };
 
     const attr = "data-sugar-vendor";
+    const vendorId = vendorPath(scriptSrc);
     const found = document.querySelector<HTMLScriptElement>(
-      `script[${attr}="${CSS.escape(scriptSrc)}"]`,
+      `script[${attr}="${CSS.escape(vendorId)}"]`,
     );
     if (found) {
       if (found.dataset.loaded === "1") {
@@ -137,7 +143,7 @@ export function loadVendorCustomElement(
     script.type = "module";
     script.src = scriptSrc;
     script.async = true;
-    script.setAttribute(attr, scriptSrc);
+    script.setAttribute(attr, vendorId);
     script.addEventListener(
       "load",
       () => {

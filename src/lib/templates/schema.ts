@@ -9,6 +9,8 @@ export const portalTemplateSchema = z.object({
   companySlug: z.string().min(1),
   displayName: z.string().min(1),
   productName: z.string().min(1),
+  /** Rapid / sugar-model-viewer `company-id` (İstikbal 42, Bellona 43). */
+  rrCompanyId: z.number().int().positive(),
   hosts: z.array(z.string().min(1)).min(1),
   colors: z.object({
     primary: hexColor,

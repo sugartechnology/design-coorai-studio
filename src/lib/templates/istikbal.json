@@ -3,6 +3,7 @@
   "companySlug": "istikbal",
   "displayName": "İstikbal",
   "productName": "3D Tasarım Stüdyosu",
+  "rrCompanyId": 42,
   "hosts": [
     "i-render.app",
     "www.i-render.app",

@@ -10,13 +10,11 @@ import {
   getProductById,
   type CatalogProductDetail,
 } from "@/lib/catalog";
-import { PortalCrmError, getPortalSessionView } from "@/lib/portal-crm";
-import {
-  ModelViewerHost,
-  SUGAR_MODEL_VIEWER_COMPANY_ID,
-} from "@/components/ModelViewerHost";
+import { PortalCrmError } from "@/lib/portal-crm";
+import { ModelViewerHost } from "@/components/ModelViewerHost";
 import { AppHeader } from "@/components/AppHeader";
 import { useProductZones } from "@/lib/material-zone";
+import { usePortalTemplate } from "@/lib/templates/context";
 import {
   lineFromCatalogProduct,
   zoneSelectionsToConfig,
@@ -43,17 +41,6 @@ type GalleryItem =
   | { kind: "3d"; key: "3d" }
   | { kind: "image"; key: string; url: string };
 
-function resolveViewerCompanyId(
-  product: CatalogProductDetail | null,
-  fallback: number | null,
-): number {
-  const fromRef = product?.rapidRenderRefs?.find(
-    (ref) => ref.rrCompanyId != null,
-  )?.rrCompanyId;
-  const id = Number(fromRef ?? fallback);
-  return Number.isFinite(id) && id > 0 ? id : SUGAR_MODEL_VIEWER_COMPANY_ID;
-}
-
 function ProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ collection: string; part: string }>();
@@ -63,6 +50,7 @@ function ProductDetailPage() {
   const tCatalog = useTranslations("catalog");
   const locale = useLocale();
   const language = isAppLocale(locale) ? locale : defaultLocale;
+  const template = usePortalTemplate();
   const collectionId = params.collection;
   const partParam = params.part;
   const fromCategory = searchParams.get("kategori");
@@ -79,9 +67,6 @@ function ProductDetailPage() {
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const { addLines } = useCart();
   const [cartFlash, setCartFlash] = useState(false);
-  const [sessionRrCompanyId, setSessionRrCompanyId] = useState<number | null>(
-    null,
-  );
 
   const part: Part | null =
     mockPart ??
@@ -91,7 +76,7 @@ function ProductDetailPage() {
 
   const sugarProductId = product?.productModalId?.trim() || null;
   const stockCode = product?.sku?.trim() || undefined;
-  const viewerCompanyId = resolveViewerCompanyId(product, sessionRrCompanyId);
+  const viewerCompanyId = template.rrCompanyId;
   const has3d = Boolean(sugarProductId);
 
   const {
@@ -136,20 +121,6 @@ function ProductDetailPage() {
   useEffect(() => {
     setActiveGalleryIndex(has3d && galleryImages.length > 0 ? 1 : 0);
   }, [product?.id, has3d, galleryImages.length]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void getPortalSessionView().then((session) => {
-      if (cancelled) return;
-      const rr = session?.rrCompanyId;
-      setSessionRrCompanyId(
-        typeof rr === "number" && Number.isFinite(rr) ? rr : null,
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;

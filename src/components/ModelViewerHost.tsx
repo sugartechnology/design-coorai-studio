@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { loadVendorCustomElement } from "@/lib/load-vendor-element";
 
-const SCRIPT_SRC = "/vendor/sugar-model-viewer.js";
+const SCRIPT_SRC = "/vendor/sugar-model-viewer.js?v=20260903-fabric";
 const TAG_NAME = "sugar-model-viewer";
-/** İstikbal / Sugar catalog company for model fetch */
+/** Fallback when host does not pass companyId. Prefer template `rrCompanyId`. */
 export const SUGAR_MODEL_VIEWER_COMPANY_ID = 42;
 
 export const APPLY_MATERIAL_EVENT = "sugar-model-viewer-apply-material";
