@@ -181,6 +181,10 @@ export function useCatalogProductSearch(input: {
   currency?: string;
   enabled?: boolean;
   size?: number;
+  /** Extra category filter (e.g. AI picker chips), merged with facet selection. */
+  categoryId?: string | null;
+  /** Extra collection filter (e.g. AI picker chips), merged with facet selection. */
+  collectionId?: string | null;
   /** When set, facet selection is restored/saved in localStorage under this key. */
   persistKey?: string | null;
 }) {
@@ -311,6 +315,14 @@ export function useCatalogProductSearch(input: {
           currentSelection.typeCategoryIds,
           typeCategoryOptionsRef.current,
         );
+        const extraCategoryId = input.categoryId?.trim() || "";
+        const extraCollectionId = input.collectionId?.trim() || "";
+        const categoryIds = extraCategoryId
+          ? Array.from(new Set([...currentSelection.categoryIds, extraCategoryId]))
+          : currentSelection.categoryIds;
+        const collectionIds = extraCollectionId
+          ? Array.from(new Set([...currentSelection.collectionIds, extraCollectionId]))
+          : currentSelection.collectionIds;
         const result = await searchCatalogProducts(
           {
             companyId,
@@ -320,9 +332,9 @@ export function useCatalogProductSearch(input: {
               query: debouncedQuery,
               catalogIds: currentSelection.catalogIds,
               typeCategoryIds,
-              categoryIds: currentSelection.categoryIds,
+              categoryIds,
               categoryNames: currentSelection.categoryNames,
-              collectionIds: currentSelection.collectionIds,
+              collectionIds,
               collectionNames: currentSelection.collectionNames,
               page: pageToLoad,
               size: pageSize,
@@ -379,7 +391,18 @@ export function useCatalogProductSearch(input: {
         }
       }
     },
-    [channel, companyId, currency, debouncedQuery, enabled, pageSize, router, t],
+    [
+      channel,
+      companyId,
+      currency,
+      debouncedQuery,
+      enabled,
+      input.categoryId,
+      input.collectionId,
+      pageSize,
+      router,
+      t,
+    ],
   );
 
   // Reset + fetch only when search inputs change — not when aggregations update.
@@ -401,6 +424,8 @@ export function useCatalogProductSearch(input: {
     selection.categoryNames,
     selection.collectionIds,
     selection.collectionNames,
+    input.categoryId,
+    input.collectionId,
   ]);
 
   useEffect(() => {

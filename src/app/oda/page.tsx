@@ -14,7 +14,7 @@ import {
   FileText,
   Loader2,
   ShoppingCart,
-  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -200,6 +200,7 @@ function OdaPage() {
     rrCompanyId,
   } = useCatalogProductSearch({
     query,
+    channel: "CRM",
     size: 40,
     persistKey: ODA_FILTERS_STORAGE_KEY,
   });
@@ -226,8 +227,16 @@ function OdaPage() {
     filtersHydrated && wantsProductPanel && !productPanelDismissed;
 
   useEffect(() => {
-    if (wantsProductPanel) setProductPanelDismissed(false);
-  }, [wantsProductPanel]);
+    if (query.trim()) setProductPanelDismissed(false);
+  }, [query]);
+
+  const onToggleFacetOption = useCallback(
+    (field: string, option: Parameters<typeof toggleFacetOption>[1]) => {
+      setProductPanelDismissed(false);
+      toggleFacetOption(field, option);
+    },
+    [toggleFacetOption],
+  );
 
   const templateLabels = useMemo(
     (): Record<TemplateKey, string> => ({
@@ -762,24 +771,22 @@ function OdaPage() {
               onReady={onDesignerReady}
             />
             {showProductPanel && (
-              <div className="absolute top-3 bottom-3 right-3 z-20 w-[min(20rem,calc(100%-1.5rem))] pointer-events-none">
+              <div className="absolute top-3 bottom-3 right-3 z-30 w-[min(20rem,calc(100%-1.5rem))] pointer-events-none">
                 <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg border border-black/5 flex flex-col min-h-0 h-full">
-                  <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0 gap-2">
-                    <span>{t("productsTitle")}</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-[color:var(--brand-primary)]/40 normal-case font-medium">
-                        {products.length}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setProductPanelDismissed(true)}
-                        className="size-8 rounded-lg inline-flex items-center justify-center text-[color:var(--brand-primary)]/50 hover:bg-black/5 hover:text-[color:var(--brand-primary)]"
-                        aria-label={t("hideProducts")}
-                        title={t("hideProducts")}
-                      >
-                        <ChevronLeft className="size-4" />
-                      </button>
+                  <h3 className="mb-2 flex shrink-0 items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]/60">
+                    <span className="min-w-0 flex-1 truncate">{t("productsTitle")}</span>
+                    <span className="normal-case font-medium text-[color:var(--brand-primary)]/40">
+                      {products.length}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => setProductPanelDismissed(true)}
+                      className="ml-auto size-8 rounded-lg inline-flex items-center justify-center text-[color:var(--brand-primary)]/50 hover:bg-black/5 hover:text-[color:var(--brand-primary)]"
+                      aria-label={t("hideProducts")}
+                      title={t("hideProducts")}
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
                   </h3>
                   <div
                     ref={setProductScrollEl}
@@ -894,7 +901,7 @@ function OdaPage() {
                 facetFilters={facetFilters}
                 facetLabel={facetLabel}
                 isOptionSelected={isOptionSelected}
-                onToggleOption={toggleFacetOption}
+                onToggleOption={onToggleFacetOption}
               />
             </div>
             {!wantsProductPanel && (

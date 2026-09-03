@@ -39,8 +39,8 @@ import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import { useCart } from "@/lib/cart";
 import {
   useCatalogFilters,
+  useCatalogProductSearch,
   useInfiniteScroll,
-  useProductSearch,
   getProductById,
   type CatalogProduct,
 } from "@/lib/catalog";
@@ -1758,8 +1758,7 @@ function ProductPicker({
     return collections.filter((c) => c.name.toLocaleLowerCase("tr").includes(entityQuery));
   }, [collections, entityQuery]);
 
-  /** Product name search only in "all"; category/collection tabs search entities via chips. */
-  const productQuery = mode === "all" ? q : "";
+  /** Product name search hits catalog/products/search on every tab. */
   const {
     products,
     loading,
@@ -1767,11 +1766,12 @@ function ProductPicker({
     error,
     hasMore,
     loadMore,
-  } = useProductSearch({
-    query: productQuery,
+  } = useCatalogProductSearch({
+    query: q,
+    channel: "CRM",
+    size: 40,
     collectionId: mode === "categories" ? null : col,
     categoryId: mode === "collections" ? null : cat,
-    size: 40,
   });
 
   const { sentinelRef } = useInfiniteScroll({
