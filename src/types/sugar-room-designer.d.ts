@@ -22,6 +22,7 @@ declare module "react" {
           download?: boolean;
           popup?: boolean;
           preload?: boolean;
+          "material-ui"?: "panel" | "host" | string;
         },
         HTMLElement
       >;

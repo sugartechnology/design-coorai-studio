@@ -130,12 +130,13 @@ export function FabricRegionsPanel({
             const n = zoneAreaNumber(area.name, i + 1);
             const hint =
               area.label && !isRawZoneAreaName(area.label) ? area.label : null;
+            const canPick = area.options.length > 0;
             return (
               <button
                 key={area.name}
                 type="button"
                 onClick={() => onOpenPicker(area.name)}
-                disabled={loading}
+                disabled={loading || !canPick}
                 className="group flex w-full items-center justify-between gap-3 rounded-xl bg-[color:var(--brand-primary)]/5 px-4 py-3 transition-colors hover:bg-[color:var(--brand-primary)]/10 disabled:opacity-60"
               >
                 <span className="text-left font-bold text-[color:var(--brand-primary)]">

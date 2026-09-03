@@ -10,7 +10,7 @@ import {
   getProductById,
   type CatalogProductDetail,
 } from "@/lib/catalog";
-import { PortalCrmError } from "@/lib/portal-crm";
+import { PortalCrmError, getPortalSessionView } from "@/lib/portal-crm";
 import {
   ModelViewerHost,
   SUGAR_MODEL_VIEWER_COMPANY_ID,
@@ -43,6 +43,17 @@ type GalleryItem =
   | { kind: "3d"; key: "3d" }
   | { kind: "image"; key: string; url: string };
 
+function resolveViewerCompanyId(
+  product: CatalogProductDetail | null,
+  fallback: number | null,
+): number {
+  const fromRef = product?.rapidRenderRefs?.find(
+    (ref) => ref.rrCompanyId != null,
+  )?.rrCompanyId;
+  const id = Number(fromRef ?? fallback);
+  return Number.isFinite(id) && id > 0 ? id : SUGAR_MODEL_VIEWER_COMPANY_ID;
+}
+
 function ProductDetailPage() {
   const router = useRouter();
   const params = useParams<{ collection: string; part: string }>();
@@ -68,6 +79,9 @@ function ProductDetailPage() {
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const { addLines } = useCart();
   const [cartFlash, setCartFlash] = useState(false);
+  const [sessionRrCompanyId, setSessionRrCompanyId] = useState<number | null>(
+    null,
+  );
 
   const part: Part | null =
     mockPart ??
@@ -76,6 +90,8 @@ function ProductDetailPage() {
       : null);
 
   const sugarProductId = product?.productModalId?.trim() || null;
+  const stockCode = product?.sku?.trim() || undefined;
+  const viewerCompanyId = resolveViewerCompanyId(product, sessionRrCompanyId);
   const has3d = Boolean(sugarProductId);
 
   const {
@@ -93,6 +109,8 @@ function ProductDetailPage() {
     guideImage,
   } = useProductZones({
     sugarProductId,
+    stockCode,
+    companyId: viewerCompanyId,
     fallbackError: t("zonesError"),
   });
 
@@ -118,6 +136,20 @@ function ProductDetailPage() {
   useEffect(() => {
     setActiveGalleryIndex(has3d && galleryImages.length > 0 ? 1 : 0);
   }, [product?.id, has3d, galleryImages.length]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getPortalSessionView().then((session) => {
+      if (cancelled) return;
+      const rr = session?.rrCompanyId;
+      setSessionRrCompanyId(
+        typeof rr === "number" && Number.isFinite(rr) ? rr : null,
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -230,9 +262,10 @@ function ProductDetailPage() {
           >
             {sugarProductId && (
               <ModelViewerHost
-                key={sugarProductId}
+                key={`${sugarProductId}:${viewerCompanyId}:${stockCode ?? ""}`}
                 sugarProductId={sugarProductId}
-                companyId={SUGAR_MODEL_VIEWER_COMPANY_ID}
+                stockCode={stockCode}
+                companyId={viewerCompanyId}
                 materialUi="host"
                 ar
                 onElementReady={onViewerReady}
@@ -339,7 +372,7 @@ function ProductDetailPage() {
             allSelected={allSelected}
             sku={zoneSku}
             guideImage={guideImage}
-            companyId={SUGAR_MODEL_VIEWER_COMPANY_ID}
+            companyId={viewerCompanyId}
             onOpenPicker={setPickerAreaName}
             onAddToCart={() => {
               if (!product) return;

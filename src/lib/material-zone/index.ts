@@ -8,11 +8,13 @@ export type {
 export {
   MATERIAL_ZONE_AREA_NAME_PREFIX_LENGTH,
   ZONE_COLORS_42,
+  ZONE_COLORS_43,
   areaDisplayLabel,
   isRawZoneAreaName,
   optionSwatchBackground,
   rebuildCodesOnPick,
   resolveOptionForArea,
+  resolveZoneColors,
   selectedCodesFromZones,
   sortAreasByName,
   zoneAreaNameToGroupCode,

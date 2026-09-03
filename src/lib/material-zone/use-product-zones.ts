@@ -23,6 +23,8 @@ import type {
 
 type UseProductZonesOptions = {
   sugarProductId: string | null;
+  stockCode?: string;
+  companyId?: number | string;
   fallbackError?: string;
 };
 
@@ -59,6 +61,8 @@ async function resolveGuideImage(
  */
 export function useProductZones({
   sugarProductId,
+  stockCode,
+  companyId,
   fallbackError = "Could not load fabric regions.",
 }: UseProductZonesOptions) {
   const [zones, setZones] = useState<MaterialZoneResponse | null>(null);
@@ -156,7 +160,7 @@ export function useProductZones({
     }
     if (!viewerReady) return;
     void loadZones({});
-  }, [sugarProductId, viewerReady, loadZones]);
+  }, [sugarProductId, stockCode, companyId, viewerReady, loadZones]);
 
   const onViewerReady = useCallback(
     (el: SugarModelViewerElement) => {

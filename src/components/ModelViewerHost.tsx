@@ -67,6 +67,8 @@ export type SugarModelViewerElement = HTMLElement & {
 type ModelViewerHostProps = {
   /** CRM `productModalId` — Sugar numeric `sugarProductId`. */
   sugarProductId: string | number;
+  /** Fabric catalog stock code (`product-id` → `stockCode`). */
+  stockCode?: string;
   companyId?: number;
   className?: string;
   /** Enables built-in AR action inside the viewer. */
@@ -165,6 +167,7 @@ export function requestViewerZoneGuide(
 
 export function ModelViewerHost({
   sugarProductId,
+  stockCode,
   companyId = SUGAR_MODEL_VIEWER_COMPANY_ID,
   className,
   ar = true,
@@ -195,7 +198,7 @@ export function ModelViewerHost({
   useEffect(() => {
     if (!ready || !elRef.current) return;
     onElementReady?.(elRef.current);
-  }, [ready, sugarProductId, materialUi, onElementReady]);
+  }, [ready, sugarProductId, stockCode, companyId, materialUi, onElementReady]);
 
   return (
     <div className={className} style={{ position: "relative", minHeight: 0 }}>
@@ -217,6 +220,7 @@ export function ModelViewerHost({
             elRef.current = node;
           }}
           sugar-product-id={String(sugarProductId)}
+          {...(stockCode ? { "product-id": stockCode } : {})}
           company-id={String(companyId)}
           material-ui={materialUi}
           {...(ar ? { ar: true } : {})}
