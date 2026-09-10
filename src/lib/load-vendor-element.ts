@@ -8,7 +8,7 @@ function vendorPath(src: string): string {
 
 /** Bundles that register the same Lit tags (sugar-light, sugar-viewport, …). */
 const EXCLUSIVE_VENDOR_SRCS = [
-  "/vendor/sugar-model-viewer.js",
+  "https://s3.eu-central-1.amazonaws.com/cdn.sugartech/sugar-model-viewer/1.0.1/sugar-model-viewer-1.0.1.js",
   "https://s3.eu-central-1.amazonaws.com/cdn.sugartech/mottobucket/CDN/sugar-planner/sugar-room-designer.js",
 ] as const;
 
