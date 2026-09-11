@@ -101,6 +101,48 @@ async function proxy(request: NextRequest, context: RouteContext) {
     const upstreamBody = await upstream.arrayBuffer();
     const bodyText = new TextDecoder().decode(upstreamBody);
 
+    if (isCatalogProductSearch) {
+      try {
+        const parsed = JSON.parse(bodyText) as Record<string, unknown>;
+        const filters = parsed.filters;
+        const firstProduct = Array.isArray(parsed.content) ? parsed.content[0] : null;
+        console.log("[crm-proxy] catalog/products/search response", {
+          status: upstream.status,
+          keys: Object.keys(parsed),
+          content: Array.isArray(parsed.content) ? parsed.content.length : typeof parsed.content,
+          sampleProduct:
+            firstProduct && typeof firstProduct === "object"
+              ? {
+                  keys: Object.keys(firstProduct as object),
+                  id: (firstProduct as { id?: unknown }).id,
+                  name: (firstProduct as { name?: unknown }).name,
+                  nameType: typeof (firstProduct as { name?: unknown }).name,
+                  productModalId: (firstProduct as { productModalId?: unknown })
+                    .productModalId,
+                }
+              : firstProduct,
+          filters: Array.isArray(filters)
+            ? (filters as Array<{ field?: string; options?: unknown[] }>).map((filter) => ({
+                field: filter.field,
+                options: Array.isArray(filter.options) ? filter.options.length : typeof filter.options,
+                sample:
+                  Array.isArray(filter.options) && filter.options[0]
+                    ? filter.options[0]
+                    : null,
+              }))
+            : typeof filters,
+          aggregations: Array.isArray(parsed.aggregations)
+            ? parsed.aggregations.length
+            : typeof parsed.aggregations,
+        });
+      } catch {
+        console.log("[crm-proxy] catalog/products/search response", {
+          status: upstream.status,
+          bytes: upstreamBody.byteLength,
+        });
+      }
+    }
+
     if (isInvalidTokenPayload(upstream.status, bodyText)) {
       return clearSessionResponse(
         { error: "SESSION_EXPIRED", message: "Oturumunuz sona erdi. Lütfen tekrar giriş yapın." },

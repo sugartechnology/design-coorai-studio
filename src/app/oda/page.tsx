@@ -1,36 +1,18 @@
 "use client";
 
-import {
-  Undo2,
-  Redo2,
-  RotateCcw,
-  Pencil,
-  DoorOpen,
-  AppWindow,
-  Search,
-  Plus,
-  Layers,
-  Box,
-  FileText,
-  Loader2,
-  ShoppingCart,
-  ChevronRight,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import { FileText, Loader2, ShoppingCart } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import {
   RoomDesignerHost,
-  SUGAR_PRODUCT_MIME,
   type SugarRoomDesignerElement,
 } from "@/components/RoomDesignerHost";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import { useCart } from "@/lib/cart";
 import {
-  useCatalogProductSearch,
-  useInfiniteScroll,
   getProductById,
   type CatalogProduct,
   type CatalogProductDetail,
@@ -47,48 +29,16 @@ import {
   type QuoteVariantSelection,
 } from "@/lib/offers";
 import { PortalCrmError } from "@/lib/portal-crm";
-import { InfiniteScrollSentinel } from "@/components/InfiniteScrollSentinel";
-import { ProductSearchFilterList } from "@/components/catalog/ProductSearchFilterMenu";
-import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
+import { defaultLocale, isAppLocale } from "@/i18n/config";
 
-const ODA_FILTERS_STORAGE_KEY = "istikbal-oda-product-filters-v1";
+const AUTHORIZED_PRODUCT_PLACED_EVENT = "authorized-product-placed";
 
-function readOdaQuery(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    const raw = window.localStorage.getItem(ODA_FILTERS_STORAGE_KEY);
-    if (!raw) return "";
-    const parsed = JSON.parse(raw) as { query?: unknown };
-    return typeof parsed.query === "string" ? parsed.query : "";
-  } catch {
-    return "";
-  }
-}
-
-function writeOdaQuery(query: string) {
-  if (typeof window === "undefined") return;
-  try {
-    const prevRaw = window.localStorage.getItem(ODA_FILTERS_STORAGE_KEY);
-    let prev: Record<string, unknown> = {};
-    if (prevRaw) {
-      try {
-        const parsed = JSON.parse(prevRaw) as unknown;
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          prev = parsed as Record<string, unknown>;
-        }
-      } catch {
-        prev = {};
-      }
-    }
-    window.localStorage.setItem(
-      ODA_FILTERS_STORAGE_KEY,
-      JSON.stringify({ ...prev, query }),
-    );
-  } catch {
-    // ignore
-  }
-}
-type TemplateKey = "kare" | "L" | "U" | "T";
+type AuthorizedProductPlacedDetail = {
+  sugarId: number;
+  catalogId: string;
+  name: string;
+  thumbnailUrl: string | null;
+};
 
 type SceneExport = {
   products?: Array<{ id?: number; name?: string }>;
@@ -106,25 +56,6 @@ type SceneExport = {
     }
   >;
 };
-
-/** Room designer Api.fetchProduct expects numeric Sugar productModalId. */
-function resolveSugarProductId(product: CatalogProduct): number | null {
-  const raw = product.productModalId?.trim();
-  if (!raw) return null;
-  const id = Number(raw);
-  return Number.isFinite(id) ? id : null;
-}
-
-function resolveRrCompanyId(
-  product: CatalogProduct,
-  fallback: number | null,
-): number | undefined {
-  const fromRef = product.rapidRenderRefs?.find(
-    (ref) => ref.rrCompanyId != null,
-  )?.rrCompanyId;
-  const id = Number(fromRef ?? fallback);
-  return Number.isFinite(id) && id > 0 ? id : undefined;
-}
 
 function configSignature(selections: QuoteVariantSelection[]): string {
   return selections
@@ -152,7 +83,6 @@ function OdaPage() {
   const tCommon = useTranslations("common");
   const locale = useLocale();
   const language = isAppLocale(locale) ? locale : defaultLocale;
-  const bcp47 = toBcp47(language);
   const router = useRouter();
   const searchParams = useSearchParams();
   const offerId = searchParams.get("offerId")?.trim() || null;
@@ -167,17 +97,6 @@ function OdaPage() {
     designer: SugarRoomDesignerElement;
   } | null>(null);
   const catalogBySugarIdRef = useRef<Map<number, CatalogProduct>>(new Map());
-  const [mode, setMode] = useState<"2D" | "3D">("2D");
-  const [template, setTemplate] = useState<TemplateKey>("kare");
-  const [addingOpening, setAddingOpening] = useState<null | "kapi" | "pencere">(
-    null,
-  );
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [query, setQuery] = useState("");
-  const [filtersHydrated, setFiltersHydrated] = useState(false);
-  const [productPanelDismissed, setProductPanelDismissed] = useState(false);
-  const [productScrollEl, setProductScrollEl] = useState<HTMLDivElement | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
@@ -186,92 +105,6 @@ function OdaPage() {
   const [offerHeaderTitle, setOfferHeaderTitle] = useState<string | null>(null);
   const [offerBanner, setOfferBanner] = useState<string | null>(null);
   const [offerImporting, setOfferImporting] = useState(false);
-  const {
-    products,
-    loading: productsLoading,
-    loadingMore: productsLoadingMore,
-    hasMore: productsHasMore,
-    loadMore: loadMoreProducts,
-    facetFilters,
-    categoryFacet,
-    setCategoryFacet,
-    hasCompanyCategoryFacet,
-    hasTypeCategoryFacet,
-    hasActiveFacets,
-    toggleFacetOption,
-    clearFacets,
-    isOptionSelected,
-    rrCompanyId,
-  } = useCatalogProductSearch({
-    query,
-    channel: "CRM",
-    size: 40,
-    persistKey: ODA_FILTERS_STORAGE_KEY,
-  });
-
-  useEffect(() => {
-    setQuery(readOdaQuery());
-    setFiltersHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!filtersHydrated) return;
-    writeOdaQuery(query);
-  }, [filtersHydrated, query]);
-
-  const { sentinelRef: productSentinelRef } = useInfiniteScroll({
-    hasMore: productsHasMore,
-    loading: productsLoading || productsLoadingMore,
-    onLoadMore: loadMoreProducts,
-    root: productScrollEl,
-  });
-
-  const wantsProductPanel = hasActiveFacets || query.trim().length > 0;
-  const showProductPanel =
-    filtersHydrated && wantsProductPanel && !productPanelDismissed;
-
-  useEffect(() => {
-    if (query.trim()) setProductPanelDismissed(false);
-  }, [query]);
-
-  const onToggleFacetOption = useCallback(
-    (field: string, option: Parameters<typeof toggleFacetOption>[1]) => {
-      setProductPanelDismissed(false);
-      toggleFacetOption(field, option);
-    },
-    [toggleFacetOption],
-  );
-
-  const templateLabels = useMemo(
-    (): Record<TemplateKey, string> => ({
-      kare: t("templateSquare"),
-      L: t("templateL"),
-      U: t("templateU"),
-      T: t("templateT"),
-    }),
-    [t],
-  );
-
-  const productsByCollection = useMemo(() => {
-    const otherLabel = tCommon("other");
-    const map: Record<string, CatalogProduct[]> = {};
-    for (const p of products) {
-      const key = p.collectionName || otherLabel;
-      (map[key] ||= []).push(p);
-    }
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b, bcp47));
-  }, [products, tCommon, bcp47]);
-
-  const facetLabel = useCallback(
-    (field: string) => {
-      if (field === "catalogs") return t("facetCatalogs");
-      if (field === "typeCategories") return t("facetTypeCategories");
-      if (field === "categories") return t("facetCategories");
-      if (field === "collections") return t("facetCollections");
-      return field;
-    },
-    [t],
-  );
 
   const onDesignerReady = useCallback((el: SugarRoomDesignerElement) => {
     designerRef.current = el;
@@ -282,38 +115,20 @@ function OdaPage() {
     const el = designerEl;
     if (!el) return;
 
-    const onRenderMode = (e: Event) => {
-      const detail = (e as CustomEvent<string>).detail;
-      setMode(detail === "3d" ? "3D" : "2D");
-    };
-    const onHistory = (e: Event) => {
-      const detail = (e as CustomEvent<{ canUndo: boolean; canRedo: boolean }>)
-        .detail;
-      setCanUndo(!!detail?.canUndo);
-      setCanRedo(!!detail?.canRedo);
-    };
-    const onDrawer = (e: Event) => {
-      const state = (e as CustomEvent<string>).detail;
-      if (state === "door") setAddingOpening("kapi");
-      else if (state === "window") setAddingOpening("pencere");
-      else setAddingOpening(null);
+    const onPlaced = (event: Event) => {
+      const detail = (event as CustomEvent<AuthorizedProductPlacedDetail>).detail;
+      if (!detail?.sugarId || !detail.catalogId) return;
+      catalogBySugarIdRef.current.set(detail.sugarId, {
+        id: detail.catalogId,
+        name: detail.name,
+        productModalId: String(detail.sugarId),
+        thumbnailUrl: detail.thumbnailUrl,
+      });
     };
 
-    el.addEventListener("render-mode-changed", onRenderMode);
-    el.addEventListener("history-changed", onHistory);
-    el.addEventListener("drawer-state", onDrawer);
-
-    const unsubHistory = el.api?.store("history").subscribe((h) => {
-      const hist = h as { canUndo?: boolean; canRedo?: boolean };
-      setCanUndo(!!hist?.canUndo);
-      setCanRedo(!!hist?.canRedo);
-    });
-
+    el.addEventListener(AUTHORIZED_PRODUCT_PLACED_EVENT, onPlaced);
     return () => {
-      el.removeEventListener("render-mode-changed", onRenderMode);
-      el.removeEventListener("history-changed", onHistory);
-      el.removeEventListener("drawer-state", onDrawer);
-      unsubHistory?.();
+      el.removeEventListener(AUTHORIZED_PRODUCT_PLACED_EVENT, onPlaced);
     };
   }, [designerEl]);
 
@@ -381,70 +196,6 @@ function OdaPage() {
       cancelled = true;
     };
   }, [designerEl, offerId, router, t]);
-
-  const withDesigner = (fn: (el: SugarRoomDesignerElement) => void) => {
-    const el = designerRef.current;
-    if (el) fn(el);
-  };
-
-  const setViewMode = (next: "2D" | "3D") => {
-    setMode(next);
-    withDesigner((el) => el.setRenderMode(next === "2D" ? "2d" : "3d"));
-  };
-
-  const applyTemplate = (t: TemplateKey) => {
-    setTemplate(t);
-    withDesigner((el) => el.applyRoomShape(t));
-  };
-
-  const toggleOpening = (kind: "kapi" | "pencere") => {
-    const next = addingOpening === kind ? null : kind;
-    setAddingOpening(next);
-    withDesigner((el) => {
-      if (next === "kapi") el.setTool("door");
-      else if (next === "pencere") el.setTool("window");
-      else el.setTool("select");
-    });
-  };
-
-  const addProduct = (product: CatalogProduct) => {
-    const sugarId = resolveSugarProductId(product);
-    if (sugarId == null) {
-      console.warn("[oda] product has no productModalId", product.id, product.name);
-      return;
-    }
-    catalogBySugarIdRef.current.set(sugarId, product);
-    const companyId = resolveRrCompanyId(product, rrCompanyId);
-    withDesigner((el) => {
-      void el.addProduct({ productId: sugarId, companyId }).catch((err) => {
-        console.error("[oda] addProduct failed", err);
-      });
-    });
-  };
-
-  const onProductDragStart = (
-    event: React.DragEvent,
-    product: CatalogProduct,
-  ) => {
-    const sugarId = resolveSugarProductId(product);
-    if (sugarId == null) {
-      event.preventDefault();
-      return;
-    }
-    catalogBySugarIdRef.current.set(sugarId, product);
-    const payload = {
-      productId: sugarId,
-      companyId: resolveRrCompanyId(product, rrCompanyId),
-    };
-    event.dataTransfer.setData(SUGAR_PRODUCT_MIME, JSON.stringify(payload));
-    event.dataTransfer.setData("text/plain", String(sugarId));
-    event.dataTransfer.effectAllowed = "copy";
-    withDesigner((el) => el.beginProductDrag(payload));
-  };
-
-  const onProductDragEnd = () => {
-    withDesigner((el) => el.cancelProductDrag());
-  };
 
   const buildQuoteFromScene = useCallback(async (): Promise<QuoteDraft | null> => {
     const el = designerRef.current;
@@ -627,330 +378,17 @@ function OdaPage() {
         </div>
       )}
 
-      <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 grid grid-cols-12 gap-4 overflow-y-auto lg:overflow-hidden">
-        {/*<aside className="col-span-12 lg:col-span-2 space-y-3 overflow-y-auto min-h-0 lg:h-full">
-          <div className="bg-white rounded-2xl p-2 shadow-sm">
-            <div className="relative flex rounded-xl bg-[color:var(--brand-bg)] p-1">
-              <div
-                className={`absolute top-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-lg bg-[color:var(--brand-primary)] transition-all duration-300 ease-out ${
-                  mode === "2D" ? "left-1" : "left-[calc(50%+2px)]"
-                }`}
-              />
-              <button
-                onClick={() => setViewMode("2D")}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold transition-colors duration-300 ${
-                  mode === "2D"
-                    ? "text-white"
-                    : "text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)]"
-                }`}
-              >
-                <Layers className="size-4" />
-                {t("view2d")}
-              </button>
-              <button
-                onClick={() => setViewMode("3D")}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold transition-colors duration-300 ${
-                  mode === "3D"
-                    ? "text-white"
-                    : "text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)]"
-                }`}
-              >
-                <Box className="size-4" />
-                {t("view3d")}
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-2 grid grid-cols-2 gap-1 shadow-sm">
-            <button
-              disabled={!canUndo}
-              onClick={() => withDesigner((el) => el.undo())}
-              className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--brand-primary)] ${
-                canUndo ? "hover:bg-black/5" : "opacity-30"
-              }`}
-              title={t("undoTitle")}
-            >
-              <Undo2 className="size-4" />
-              <span className="text-[10px] font-semibold">{t("undo")}</span>
-            </button>
-            <button
-              disabled={!canRedo}
-              onClick={() => withDesigner((el) => el.redo())}
-              className={`h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[color:var(--brand-primary)] ${
-                canRedo ? "hover:bg-black/5" : "opacity-30"
-              }`}
-              title={t("redoTitle")}
-            >
-              <Redo2 className="size-4" />
-              <span className="text-[10px] font-semibold">{t("redo")}</span>
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl p-2 grid grid-cols-2 gap-1 shadow-sm">
-            <button
-              onClick={() => withDesigner((el) => void el.newScene())}
-              className="h-16 rounded-xl flex flex-col items-center justify-center gap-1 text-[color:var(--brand-primary)] hover:bg-black/5"
-              title={t("resetTitle")}
-            >
-              <RotateCcw className="size-4" />
-              <span className="text-[10px] font-bold">{t("reset")}</span>
-            </button>
-            <button
-              onClick={() =>
-                withDesigner((el) => {
-                  void el.newScene().then(() => el.setTool("draw"));
-                })
-              }
-              className="h-16 rounded-xl flex flex-col items-center justify-center gap-1 text-rose-600 hover:bg-rose-50"
-              title={t("drawFromScratchTitle")}
-            >
-              <Pencil className="size-4" />
-              <span className="text-[10px] font-bold">{t("drawFromScratch")}</span>
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2">
-              {t("templates")}
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {(Object.keys(templateLabels) as TemplateKey[]).map((key) => (
-                <button
-                  key={key}
-                  onClick={() => applyTemplate(key)}
-                  className={`aspect-square rounded-xl border-2 transition flex flex-col items-center justify-center gap-1 p-2 ${
-                    template === key
-                      ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/5"
-                      : "border-black/5 hover:border-black/20"
-                  }`}
-                >
-                  <TemplateIcon kind={key} active={template === key} />
-                  <span className="text-[10px] font-semibold text-[color:var(--brand-primary)]">
-                    {templateLabels[key]}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-3 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider mb-2">
-              {t("openings")}
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => toggleOpening("kapi")}
-                className={`h-16 rounded-xl border-2 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
-                  addingOpening === "kapi"
-                    ? "border-[color:var(--brand-accent)] bg-[color:var(--brand-accent)]/10 text-[color:var(--brand-primary)]"
-                    : "border-black/5 hover:border-black/20 text-[color:var(--brand-primary)]"
-                }`}
-              >
-                <DoorOpen className="size-4" /> {t("door")}
-              </button>
-              <button
-                onClick={() => toggleOpening("pencere")}
-                className={`h-16 rounded-xl border-2 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
-                  addingOpening === "pencere"
-                    ? "border-[color:var(--brand-accent)] bg-[color:var(--brand-accent)]/10 text-[color:var(--brand-primary)]"
-                    : "border-black/5 hover:border-black/20 text-[color:var(--brand-primary)]"
-                }`}
-              >
-                <AppWindow className="size-4" /> {t("window")}
-              </button>
-            </div>
-            {addingOpening && (
-              <p className="mt-2 text-[10px] text-[color:var(--brand-primary)]/60">
-                {t("clickWallHint")}
-              </p>
-            )}
-          </div>
-        </aside>*/}
-
-        <section className="col-span-12 lg:col-span-9 min-h-[520px] lg:min-h-0 lg:h-full relative">
-          <div className="bg-white rounded-3xl shadow-sm overflow-hidden relative h-full min-h-[520px] lg:min-h-0">
+      <main className="flex-1 min-h-0 px-4 lg:px-8 py-4 lg:py-6 overflow-hidden">
+        <section className="h-full min-h-[520px] relative">
+          <div className="bg-white rounded-3xl shadow-sm overflow-hidden relative h-full min-h-[520px]">
             <RoomDesignerHost
               className="absolute inset-0 h-full w-full"
-              ui="none"
+              authorizedProductMenu
               clearLastSceneOnMount={Boolean(offerId)}
               onReady={onDesignerReady}
             />
-            {showProductPanel && (
-              <div className="absolute top-3 bottom-3 right-3 z-30 w-[min(20rem,calc(100%-1.5rem))] pointer-events-none">
-                <div className="pointer-events-auto bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg border border-black/5 flex flex-col min-h-0 h-full">
-                  <h3 className="mb-2 flex shrink-0 items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[color:var(--brand-primary)]/60">
-                    <span className="min-w-0 flex-1 truncate">{t("productsTitle")}</span>
-                    <span className="normal-case font-medium text-[color:var(--brand-primary)]/40">
-                      {products.length}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setProductPanelDismissed(true)}
-                      className="ml-auto size-8 rounded-lg inline-flex items-center justify-center text-[color:var(--brand-primary)]/50 hover:bg-black/5 hover:text-[color:var(--brand-primary)]"
-                      aria-label={t("hideProducts")}
-                      title={t("hideProducts")}
-                    >
-                      <ChevronRight className="size-4" />
-                    </button>
-                  </h3>
-                  <div
-                    ref={setProductScrollEl}
-                    className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4"
-                  >
-                    {productsLoading && products.length === 0 && (
-                      <p className="text-xs text-[color:var(--brand-primary)]/50 text-center py-6">
-                        {tCommon("loading")}
-                      </p>
-                    )}
-                    {!productsLoading && productsByCollection.length === 0 && (
-                      <div className="text-sm text-[color:var(--brand-primary)]/40 text-center py-6">
-                        {tCommon("noResults")}
-                      </div>
-                    )}
-                    {productsByCollection.map(([collection, items]) => (
-                      <div key={collection}>
-                        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-1 mb-1.5 flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[color:var(--brand-primary)] uppercase tracking-wider">
-                            {collection}
-                          </span>
-                          <span className="text-[10px] text-[color:var(--brand-primary)]/40">
-                            {items.length}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {items.map((p) => {
-                            const sugarId = resolveSugarProductId(p);
-                            const canPlace = sugarId != null;
-                            return (
-                            <button
-                              type="button"
-                              key={p.id}
-                              title={
-                                canPlace
-                                  ? p.name
-                                  : t("noModelIdTitle", { name: p.name })
-                              }
-                              draggable={canPlace}
-                              onDragStart={(e) => onProductDragStart(e, p)}
-                              onDragEnd={onProductDragEnd}
-                              onClick={() => addProduct(p)}
-                              disabled={!canPlace}
-                              className="group rounded-xl border border-black/5 hover:border-[color:var(--brand-primary)]/40 hover:shadow-md transition p-2 text-left bg-white cursor-grab active:cursor-grabbing disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
-                            >
-                              <div className="aspect-square rounded-lg overflow-hidden bg-white mb-1.5 relative">
-                                {p.thumbnailUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={p.thumbnailUrl}
-                                    alt={p.name}
-                                    loading="lazy"
-                                    className="absolute inset-0 h-full w-full object-contain p-1 group-hover:scale-[1.04] transition duration-300"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-[color:var(--brand-primary)]/20 text-xs">
-                                    {tCommon("emDash")}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="text-[11px] font-semibold text-[color:var(--brand-primary)] leading-tight line-clamp-2">
-                                {p.name}
-                              </div>
-                              <div className="mt-1 flex items-center justify-end">
-                                <Plus className="size-3 text-[color:var(--brand-primary)]/40 group-hover:text-[color:var(--brand-primary)] shrink-0" />
-                              </div>
-                            </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                    <InfiniteScrollSentinel
-                      sentinelRef={productSentinelRef}
-                      hasMore={productsHasMore}
-                      loadingMore={productsLoadingMore}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </section>
-
-        <aside className="col-span-12 lg:col-span-3 flex flex-col min-h-0 lg:h-full">
-          <div className="bg-white rounded-2xl p-3 shadow-sm flex flex-col min-h-0 flex-1">
-            <div className="relative mb-3 shrink-0">
-              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--brand-primary)]/40" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("searchProductsPlaceholder")}
-                className="w-full h-10 pl-9 pr-3 rounded-xl bg-black/5 text-sm placeholder:text-[color:var(--brand-primary)]/40 text-[color:var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-primary)]/20"
-              />
-            </div>
-            <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
-              <h3 className="text-[11px] font-bold text-[color:var(--brand-primary)]/60 uppercase tracking-wider">
-                {t("filters")}
-              </h3>
-              {hasActiveFacets && (
-                <button
-                  type="button"
-                  onClick={clearFacets}
-                  className="h-7 px-2 rounded-lg text-[10px] font-semibold text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
-                >
-                  {t("clearFacets")}
-                </button>
-              )}
-            </div>
-            {hasCompanyCategoryFacet && hasTypeCategoryFacet && (
-              <div className="mb-2 shrink-0 grid grid-cols-2 gap-1 rounded-xl bg-black/5 p-1">
-                <button
-                  type="button"
-                  onClick={() => setCategoryFacet("categories")}
-                  className={`h-8 rounded-lg text-[10px] font-bold uppercase tracking-wide transition ${
-                    categoryFacet === "categories"
-                      ? "bg-white text-[color:var(--brand-primary)] shadow-sm"
-                      : "text-[color:var(--brand-primary)]/50 hover:text-[color:var(--brand-primary)]"
-                  }`}
-                >
-                  {t("facetCategories")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCategoryFacet("typeCategories")}
-                  className={`h-8 rounded-lg text-[10px] font-bold uppercase tracking-wide transition ${
-                    categoryFacet === "typeCategories"
-                      ? "bg-white text-[color:var(--brand-primary)] shadow-sm"
-                      : "text-[color:var(--brand-primary)]/50 hover:text-[color:var(--brand-primary)]"
-                  }`}
-                >
-                  {t("facetTypeCategories")}
-                </button>
-              </div>
-            )}
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-              <ProductSearchFilterList
-                facetFilters={facetFilters}
-                facetLabel={facetLabel}
-                isOptionSelected={isOptionSelected}
-                onToggleOption={onToggleFacetOption}
-              />
-            </div>
-            {!wantsProductPanel && (
-              <p className="mt-2 shrink-0 text-[10px] text-[color:var(--brand-primary)]/50">
-                {t("chooseFilterHint")}
-              </p>
-            )}
-            {wantsProductPanel && productPanelDismissed && (
-              <button
-                type="button"
-                onClick={() => setProductPanelDismissed(false)}
-                className="mt-2 shrink-0 h-9 rounded-xl bg-[color:var(--brand-primary)] text-white text-[11px] font-bold"
-              >
-                {t("showProducts")}
-              </button>
-            )}
-          </div>
-        </aside>
       </main>
 
       <QuoteOfferSheet
@@ -960,20 +398,6 @@ function OdaPage() {
         onDraftChange={setQuoteDraft}
       />
     </div>
-  );
-}
-
-function TemplateIcon({ kind, active }: { kind: TemplateKey; active: boolean }) {
-  const stroke = active ? "var(--brand-primary)" : "#9ca3af";
-  const fill = active ? "rgba(30,58,138,0.08)" : "transparent";
-  const common = { fill, stroke, strokeWidth: 2 };
-  return (
-    <svg viewBox="0 0 40 40" className="w-8 h-8">
-      {kind === "kare" && <rect x="6" y="6" width="28" height="28" rx="2" {...common} />}
-      {kind === "L" && <path d="M6 6 H34 V22 H22 V34 H6 Z" {...common} />}
-      {kind === "U" && <path d="M6 6 H34 V34 H26 V18 H14 V34 H6 Z" {...common} />}
-      {kind === "T" && <path d="M6 6 H34 V18 H26 V34 H14 V18 H6 Z" {...common} />}
-    </svg>
   );
 }
 

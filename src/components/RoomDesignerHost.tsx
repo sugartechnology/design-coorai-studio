@@ -55,6 +55,8 @@ type RoomDesignerHostProps = {
   welcomeMenu?: boolean;
   /** builtin = full chrome; none = canvas only (default for studio host). */
   ui?: "builtin" | "none";
+  /** Enables the authorized CRM product pane inside sugar-room-designer. */
+  authorizedProductMenu?: boolean;
   /**
    * Clear room-designer last-scene localStorage before mounting so controller
    * auto-restore cannot overwrite an offer restore.
@@ -86,6 +88,7 @@ export const RoomDesignerHost = forwardRef<
   {
     className,
     welcomeMenu = true,
+    authorizedProductMenu = false,
     clearLastSceneOnMount = false,
     onReady,
   },
@@ -193,6 +196,9 @@ export const RoomDesignerHost = forwardRef<
             elRef.current = node;
           }}
           welcome-menu={welcomeMenu ? "true" : "false"}
+          {...(authorizedProductMenu
+            ? { "authorized-product-menu": "true" }
+            : {})}
           style={{ display: "block", width: "100%", height: "100%" }}
         />
       )}

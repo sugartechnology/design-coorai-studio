@@ -21,9 +21,14 @@ export async function plannerUpstream(
   });
 }
 
+const BODYLESS_STATUSES = new Set([204, 205, 304]);
+
 export async function proxyPlannerResponse(
   upstream: Response,
 ): Promise<NextResponse> {
+  if (BODYLESS_STATUSES.has(upstream.status)) {
+    return new NextResponse(null, { status: upstream.status });
+  }
   const data = await upstream.json().catch(() => ({}));
   return NextResponse.json(data, { status: upstream.status });
 }

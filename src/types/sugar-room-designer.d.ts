@@ -7,6 +7,7 @@ declare module "react" {
         HTMLAttributes<HTMLElement> & {
           "app-identifier"?: string;
           "welcome-menu"?: string;
+          "authorized-product-menu"?: string;
           state?: string;
           ui?: "builtin" | "none" | string;
         },
