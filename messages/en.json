@@ -358,9 +358,9 @@
     "qrHint": "Have the customer scan the QR code, pick an image, and send it.",
     "qrAlt": "QR code",
     "qrManualUpload": "Upload manually from this device",
-    "pickerHelpAll": "Search by product name. Optionally narrow by category or collection; click to add to the scene.",
-    "pickerHelpCategories": "Search by category name, pick a category, then click products to add to the scene.",
-    "pickerHelpCollections": "Search by collection name, pick a collection, then click products to add to the scene.",
+    "pickerHelpAll": "Search by product name. Optionally narrow by category or collection; select multiple products, then transfer them.",
+    "pickerHelpCategories": "Search by category name, pick a category, then select products and transfer them.",
+    "pickerHelpCollections": "Search by collection name, pick a collection, then select products and transfer them.",
     "searchProductPlaceholder": "Search products…",
     "searchCategoryPlaceholder": "Search categories…",
     "searchCollectionPlaceholder": "Search collections…",
@@ -368,8 +368,10 @@
     "filterCollection": "COLLECTION",
     "productsLoading": "Loading products…",
     "noMatchingProducts": "No matching products.",
-    "pickerTip": "Tip: Click a product to add it to the scene, or drag and drop.",
-    "pickerCardTitle": "Click to add to scene"
+    "pickerTip": "Tip: Click products to select them, then press Transfer when ready. You can also drag and drop.",
+    "pickerCardTitle": "Click to select or deselect",
+    "pickerTransfer": "Transfer",
+    "pickerSelectedCount": "{count} products selected"
   },
   "aiUpload": {
     "title": "UPLOAD ROOM IMAGE",

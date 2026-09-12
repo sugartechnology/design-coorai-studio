@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import {
   ArrowUp,
+  Check,
   ChevronDown,
   ChevronUp,
   Eye,
@@ -306,13 +307,17 @@ function AiStudioPage() {
     [],
   );
 
-  const addProductToSidebar = useCallback((product: CatalogProduct) => {
+  const addProductsToSidebar = useCallback((products: CatalogProduct[]) => {
+    if (products.length === 0) return;
+    const now = Date.now();
     setSelected((prev) => [
       ...prev,
-      { uid: `${product.id}-${Date.now()}`, product },
+      ...products.map((product, index) => ({
+        uid: `${product.id}-${now}-${index}`,
+        product,
+      })),
     ]);
     setOpenSections((s) => ({ ...s, products: true }));
-    setMobileOpen(false);
   }, []);
 
   const removeSelected = useCallback((uid: string) => {
@@ -1585,8 +1590,8 @@ function AiStudioPage() {
           mode={productTab}
           initialCategoryId={pickerCategoryId}
           initialCollectionId={pickerCollectionId}
-          onSelectProduct={(product) => {
-            addProductToSidebar(product);
+          onConfirmProducts={(products) => {
+            addProductsToSidebar(products);
             setPickerOpen(false);
             setPickerCategoryId(null);
             setPickerCollectionId(null);
@@ -1728,13 +1733,13 @@ function ProductThumb({ product, size = 80 }: { product: CatalogProduct; size?: 
 
 function ProductPicker({
   onClose,
-  onSelectProduct,
+  onConfirmProducts,
   mode = "all",
   initialCategoryId = null,
   initialCollectionId = null,
 }: {
   onClose: () => void;
-  onSelectProduct: (product: CatalogProduct) => void;
+  onConfirmProducts: (products: CatalogProduct[]) => void;
   mode?: "all" | "collections" | "categories";
   initialCategoryId?: string | null;
   initialCollectionId?: string | null;
@@ -1745,6 +1750,7 @@ function ProductPicker({
   const [q, setQ] = useState("");
   const [col, setCol] = useState<string | null>(initialCollectionId);
   const [cat, setCat] = useState<string | null>(initialCategoryId);
+  const [pending, setPending] = useState<CatalogProduct[]>([]);
   const [pickerScrollEl, setPickerScrollEl] = useState<HTMLDivElement | null>(null);
   const { collections, categories, loading: filtersLoading, error: filtersError } = useCatalogFilters();
 
@@ -1789,6 +1795,23 @@ function ProductPicker({
     setCol(initialCollectionId);
   }, [initialCollectionId]);
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const togglePending = useCallback((product: CatalogProduct) => {
+    setPending((prev) => {
+      const exists = prev.some((item) => item.id === product.id);
+      return exists ? prev.filter((item) => item.id !== product.id) : [...prev, product];
+    });
+  }, []);
+
+  const pendingIds = useMemo(() => new Set(pending.map((item) => item.id)), [pending]);
+
   const searchPlaceholder =
     mode === "categories"
       ? t("searchCategoryPlaceholder")
@@ -1810,21 +1833,37 @@ function ProductPicker({
       : null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-6 overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6" onClick={onClose}>
       <div
-        className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden my-8"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ai-product-picker-title"
+        className="w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-5 border-b border-black/5 flex items-start justify-between gap-4">
-          <p className="text-sm text-[color:var(--brand-primary)]/80 max-w-2xl">
-            {helpText}
-          </p>
-          <button onClick={onClose} className="size-9 rounded-full border border-black/10 text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)] inline-flex items-center justify-center">
+        <div className="px-6 py-5 border-b border-black/5 flex items-start justify-between gap-4 shrink-0">
+          <div className="min-w-0">
+            <h2
+              id="ai-product-picker-title"
+              className="text-sm font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]"
+            >
+              {t("selectProduct")}
+            </h2>
+            <p className="mt-1 text-sm text-[color:var(--brand-primary)]/80 max-w-2xl">
+              {helpText}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="size-9 rounded-full border border-black/10 text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)] inline-flex items-center justify-center"
+            aria-label={tCommon("close")}
+          >
             <X className="size-4" />
           </button>
         </div>
 
-        <div className="px-6 pt-5">
+        <div className="px-6 pt-5 shrink-0">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[color:var(--brand-primary)]/40" />
             <input
@@ -1836,7 +1875,7 @@ function ProductPicker({
           </div>
         </div>
 
-        <div className="px-6 pt-5 space-y-3 text-sm">
+        <div className="px-6 pt-5 space-y-3 text-sm shrink-0 max-h-[28vh] overflow-y-auto">
           {(mode === "all" || mode === "categories") && (
             <FilterRow
               label={t("filterCategory")}
@@ -1859,7 +1898,7 @@ function ProductPicker({
 
         <div
           ref={setPickerScrollEl}
-          className="px-6 py-6 max-h-[60vh] overflow-y-auto"
+          className="px-6 py-6 min-h-0 flex-1 overflow-y-auto"
         >
           {displayError && (
             <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -1882,7 +1921,8 @@ function ProductPicker({
                   <PickerCard
                     key={p.id}
                     product={p}
-                    onSelect={() => onSelectProduct(p)}
+                    selected={pendingIds.has(p.id)}
+                    onToggle={() => togglePending(p)}
                   />
                 ))}
               </div>
@@ -1896,6 +1936,29 @@ function ProductPicker({
           <p className="mt-6 text-xs text-[color:var(--brand-primary)]/50 text-center">
             {t("pickerTip")}
           </p>
+        </div>
+
+        <div className="px-6 py-4 border-t border-black/5 bg-white shrink-0 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 px-4 rounded-full border border-black/10 bg-white text-sm font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
+          >
+            {tCommon("cancel")}
+          </button>
+          <div className="flex items-center justify-between sm:justify-end gap-3">
+            <span className="text-xs font-semibold text-[color:var(--brand-primary)]/60">
+              {t("pickerSelectedCount", { count: pending.length })}
+            </span>
+            <button
+              type="button"
+              disabled={pending.length === 0}
+              onClick={() => onConfirmProducts(pending)}
+              className="h-11 px-5 rounded-full bg-[color:var(--brand-primary)] text-white text-sm font-bold inline-flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t("pickerTransfer")}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1933,10 +1996,12 @@ function FilterRow({
 
 function PickerCard({
   product,
-  onSelect,
+  selected,
+  onToggle,
 }: {
   product: CatalogProduct;
-  onSelect: () => void;
+  selected: boolean;
+  onToggle: () => void;
 }) {
   const t = useTranslations("aiStudio");
   const tCommon = useTranslations("common");
@@ -1946,12 +2011,13 @@ function PickerCard({
     <button
       type="button"
       draggable
+      aria-pressed={selected}
       onClick={() => {
         if (draggedRef.current) {
           draggedRef.current = false;
           return;
         }
-        onSelect();
+        onToggle();
       }}
       onDragStart={(e) => {
         draggedRef.current = true;
@@ -1959,12 +2025,15 @@ function PickerCard({
         e.dataTransfer.effectAllowed = "copy";
       }}
       onDragEnd={() => {
-        // Keep flag until click handler runs (or clear shortly if no click).
         window.setTimeout(() => {
           draggedRef.current = false;
         }, 0);
       }}
-      className="group rounded-xl border border-black/5 bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer text-left w-full"
+      className={`group rounded-xl border bg-white p-3 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer text-left w-full ${
+        selected
+          ? "border-[color:var(--brand-primary)] ring-2 ring-[color:var(--brand-primary)]/20"
+          : "border-black/5"
+      }`}
       title={t("pickerCardTitle")}
     >
       <div className="aspect-square rounded-lg bg-white overflow-hidden relative flex items-center justify-center text-[color:var(--brand-primary)]/30 text-xs font-semibold">
@@ -1974,6 +2043,16 @@ function PickerCard({
         ) : (
           tCommon("noImage")
         )}
+        <span
+          className={`absolute top-2 right-2 size-7 rounded-full border inline-flex items-center justify-center ${
+            selected
+              ? "bg-[color:var(--brand-primary)] border-[color:var(--brand-primary)] text-white"
+              : "bg-white/90 border-black/10 text-[color:var(--brand-primary)]/40"
+          }`}
+          aria-hidden
+        >
+          {selected ? <Check className="size-3.5" /> : null}
+        </span>
       </div>
       <div className="mt-3 text-center text-xs font-bold text-[color:var(--brand-primary)] line-clamp-2 min-h-[2.5rem]">
         {product.name}

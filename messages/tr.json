@@ -358,9 +358,9 @@
     "qrHint": "Müşteri telefonuyla QR kodu okutsun, görseli seçip göndersin.",
     "qrAlt": "QR kod",
     "qrManualUpload": "Bu cihazdan manuel yükle",
-    "pickerHelpAll": "Ürün adıyla arayın. İsterseniz kategori veya koleksiyon ile daraltın; tıklayarak sahneye ekleyin.",
-    "pickerHelpCategories": "Kategori adına göre arayın, bir kategori seçin; ürünlere tıklayarak sahneye ekleyin.",
-    "pickerHelpCollections": "Koleksiyon adına göre arayın, bir koleksiyon seçin; ürünlere tıklayarak sahneye ekleyin.",
+    "pickerHelpAll": "Ürün adıyla arayın. İsterseniz kategori veya koleksiyon ile daraltın; birden fazla ürün seçip Aktar ile ekleyin.",
+    "pickerHelpCategories": "Kategori adına göre arayın, bir kategori seçin; ürünleri işaretleyip Aktar ile ekleyin.",
+    "pickerHelpCollections": "Koleksiyon adına göre arayın, bir koleksiyon seçin; ürünleri işaretleyip Aktar ile ekleyin.",
     "searchProductPlaceholder": "Ürün ara…",
     "searchCategoryPlaceholder": "Kategori ara…",
     "searchCollectionPlaceholder": "Koleksiyon ara…",
@@ -368,8 +368,10 @@
     "filterCollection": "KOLEKSİYON",
     "productsLoading": "Ürünler yükleniyor…",
     "noMatchingProducts": "Eşleşen ürün bulunamadı.",
-    "pickerTip": "İpucu: Ürüne tıklayarak sahneye ekleyin; dilerseniz sürükleyip bırakabilirsiniz.",
-    "pickerCardTitle": "Sahneye eklemek için tıklayın"
+    "pickerTip": "İpucu: Ürünlere tıklayarak seçin, işiniz bitince Aktar’a basın. Dilerseniz sürükleyip bırakabilirsiniz.",
+    "pickerCardTitle": "Seçmek veya kaldırmak için tıklayın",
+    "pickerTransfer": "Aktar",
+    "pickerSelectedCount": "{count} ürün seçildi"
   },
   "aiUpload": {
     "title": "ODA GÖRSELİ YÜKLE",

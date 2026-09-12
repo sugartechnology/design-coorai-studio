@@ -56,7 +56,7 @@ export async function generateRoomDesign(
   router?: RouterLike,
 ): Promise<AiImageGeneration> {
   return portalCrmFetch<AiImageGeneration>(
-    `ai-studio/room-design/${encodeURIComponent(sessionId)}/generate`,
+    `ai-studio/room-design/${encodeURIComponent(sessionId)}/generate-v2`,
     { method: "POST", body, router },
   );
 }
