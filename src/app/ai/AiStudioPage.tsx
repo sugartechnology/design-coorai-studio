@@ -93,9 +93,64 @@ type PlacedItem = {
 };
 
 type SelectedProduct = {
-  uid: string;
   product: CatalogProduct;
+  quantity: number;
 };
+
+function nextPlacedOffset(existing: PlacedItem[]): { x: number; y: number; scale: number } {
+  const last = existing[existing.length - 1];
+  if (!last) return { x: 50, y: 50, scale: 1 };
+  return {
+    x: Math.min(92, last.x + 6),
+    y: Math.min(92, last.y + 6),
+    scale: last.scale,
+  };
+}
+
+function createPlacedItem(
+  product: CatalogProduct,
+  x: number,
+  y: number,
+  scale = 1,
+): PlacedItem {
+  return {
+    uid: `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    product,
+    x,
+    y,
+    scale,
+  };
+}
+
+function appendPlacedCopies(
+  prev: PlacedItem[],
+  product: CatalogProduct,
+  count: number,
+): PlacedItem[] {
+  if (count <= 0) return prev;
+  const next = [...prev];
+  for (let i = 0; i < count; i += 1) {
+    const ofProduct = next.filter((item) => item.product.id === product.id);
+    const pos = nextPlacedOffset(ofProduct);
+    next.push(createPlacedItem(product, pos.x, pos.y, pos.scale));
+  }
+  return next;
+}
+
+function removeLastPlacedOfProduct(
+  prev: PlacedItem[],
+  productId: string,
+  count: number,
+): { next: PlacedItem[]; removedUids: string[] } {
+  if (count <= 0) return { next: prev, removedUids: [] };
+  const ofProduct = prev.filter((item) => item.product.id === productId);
+  const removedUids = ofProduct.slice(-count).map((item) => item.uid);
+  const removed = new Set(removedUids);
+  return {
+    next: prev.filter((item) => !removed.has(item.uid)),
+    removedUids,
+  };
+}
 
 const PRODUCT_MIME = "application/x-product";
 
@@ -286,6 +341,11 @@ function AiStudioPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
   const qrUploadInputRef = useRef<HTMLInputElement>(null);
+  const renderEpochRef = useRef(0);
+  const selectedQuantity = useMemo(
+    () => selected.reduce((sum, item) => sum + item.quantity, 0),
+    [selected],
+  );
 
   const mobileUploadUrl =
     typeof window !== "undefined"
@@ -309,35 +369,99 @@ function AiStudioPage() {
 
   const addProductsToSidebar = useCallback((products: CatalogProduct[]) => {
     if (products.length === 0) return;
-    const now = Date.now();
-    setSelected((prev) => [
-      ...prev,
-      ...products.map((product, index) => ({
-        uid: `${product.id}-${now}-${index}`,
-        product,
-      })),
-    ]);
+    const incremented: CatalogProduct[] = [];
+    setSelected((prev) => {
+      const next = [...prev];
+      for (const product of products) {
+        const idx = next.findIndex((item) => item.product.id === product.id);
+        if (idx >= 0) {
+          next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+          incremented.push(product);
+        } else {
+          next.push({ product, quantity: 1 });
+        }
+      }
+      return next;
+    });
+    if (mode === "manual" && incremented.length > 0) {
+      setPlaced((prev) => {
+        let next = prev;
+        for (const product of incremented) {
+          next = appendPlacedCopies(next, product, 1);
+        }
+        return next;
+      });
+    }
     setOpenSections((s) => ({ ...s, products: true }));
+  }, [mode]);
+
+  const removeSelected = useCallback((productId: string) => {
+    setSelected((prev) => prev.filter((item) => item.product.id !== productId));
+    setPlaced((prev) => {
+      const removed = prev.filter((item) => item.product.id === productId).map((item) => item.uid);
+      setSelectedUid((cur) => (cur && removed.includes(cur) ? null : cur));
+      return prev.filter((item) => item.product.id !== productId);
+    });
   }, []);
 
-  const removeSelected = useCallback((uid: string) => {
-    setSelected((prev) => prev.filter((p) => p.uid !== uid));
-    setPlaced((prev) => prev.filter((p) => p.uid !== uid));
+  const updateProductQuantity = useCallback((productId: string, delta: number) => {
+    if (delta === 0) return;
+    let product: CatalogProduct | undefined;
+    let nextQty = 0;
+    setSelected((prev) => {
+      const item = prev.find((row) => row.product.id === productId);
+      if (!item) return prev;
+      product = item.product;
+      nextQty = item.quantity + delta;
+      if (nextQty <= 0) return prev.filter((row) => row.product.id !== productId);
+      return prev.map((row) =>
+        row.product.id === productId ? { ...row, quantity: nextQty } : row,
+      );
+    });
+    if (!product) return;
+    if (mode !== "manual") return;
+    if (delta > 0) {
+      setPlaced((prev) => appendPlacedCopies(prev, product!, delta));
+      return;
+    }
+    const removeCount = nextQty <= 0 ? Number.POSITIVE_INFINITY : -delta;
+    setPlaced((prev) => {
+      const count = Number.isFinite(removeCount)
+        ? removeCount
+        : prev.filter((item) => item.product.id === productId).length;
+      const { next, removedUids } = removeLastPlacedOfProduct(prev, productId, count);
+      setSelectedUid((cur) => (cur && removedUids.includes(cur) ? null : cur));
+      return next;
+    });
+  }, [mode]);
+
+  const removePlacedInstance = useCallback((uid: string) => {
+    setPlaced((prev) => {
+      const item = prev.find((row) => row.uid === uid);
+      if (!item) return prev;
+      const productId = item.product.id;
+      setSelected((selectedPrev) => {
+        const row = selectedPrev.find((entry) => entry.product.id === productId);
+        if (!row) return selectedPrev;
+        if (row.quantity <= 1) {
+          return selectedPrev.filter((entry) => entry.product.id !== productId);
+        }
+        return selectedPrev.map((entry) =>
+          entry.product.id === productId
+            ? { ...entry, quantity: entry.quantity - 1 }
+            : entry,
+        );
+      });
+      return prev.filter((row) => row.uid !== uid);
+    });
     setSelectedUid((cur) => (cur === uid ? null : cur));
   }, []);
 
   const buildQuoteFromSelected = useCallback(async (): Promise<QuoteDraft | null> => {
     if (selected.length === 0) return null;
 
-    const qtyById = new Map<string, { product: CatalogProduct; quantity: number }>();
-    for (const item of selected) {
-      const existing = qtyById.get(item.product.id);
-      if (existing) existing.quantity += 1;
-      else qtyById.set(item.product.id, { product: item.product, quantity: 1 });
-    }
-
     const lines: QuoteLineItem[] = await Promise.all(
-      [...qtyById.values()].map(async ({ product, quantity }) => {
+      selected.map(async ({ product, quantity }) => {
         try {
           const detail = await getProductById(product.id, router);
           return lineFromCatalogProduct(detail, {
@@ -417,18 +541,26 @@ function AiStudioPage() {
 
   const placeProductOnCanvas = useCallback(
     (product: CatalogProduct, x: number, y: number, uid?: string) => {
-      const itemUid = uid ?? `${product.id}-${Date.now()}`;
       setSelected((prev) =>
-        prev.some((p) => p.uid === itemUid)
+        prev.some((item) => item.product.id === product.id)
           ? prev
-          : [...prev, { uid: itemUid, product }],
+          : [...prev, { product, quantity: 1 }],
       );
       setPlaced((prev) => {
-        const existing = prev.find((p) => p.uid === itemUid);
-        if (existing) {
-          return prev.map((p) => (p.uid === itemUid ? { ...p, x, y } : p));
+        if (uid) {
+          const existing = prev.find((item) => item.uid === uid);
+          if (existing) {
+            return prev.map((item) => (item.uid === uid ? { ...item, x, y } : item));
+          }
+          return [...prev, { uid, product, x, y, scale: 1 }];
         }
-        return [...prev, { uid: itemUid, product, x, y, scale: 1 }];
+        const existing = prev.find((item) => item.product.id === product.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.uid === existing.uid ? { ...item, x, y } : item,
+          );
+        }
+        return [...prev, createPlacedItem(product, x, y)];
       });
     },
     [],
@@ -590,6 +722,7 @@ function AiStudioPage() {
       setError(t("errorNeedRoomFirst"));
       return;
     }
+    const epoch = ++renderEpochRef.current;
     setError(null);
     setBusy("render");
     setStatusMessage(t("statusRendering"));
@@ -609,7 +742,7 @@ function AiStudioPage() {
       const products = selected.map((p) => ({
         productId: p.product.id,
         name: p.product.name,
-        quantity: 1,
+        quantity: p.quantity,
         imageUrl: p.product.thumbnailUrl || undefined,
       }));
 
@@ -695,6 +828,7 @@ function AiStudioPage() {
       mergeGalleryItems([normalized]);
       void refreshCredits();
       void refreshGallery();
+      if (renderEpochRef.current === epoch) setBusy("idle");
 
       const done = isGenerationSuccessful(generation.status)
         ? generation
@@ -711,9 +845,6 @@ function AiStudioPage() {
       const url = resolveGenerationImageUrl(done);
       if (!url) throw new Error(t("errorRenderImageMissing"));
       setGalleryPreview({ url, caption: promptNotes || undefined });
-      setPlaced([]);
-      setSelected([]);
-      setSelectedUid(null);
       setStatusMessage(t("statusRenderDone"));
       setPendingHistoryItem(null);
       mergeGalleryItems([{ ...normalized, ...done, status: done.status }]);
@@ -721,18 +852,19 @@ function AiStudioPage() {
       void refreshGallery();
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
-      setPendingHistoryItem(null);
       void refreshCredits();
+      if (renderEpochRef.current !== epoch) return;
+      setPendingHistoryItem(null);
       setError(err instanceof Error ? err.message : t("errorRenderStart"));
     } finally {
-      setBusy("idle");
+      if (renderEpochRef.current === epoch) setBusy("idle");
     }
   };
 
   const toggle = (k: keyof typeof openSections) =>
     setOpenSections((s) => ({ ...s, [k]: !s[k] }));
 
-  const estimatedCost = creditCost ?? Math.max(2, selected.length + 2);
+  const estimatedCost = creditCost ?? Math.max(2, selectedQuantity + 2);
   const isBusy = busy !== "idle";
   const balanceDisplay =
     creditsLoading && availableCredit == null
@@ -790,7 +922,7 @@ function AiStudioPage() {
             <Section
               title={t("sectionProducts")}
               icon={<Sofa className="size-4" />}
-              badge={selected.length || undefined}
+              badge={selectedQuantity || undefined}
               open={openSections.products}
               onToggle={() => toggle("products")}
             >
@@ -829,16 +961,21 @@ function AiStudioPage() {
                   <div className="grid grid-cols-2 gap-2">
                     {selected.map((item) => (
                       <div
-                        key={item.uid}
+                        key={item.product.id}
                         draggable={mode === "manual"}
                         onDragStart={(e) => {
                           if (mode !== "manual") {
                             e.preventDefault();
                             return;
                           }
+                          const target = e.target as HTMLElement | null;
+                          if (target?.closest("button")) {
+                            e.preventDefault();
+                            return;
+                          }
                           e.dataTransfer.setData(
                             PRODUCT_MIME,
-                            JSON.stringify({ product: item.product, uid: item.uid }),
+                            JSON.stringify({ product: item.product }),
                           );
                           e.dataTransfer.effectAllowed = "copyMove";
                         }}
@@ -853,7 +990,7 @@ function AiStudioPage() {
                       >
                         <button
                           type="button"
-                          onClick={() => removeSelected(item.uid)}
+                          onClick={() => removeSelected(item.product.id)}
                           className="absolute top-1 right-1 z-10 size-6 rounded-full bg-white/90 border border-black/10 text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)] inline-flex items-center justify-center"
                           title={tCommon("remove")}
                         >
@@ -873,6 +1010,25 @@ function AiStudioPage() {
                         <p className="mt-1.5 text-[10px] font-bold text-[color:var(--brand-primary)] line-clamp-2 text-center">
                           {item.product.name}
                         </p>
+                        <div className="mt-1.5 flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => updateProductQuantity(item.product.id, -1)}
+                            className="size-7 rounded-full border border-black/10 bg-white hover:bg-[color:var(--brand-soft)] inline-flex items-center justify-center"
+                          >
+                            <Minus className="size-3.5" />
+                          </button>
+                          <span className="w-5 text-center text-xs font-bold text-[color:var(--brand-primary)]">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateProductQuantity(item.product.id, 1)}
+                            className="size-7 rounded-full border border-black/10 bg-white hover:bg-[color:var(--brand-soft)] inline-flex items-center justify-center"
+                          >
+                            <Plus className="size-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1292,7 +1448,7 @@ function AiStudioPage() {
                             className="size-7 rounded-full hover:bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] text-sm font-bold"
                           >+</button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); setPlaced((p) => p.filter((x) => x.uid !== it.uid)); setSelectedUid(null); }}
+                            onClick={(e) => { e.stopPropagation(); removePlacedInstance(it.uid); }}
                             className="size-7 rounded-full hover:bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] inline-flex items-center justify-center"
                           ><Trash2 className="size-3.5" /></button>
                         </div>
