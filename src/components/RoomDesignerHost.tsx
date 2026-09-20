@@ -14,6 +14,8 @@ import { clearRoomDesignerLastScene } from "@/lib/offers";
 const SCRIPT_SRC = "https://s3.eu-central-1.amazonaws.com/cdn.sugartech/mottobucket/CDN/sugar-planner/sugar-room-designer.js";
 const TAG_NAME = "sugar-room-designer";
 
+export const ROOM_QUOTE_REQUEST_EVENT = "room-quote-request";
+
 export type SugarRoomDesignerElement = HTMLElement & {
   ui?: "builtin" | "none";
   api?: {
@@ -57,6 +59,11 @@ type RoomDesignerHostProps = {
   /** Enables the authorized CRM product pane inside sugar-room-designer. */
   authorizedProductMenu?: boolean;
   /**
+   * `panel` — built-in PDF + OTP quote modal.
+   * `host` — modal hidden; host handles `room-quote-request` (default for /oda).
+   */
+  quoteUi?: "panel" | "host";
+  /**
    * Clear room-designer last-scene localStorage before mounting so controller
    * auto-restore cannot overwrite an offer restore.
    */
@@ -88,6 +95,7 @@ export const RoomDesignerHost = forwardRef<
     className,
     welcomeMenu = true,
     authorizedProductMenu = false,
+    quoteUi = "host",
     clearLastSceneOnMount = false,
     onReady,
   },
@@ -195,6 +203,7 @@ export const RoomDesignerHost = forwardRef<
             elRef.current = node;
           }}
           welcome-menu={welcomeMenu ? "true" : "false"}
+          quote-ui={quoteUi}
           {...(authorizedProductMenu
             ? { "authorized-product-menu": "true" }
             : {})}

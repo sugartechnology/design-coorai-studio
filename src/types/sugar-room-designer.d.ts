@@ -8,6 +8,7 @@ declare module "react" {
           "app-identifier"?: string;
           "welcome-menu"?: string;
           "authorized-product-menu"?: string;
+          "quote-ui"?: "panel" | "host" | string;
           state?: string;
           ui?: "builtin" | "none" | string;
         },

@@ -16,6 +16,7 @@ export type {
 
 export {
   createOffer,
+  createRapidRenderQuote,
   createShareLink,
   formatCustomerLabel,
   getOfferById,
@@ -32,7 +33,13 @@ export {
   type ApplyOfferSceneResult,
   type OfferSceneHost,
 } from "./apply-offer-scene";
-export { buildOfferCreateRequest, toOfferProductRequest } from "./build-request";
+export {
+  buildOfferCreateRequest,
+  buildRapidRenderQuoteRequest,
+  isRapidRenderQuoteDraft,
+  splitPersonName,
+  toOfferProductRequest,
+} from "./build-request";
 export { createOfferWithPreview, buildOfferEditUrl } from "./create-with-preview";
 export { lineFromCatalogProduct, resolveCatalogUnitPrice } from "./pricing";
 export { formatConfigNote, zoneSelectionsToConfig } from "./zone-config";

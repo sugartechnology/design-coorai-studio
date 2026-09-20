@@ -8,6 +8,8 @@ import type {
   OfferSearchCriteria,
   OfferSearchPage,
   OfferShareLinkResponse,
+  RapidRenderQuoteCreateRequest,
+  RapidRenderQuoteCreateResponse,
 } from "./types";
 
 type RouterLike = { replace: (href: string) => void };
@@ -46,6 +48,21 @@ export async function createOffer(
     searchParams: { response: "full" },
     router,
   });
+}
+
+/** Authenticated RapidRender quote create — not pricing-preview / calculate. */
+export async function createRapidRenderQuote(
+  request: RapidRenderQuoteCreateRequest,
+  router?: RouterLike,
+): Promise<RapidRenderQuoteCreateResponse> {
+  return portalCrmFetch<RapidRenderQuoteCreateResponse>(
+    "integrations/proposals/quote/requests",
+    {
+      method: "POST",
+      body: request,
+      router,
+    },
+  );
 }
 
 export async function createShareLink(

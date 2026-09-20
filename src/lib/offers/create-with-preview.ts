@@ -1,7 +1,11 @@
 import { getPortalSessionView } from "@/lib/portal-crm";
-import { buildOfferCreateRequest } from "./build-request";
-import { createOffer, createShareLink } from "./api";
-import type { CreateOfferResult, QuoteDraft } from "./types";
+import {
+  buildOfferCreateRequest,
+  buildRapidRenderQuoteRequest,
+  isRapidRenderQuoteDraft,
+} from "./build-request";
+import { createOffer, createRapidRenderQuote, createShareLink } from "./api";
+import type { CreateOfferResult, OfferResponse, QuoteDraft } from "./types";
 
 export function crmWebOrigin(): string {
   const raw =
@@ -32,8 +36,9 @@ export async function createOfferWithPreview(
     throw new Error("Not authenticated");
   }
 
-  const request = buildOfferCreateRequest(draft);
-  const offer = await createOffer(request, router);
+  const offer = isRapidRenderQuoteDraft(draft)
+    ? await createRoomRapidRenderOffer(draft, session.rrCompanyId, router)
+    : await createOffer(buildOfferCreateRequest(draft), router);
   const origin = crmWebOrigin();
   const editUrl = buildOfferEditUrl(offer.id, session.companySlug);
 
@@ -48,4 +53,24 @@ export async function createOfferWithPreview(
   }
 
   return { offer, shareToken, shareUrl, editUrl };
+}
+
+async function createRoomRapidRenderOffer(
+  draft: QuoteDraft,
+  rrCompanyId: number | null | undefined,
+  router?: RouterLike,
+): Promise<OfferResponse> {
+  const created = await createRapidRenderQuote(
+    buildRapidRenderQuoteRequest(draft, { rapidRenderCompanyId: rrCompanyId }),
+    router,
+  );
+  if (!created.offerId) {
+    throw new Error(created.message || "Teklif oluşturulamadı.");
+  }
+  return {
+    id: created.offerId,
+    offerNumber: created.offerNumber,
+    status: created.status,
+    customer: created.customerId ? { firstName: draft.customerFirstName ?? undefined } : undefined,
+  };
 }

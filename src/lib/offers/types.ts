@@ -7,6 +7,9 @@ export type QuoteVariantSelection = {
 
 export type QuoteLineItem = {
   productId: string;
+  /** Sugar / RapidRender numeric id — room-designer quote create. */
+  rapidRenderProductId?: number;
+  rapidRenderCompanyId?: number;
   name: string;
   sku?: string | null;
   quantity: number;
@@ -38,8 +41,72 @@ export type QuoteDraft = {
   language: string;
   customerId?: string | null;
   customerLabel?: string | null;
+  customerFirstName?: string | null;
+  customerLastName?: string | null;
+  customerPhone?: string | null;
+  customerEmail?: string | null;
+  customerCompany?: string | null;
   section: QuoteSectionMeta;
   lines: QuoteLineItem[];
+};
+
+export type RapidRenderQuoteCustomerRequest = {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  country?: string;
+  city?: string;
+};
+
+export type RapidRenderQuoteProductImageRequest = {
+  imageUrl: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  altText?: string;
+};
+
+export type RapidRenderQuoteProductRequest = {
+  crmProductId?: string;
+  rapidRenderProductId?: number;
+  productModalId?: number;
+  rapidRenderCompanyId?: number;
+  name?: string;
+  sku?: string;
+  quantity: number;
+  configuration?: QuoteVariantSelection[];
+  images?: RapidRenderQuoteProductImageRequest[];
+};
+
+export type RapidRenderQuoteSectionRequest = {
+  name?: string;
+  sectionOrder?: number;
+  images?: RapidRenderQuoteProductImageRequest[];
+  products: RapidRenderQuoteProductRequest[];
+  sceneLayout?: string;
+};
+
+export type RapidRenderQuoteCreateRequest = {
+  idempotencyKey: string;
+  language?: string;
+  currency?: string;
+  customer?: RapidRenderQuoteCustomerRequest;
+  products?: RapidRenderQuoteProductRequest[];
+  sections?: RapidRenderQuoteSectionRequest[];
+  note?: string;
+  scene?: string;
+};
+
+export type RapidRenderQuoteCreateResponse = {
+  success?: boolean;
+  message?: string;
+  requestId?: string;
+  offerId?: string;
+  offerNumber?: string;
+  customerId?: string;
+  status?: string;
+  mailSent?: boolean;
 };
 
 export type OfferProductVariantSelection = QuoteVariantSelection & {

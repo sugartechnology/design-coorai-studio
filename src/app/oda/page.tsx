@@ -7,18 +7,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import {
+  ROOM_QUOTE_REQUEST_EVENT,
   RoomDesignerHost,
   type SugarRoomDesignerElement,
 } from "@/components/RoomDesignerHost";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import { useCart } from "@/lib/cart";
+import { type CatalogProduct } from "@/lib/catalog";
 import {
-  getProductById,
-  type CatalogProduct,
-  type CatalogProductDetail,
-} from "@/lib/catalog";
-import {
-  lineFromCatalogProduct,
   formatConfigNote,
   getOfferById,
   resolveOfferSceneLayout,
@@ -38,6 +34,15 @@ type AuthorizedProductPlacedDetail = {
   catalogId: string;
   name: string;
   thumbnailUrl: string | null;
+};
+
+type RoomQuoteRequestDetail = {
+  products?: Array<{
+    rapidRenderProductId?: number;
+    catalogId?: string;
+    name?: string;
+    images?: Array<{ thumbnailUrl?: string }>;
+  }>;
 };
 
 type SceneExport = {
@@ -237,45 +242,20 @@ function OdaPage() {
     const lines: QuoteLineItem[] = [];
     for (const row of grouped.values()) {
       const cached = catalogBySugarIdRef.current.get(row.sugarId);
-      let catalogId = cached?.id;
-      let detailName = cached?.name || row.name;
-      let prices: CatalogProductDetail["prices"] = [];
-      let sku: string | null = null;
-      let thumbnailUrl: string | null = cached?.thumbnailUrl ?? null;
-
-      if (catalogId) {
-        try {
-          const detail = await getProductById(catalogId, router);
-          detailName = detail.name;
-          prices = detail.prices;
-          sku = detail.sku ?? null;
-          thumbnailUrl = detail.thumbnailUrl ?? thumbnailUrl;
-        } catch {
-          // keep cached / scene name
-        }
-      } else {
-        console.warn("[oda] missing CRM product for sugar id", row.sugarId);
-        continue;
-      }
-
+      const catalogId = cached?.id?.trim();
       const note = formatConfigNote(row.variantSelections);
-      lines.push(
-        lineFromCatalogProduct(
-          {
-            id: catalogId,
-            name: detailName,
-            sku,
-            thumbnailUrl,
-            prices: prices ?? [],
-          },
-          {
-            quantity: row.quantity,
-            currency: "TRY",
-            note: note || null,
-            variantSelections: row.variantSelections,
-          },
-        ),
-      );
+      lines.push({
+        productId: catalogId || String(row.sugarId),
+        rapidRenderProductId: row.sugarId,
+        name: cached?.name || row.name,
+        sku: null,
+        quantity: row.quantity,
+        price: 0,
+        currency: "TRY",
+        note: note || null,
+        imageUrl: cached?.thumbnailUrl ?? null,
+        variantSelections: row.variantSelections,
+      });
     }
 
     if (lines.length === 0) return null;
@@ -290,7 +270,7 @@ function OdaPage() {
       },
       lines,
     };
-  }, [language, router, t]);
+  }, [language, t]);
 
   const openQuoteFromScene = useCallback(async () => {
     setQuoteBusy(true);
@@ -303,6 +283,32 @@ function OdaPage() {
       setQuoteBusy(false);
     }
   }, [buildQuoteFromScene]);
+
+  useEffect(() => {
+    const el = designerEl;
+    if (!el) return;
+
+    const onQuoteRequest = (event: Event) => {
+      const products = (event as CustomEvent<RoomQuoteRequestDetail>).detail
+        ?.products;
+      for (const product of products ?? []) {
+        const sugarId = Number(product.rapidRenderProductId);
+        if (!sugarId) continue;
+        catalogBySugarIdRef.current.set(sugarId, {
+          id: product.catalogId || String(sugarId),
+          name: product.name || `Product ${sugarId}`,
+          productModalId: String(sugarId),
+          thumbnailUrl: product.images?.[0]?.thumbnailUrl ?? null,
+        });
+      }
+      void openQuoteFromScene();
+    };
+
+    el.addEventListener(ROOM_QUOTE_REQUEST_EVENT, onQuoteRequest);
+    return () => {
+      el.removeEventListener(ROOM_QUOTE_REQUEST_EVENT, onQuoteRequest);
+    };
+  }, [designerEl, openQuoteFromScene]);
 
   const addSceneToCart = useCallback(async () => {
     setQuoteBusy(true);
@@ -384,6 +390,7 @@ function OdaPage() {
             <RoomDesignerHost
               className="absolute inset-0 h-full w-full"
               authorizedProductMenu
+              quoteUi="host"
               clearLastSceneOnMount={Boolean(offerId)}
               onReady={onDesignerReady}
             />
@@ -396,6 +403,7 @@ function OdaPage() {
         onOpenChange={setQuoteOpen}
         draft={quoteDraft}
         onDraftChange={setQuoteDraft}
+        requireCustomer={false}
       />
     </div>
   );

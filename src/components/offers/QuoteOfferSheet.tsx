@@ -25,6 +25,7 @@ import {
   quickCreateCustomer,
   resolveCustomerId,
   searchCustomersCompletion,
+  splitPersonName,
   type CreateOfferResult,
   type CustomerSearchHit,
   type QuoteDraft,
@@ -39,6 +40,8 @@ type QuoteOfferSheetProps = {
   onDraftChange?: (draft: QuoteDraft) => void;
   /** Called after offer is created successfully (e.g. clear cart). */
   onCreated?: (result: CreateOfferResult) => void;
+  /** Default true. `/oda` RapidRender create allows a quote without a customer. */
+  requireCustomer?: boolean;
 };
 
 export function QuoteOfferSheet({
@@ -47,6 +50,7 @@ export function QuoteOfferSheet({
   draft,
   onDraftChange,
   onCreated,
+  requireCustomer = true,
 }: QuoteOfferSheetProps) {
   const t = useTranslations("offers");
   const router = useRouter();
@@ -120,9 +124,15 @@ export function QuoteOfferSheet({
   const selectCustomer = (hit: CustomerSearchHit) => {
     const id = resolveCustomerId(hit);
     if (!id || !draft) return;
+    const names = splitPersonName(hit.name);
     patchDraft({
       customerId: id,
       customerLabel: formatCustomerLabel(hit),
+      customerFirstName: names.first || null,
+      customerLastName: names.last || null,
+      customerPhone: hit.mobileNumber || hit.phoneNumber || null,
+      customerEmail: hit.email || null,
+      customerCompany: hit.customerCompanyName || null,
     });
     setQuery("");
     setHits([]);
@@ -156,6 +166,7 @@ export function QuoteOfferSheet({
         },
         router,
       );
+      const names = splitPersonName(newName);
       const label = [created.firstName, created.lastName].filter(Boolean).join(" ")
         || created.customerCompanyName
         || created.phoneNumber
@@ -163,6 +174,11 @@ export function QuoteOfferSheet({
       patchDraft({
         customerId: created.id,
         customerLabel: label,
+        customerFirstName: created.firstName || names.first || null,
+        customerLastName: created.lastName || names.last || null,
+        customerPhone: created.mobileNumber || created.phoneNumber || phone,
+        customerEmail: created.email || null,
+        customerCompany: created.customerCompanyName || null,
       });
       setShowQuickCreate(false);
       setNewPhone("");
@@ -177,7 +193,7 @@ export function QuoteOfferSheet({
 
   const handleSubmit = async () => {
     if (!draft) return;
-    if (!draft.customerId) {
+    if (requireCustomer && !draft.customerId) {
       setError(t("customerRequired"));
       return;
     }
@@ -248,7 +264,15 @@ export function QuoteOfferSheet({
                       type="button"
                       className="text-xs font-semibold text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
                       onClick={() =>
-                        patchDraft({ customerId: null, customerLabel: null })
+                        patchDraft({
+                          customerId: null,
+                          customerLabel: null,
+                          customerFirstName: null,
+                          customerLastName: null,
+                          customerPhone: null,
+                          customerEmail: null,
+                          customerCompany: null,
+                        })
                       }
                     >
                       {t("changeCustomer")}
@@ -358,7 +382,11 @@ export function QuoteOfferSheet({
 
               <button
                 type="button"
-                disabled={submitting || !draft?.customerId || lines.length === 0}
+                disabled={
+                  submitting ||
+                  (requireCustomer && !draft?.customerId) ||
+                  lines.length === 0
+                }
                 onClick={() => void handleSubmit()}
                 className="w-full h-12 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] disabled:opacity-40 disabled:cursor-not-allowed"
               >
