@@ -148,19 +148,34 @@ function OfferDetailPage() {
     return [...list].sort((a, b) => (a.sectionOrder ?? 0) - (b.sectionOrder ?? 0));
   }, [offer]);
 
+  const persistOffer = async (): Promise<OfferResponse | null> => {
+    if (!offer) return null;
+    const saved = await updateOffer(
+      offer.id,
+      toOfferUpdateRequest(offer, customer?.id ?? null),
+      router,
+    );
+    const next = saved.id ? saved : await getOfferById(offer.id, router);
+    setOffer(next);
+    setCustomer(customerChoiceFromOffer(next, t("listCustomerUnknown")));
+    return next;
+  };
+
   const openPdf = async () => {
     if (!offer) return;
     setPdfBusy(true);
     setError(null);
     try {
-      await downloadOfferPdf(offer, {
-        untitled: t("listUntitled"),
-        noCustomer: t("listCustomerUnknown"),
-        customer: customer?.label,
+      const saved = await persistOffer();
+      if (!saved) return;
+      await downloadOfferPdf(saved, {
         error: t("detailPdfError"),
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("detailPdfError"));
+      if (err instanceof PortalCrmError && err.status === 401) return;
+      setError(
+        err instanceof Error ? err.message : t("detailPdfError"),
+      );
     } finally {
       setPdfBusy(false);
     }
@@ -171,14 +186,7 @@ function OfferDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const saved = await updateOffer(
-        offer.id,
-        toOfferUpdateRequest(offer, customer?.id ?? null),
-        router,
-      );
-      const next = saved.id ? saved : await getOfferById(offer.id, router);
-      setOffer(next);
-      setCustomer(customerChoiceFromOffer(next, t("listCustomerUnknown")));
+      await persistOffer();
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
       setError(err instanceof Error ? err.message : t("detailSaveError"));

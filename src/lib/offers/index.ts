@@ -55,5 +55,5 @@ export {
 } from "./create-with-preview";
 export { lineFromCatalogProduct, resolveCatalogUnitPrice } from "./pricing";
 export { attachQuoteViewImages, type QuoteCaptureViews } from "./quote-view-images";
-export { buildOfferPdfHtml, downloadOfferPdf } from "./offer-pdf";
+export { downloadOfferPdf } from "./offer-pdf";
 export { formatConfigNote, zoneSelectionsToConfig } from "./zone-config";
