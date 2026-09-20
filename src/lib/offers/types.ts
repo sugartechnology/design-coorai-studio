@@ -155,11 +155,23 @@ export type OfferCreateRequest = {
 };
 
 export type OfferCustomerResponse = {
+  id?: string;
+  customerId?: string;
   firstName?: string;
   lastName?: string;
+  companyName?: string;
   customerCompanyName?: string;
   phoneNumber?: string;
+  mobileNumber?: string;
   email?: string;
+};
+
+export type OfferImageResponse = {
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  altText?: string;
+  imageOrder?: number;
 };
 
 export type OfferProductResponse = {
@@ -171,7 +183,11 @@ export type OfferProductResponse = {
   price?: number;
   totalPrice?: number;
   currency?: string;
+  discount?: number;
+  discountType?: string;
+  productOrder?: number;
   note?: string | null;
+  imageUrl?: string | null;
   variantSelections?: OfferProductVariantSelection[];
 };
 
@@ -182,6 +198,7 @@ export type OfferSectionResponse = {
   roomType?: string | null;
   promptNotes?: string | null;
   sceneLayout?: string | null;
+  images?: OfferImageResponse[];
   products?: OfferProductResponse[];
 };
 
@@ -235,9 +252,9 @@ export type OfferShareLinkResponse = {
 
 export type CreateOfferResult = {
   offer: OfferResponse;
-  shareToken: string;
-  shareUrl: string;
-  editUrl: string;
+  shareToken?: string;
+  shareUrl?: string;
+  editUrl?: string;
 };
 
 export type CustomerSearchHit = {

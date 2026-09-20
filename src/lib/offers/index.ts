@@ -4,6 +4,8 @@ export type {
   CustomerResponse,
   CustomerSearchHit,
   OfferCreateRequest,
+  OfferImageResponse,
+  OfferProductResponse,
   OfferResponse,
   OfferSearchCriteria,
   OfferSearchPage,
@@ -25,6 +27,8 @@ export {
   resolveOfferSceneLayout,
   searchCustomersCompletion,
   searchOffers,
+  toOfferProductUpdateRequest,
+  updateOfferProduct,
 } from "./api";
 export {
   applyOfferSceneToDesigner,
@@ -40,7 +44,11 @@ export {
   splitPersonName,
   toOfferProductRequest,
 } from "./build-request";
-export { createOfferWithPreview, buildOfferEditUrl } from "./create-with-preview";
+export {
+  createOfferWithPreview,
+  buildOfferEditUrl,
+  buildOfferShareUrl,
+} from "./create-with-preview";
 export { lineFromCatalogProduct, resolveCatalogUnitPrice } from "./pricing";
 export { attachQuoteViewImages, type QuoteCaptureViews } from "./quote-view-images";
 export { formatConfigNote, zoneSelectionsToConfig } from "./zone-config";

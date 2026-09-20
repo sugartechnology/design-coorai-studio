@@ -2,17 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExternalLink, FileText, Loader2, Search, Sofa } from "lucide-react";
+import { FileText, Loader2, Search, Sofa } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { AppHeader } from "@/components/AppHeader";
-import {
-  buildOfferEditUrl,
-  searchOffers,
-  type OfferSearchResponse,
-} from "@/lib/offers";
-import { getPortalSessionView, PortalCrmError } from "@/lib/portal-crm";
+import { searchOffers, type OfferSearchResponse } from "@/lib/offers";
+import { PortalCrmError } from "@/lib/portal-crm";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
 function formatMoney(
@@ -53,23 +49,6 @@ function OffersPage() {
   const [offers, setOffers] = useState<OfferSearchResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [companySlug, setCompanySlug] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void getPortalSessionView()
-      .then((session) => {
-        if (!cancelled && session?.companySlug) {
-          setCompanySlug(session.companySlug);
-        }
-      })
-      .catch(() => {
-        /* ignore */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -150,11 +129,7 @@ function OffersPage() {
 
         {!loading && !error && offers.length > 0 && (
           <ul className="space-y-2">
-            {offers.map((offer) => {
-              const viewHref = companySlug
-                ? buildOfferEditUrl(offer.id, companySlug)
-                : null;
-              return (
+            {offers.map((offer) => (
                 <li
                   key={offer.id}
                   className="rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm"
@@ -185,26 +160,13 @@ function OffersPage() {
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    {viewHref ? (
-                      <a
-                        href={viewHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-2 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
-                      >
-                        <ExternalLink className="size-3.5 shrink-0" />
-                        <span className="truncate">{t("listViewOffer")}</span>
-                      </a>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/10 px-2 text-xs font-bold text-[color:var(--brand-primary)]/35"
-                      >
-                        <ExternalLink className="size-3.5 shrink-0" />
-                        <span className="truncate">{t("listViewOffer")}</span>
-                      </button>
-                    )}
+                    <Link
+                      href={`/teklifler/${encodeURIComponent(offer.id)}`}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-2 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
+                    >
+                      <FileText className="size-3.5 shrink-0" />
+                      <span className="truncate">{t("listViewOffer")}</span>
+                    </Link>
                     <Link
                       href={`/oda?offerId=${encodeURIComponent(offer.id)}`}
                       className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--brand-primary)] px-2 text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)]"
@@ -214,8 +176,7 @@ function OffersPage() {
                     </Link>
                   </div>
                 </li>
-              );
-            })}
+            ))}
           </ul>
         )}
       </main>

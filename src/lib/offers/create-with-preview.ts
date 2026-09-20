@@ -4,7 +4,7 @@ import {
   buildRapidRenderQuoteRequest,
   isRapidRenderQuoteDraft,
 } from "./build-request";
-import { createOffer, createRapidRenderQuote, createShareLink } from "./api";
+import { createOffer, createRapidRenderQuote } from "./api";
 import type { CreateOfferResult, OfferResponse, QuoteDraft } from "./types";
 
 export function crmWebOrigin(): string {
@@ -24,8 +24,15 @@ export function buildOfferEditUrl(offerId: string, companySlug: string): string 
 
 type RouterLike = { replace: (href: string) => void };
 
+/** Public CRM share page for PDF viewing. */
+export function buildOfferShareUrl(token: string): string {
+  const origin = crmWebOrigin();
+  const path = `/share/${encodeURIComponent(token)}`;
+  return origin ? `${origin}${path}` : path;
+}
+
 /**
- * Create PENDING offer (full draft) + share link URLs for preview/edit.
+ * Create PENDING offer. View/edit continues in DSP `/teklifler/[id]`.
  */
 export async function createOfferWithPreview(
   draft: QuoteDraft,
@@ -39,20 +46,8 @@ export async function createOfferWithPreview(
   const offer = isRapidRenderQuoteDraft(draft)
     ? await createRoomRapidRenderOffer(draft, session.rrCompanyId, router)
     : await createOffer(buildOfferCreateRequest(draft), router);
-  const origin = crmWebOrigin();
-  const editUrl = buildOfferEditUrl(offer.id, session.companySlug);
 
-  let shareToken = "";
-  let shareUrl = "";
-  try {
-    const share = await createShareLink(offer.id, router);
-    shareToken = share.token;
-    shareUrl = origin ? `${origin}/share/${share.token}` : `/share/${share.token}`;
-  } catch {
-    // Share is optional; draft + editUrl still usable.
-  }
-
-  return { offer, shareToken, shareUrl, editUrl };
+  return { offer };
 }
 
 async function createRoomRapidRenderOffer(

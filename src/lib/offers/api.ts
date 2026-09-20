@@ -4,6 +4,8 @@ import type {
   CustomerResponse,
   CustomerSearchHit,
   OfferCreateRequest,
+  OfferProductRequest,
+  OfferProductResponse,
   OfferResponse,
   OfferSearchCriteria,
   OfferSearchPage,
@@ -102,6 +104,43 @@ export async function getOfferById(
   return portalCrmFetch<OfferResponse>(
     `offers/${encodeURIComponent(offerId)}`,
     { router },
+  );
+}
+
+export function toOfferProductUpdateRequest(
+  product: OfferProductResponse,
+  patch: { quantity?: number; note?: string | null },
+): OfferProductRequest {
+  const productId = product.productId || product.id || "";
+  return {
+    productId,
+    sku: product.sku ?? undefined,
+    name: product.name || "",
+    note: patch.note !== undefined ? patch.note : product.note ?? null,
+    variantSelections: product.variantSelections,
+    catalogVariantSelections: [],
+    price: product.price ?? 0,
+    currency: product.currency || "TRY",
+    discount: product.discount ?? 0,
+    discountType: product.discountType || "PERCENTAGE",
+    quantity: patch.quantity ?? product.quantity ?? 1,
+    productOrder: product.productOrder,
+  };
+}
+
+export async function updateOfferProduct(
+  offerId: string,
+  productId: string,
+  request: OfferProductRequest,
+  router?: RouterLike,
+): Promise<OfferResponse> {
+  return portalCrmFetch<OfferResponse>(
+    `offers/${encodeURIComponent(offerId)}/products/${encodeURIComponent(productId)}/update`,
+    {
+      method: "POST",
+      body: request,
+      router,
+    },
   );
 }
 

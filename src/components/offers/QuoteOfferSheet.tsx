@@ -3,14 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  ExternalLink,
-  Loader2,
-  Plus,
-  Search,
-  Trash2,
-  FileText,
-} from "lucide-react";
+import { Loader2, Plus, Search, Trash2, FileText } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -63,7 +56,6 @@ export function QuoteOfferSheet({
   const [creating, setCreating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<CreateOfferResult | null>(null);
 
   const [newPhone, setNewPhone] = useState("");
   const [newName, setNewName] = useState("");
@@ -71,7 +63,6 @@ export function QuoteOfferSheet({
 
   useEffect(() => {
     if (!open) return;
-    setResult(null);
     setError(null);
     setQuery("");
     setHits([]);
@@ -209,8 +200,9 @@ export function QuoteOfferSheet({
         language: draft.language || language,
       };
       const created = await createOfferWithPreview(payload, router);
-      setResult(created);
       onCreated?.(created);
+      onOpenChange(false);
+      router.push(`/teklifler/${encodeURIComponent(created.offer.id)}`);
     } catch (err) {
       if (err instanceof PortalCrmError && err.status === 401) return;
       setError(err instanceof Error ? err.message : t("createError"));
@@ -227,14 +219,10 @@ export function QuoteOfferSheet({
       >
         <SheetHeader className="border-b border-black/5 px-5 py-4 text-left">
           <SheetTitle className="text-[color:var(--brand-primary)]">
-            {result ? t("successTitle") : t("title")}
+            {t("title")}
           </SheetTitle>
           <SheetDescription className="text-[color:var(--brand-primary)]/60">
-            {result
-              ? t("successHint", {
-                  number: result.offer.offerNumber || result.offer.id.slice(0, 8),
-                })
-              : t("subtitle")}
+            {t("subtitle")}
           </SheetDescription>
         </SheetHeader>
 
@@ -245,11 +233,7 @@ export function QuoteOfferSheet({
             </div>
           )}
 
-          {result ? (
-            <SuccessPanel result={result} lines={lines} />
-          ) : (
-            <>
-              <section className="space-y-2">
+          <section className="space-y-2">
                 <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/50">
                   {t("customerSection")}
                 </h3>
@@ -397,8 +381,6 @@ export function QuoteOfferSheet({
                 )}
                 {t("submit")}
               </button>
-            </>
-          )}
         </div>
       </SheetContent>
     </Sheet>
@@ -440,95 +422,5 @@ function LineRow({
         ) : null}
       </div>
     </li>
-  );
-}
-
-function SuccessPanel({
-  result,
-  lines,
-}: {
-  result: CreateOfferResult;
-  lines: QuoteLineItem[];
-}) {
-  const t = useTranslations("offers");
-  const offer = result.offer;
-  const products =
-    offer.sections?.flatMap((s) => s.products ?? []) ??
-    lines.map((l) => ({
-      name: l.name,
-      quantity: l.quantity,
-      price: l.price,
-      note: l.note,
-    }));
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl bg-[color:var(--brand-primary)]/5 p-4 space-y-1">
-        <p className="text-xs font-bold text-[color:var(--brand-primary)]/50">
-          {t("offerNumber")}
-        </p>
-        <p className="text-lg font-extrabold text-[color:var(--brand-primary)]">
-          {offer.offerNumber || offer.id}
-        </p>
-        <p className="text-sm text-[color:var(--brand-primary)]/70">
-          {t("status")}: {offer.status || "PENDING"}
-        </p>
-        {typeof offer.totalPrice === "number" && (
-          <p className="text-sm font-bold text-[color:var(--brand-primary)]">
-            {t("total")}: {offer.totalPrice.toLocaleString()} {offer.currency}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/50">
-          {t("draftPreview")}
-        </h3>
-        <ul className="space-y-2">
-          {products.map((p, i) => (
-            <li
-              key={i}
-              className="rounded-xl border border-black/5 px-3 py-2 text-sm text-[color:var(--brand-primary)]"
-            >
-              <span className="font-semibold">{p.name}</span>
-              {p.quantity != null ? (
-                <span className="text-[color:var(--brand-primary)]/55">
-                  {" "}
-                  ×{p.quantity}
-                </span>
-              ) : null}
-              {p.note ? (
-                <p className="text-[11px] text-[color:var(--brand-primary)]/60 mt-0.5">
-                  {p.note}
-                </p>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {result.shareUrl ? (
-          <a
-            href={result.shareUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="h-11 rounded-xl bg-[color:var(--brand-primary)] text-white text-sm font-bold flex items-center justify-center gap-2"
-          >
-            <ExternalLink className="size-4" /> {t("viewShare")}
-          </a>
-        ) : null}
-        {result.editUrl ? (
-          <a
-            href={result.editUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="h-11 rounded-xl border border-[color:var(--brand-primary)]/20 text-[color:var(--brand-primary)] text-sm font-bold flex items-center justify-center gap-2"
-          >
-            <FileText className="size-4" /> {t("editInCrm")}
-          </a>
-        ) : null}
-      </div>
-    </div>
   );
 }
