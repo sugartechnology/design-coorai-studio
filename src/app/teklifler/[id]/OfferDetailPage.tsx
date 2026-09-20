@@ -16,6 +16,7 @@ import {
   type OfferImageResponse,
   type OfferProductResponse,
   type OfferResponse,
+  type OfferSectionResponse,
 } from "@/lib/offers";
 import { PortalCrmError } from "@/lib/portal-crm";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
@@ -48,9 +49,35 @@ function customerLabel(offer: OfferResponse, fallback: string): string {
   return name || company || phone || customer.email?.trim() || fallback;
 }
 
-function sectionImages(offer: OfferResponse): OfferImageResponse[] {
-  return (offer.sections ?? [])
-    .flatMap((section) => section.images ?? [])
+function humanProductNote(product: OfferProductResponse): string | null {
+  const fromVariants = (product.variantSelections ?? [])
+    .map((selection) => {
+      const option = selection.optionName?.trim();
+      const value = selection.valueName?.trim();
+      if (!option && !value) return "";
+      return [option, value].filter(Boolean).join(": ");
+    })
+    .filter(Boolean);
+  if (fromVariants.length) return fromVariants.join(" · ");
+
+  const note = product.note?.trim();
+  if (!note) return null;
+  const kept = note
+    .replace(/\s+(?=RapidRender\s)/g, "\n")
+    .replace(/\s+(?=Konfigürasyon:)/g, "\n")
+    .replace(/\s+(?=Kaynak Satır ID:)/g, "\n")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^RapidRender\s+(Ürün|Şirket)\s+ID:/i.test(line))
+    .filter((line) => !/^Kaynak Satır ID:/i.test(line))
+    .map((line) => line.replace(/^Konfigürasyon:\s*/i, ""))
+    .filter(Boolean);
+  return kept.length ? kept.join(" · ") : null;
+}
+
+function sectionImages(section: OfferSectionResponse): OfferImageResponse[] {
+  return (section.images ?? [])
     .filter((image) => image.imageUrl?.trim())
     .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0));
 }
@@ -96,11 +123,10 @@ function OfferDetailPage() {
     };
   }, [offerId, router, t]);
 
-  const images = useMemo(() => (offer ? sectionImages(offer) : []), [offer]);
-  const products = useMemo(
-    () => (offer?.sections ?? []).flatMap((section) => section.products ?? []),
-    [offer],
-  );
+  const sections = useMemo(() => {
+    const list = offer?.sections ?? [];
+    return [...list].sort((a, b) => (a.sectionOrder ?? 0) - (b.sectionOrder ?? 0));
+  }, [offer]);
 
   const openPdf = async () => {
     if (!offerId) return;
@@ -126,7 +152,7 @@ function OfferDetailPage() {
     <div className="flex min-h-dvh flex-col bg-[color:var(--brand-bg)]">
       <AppHeader title={title.toUpperCase()} backHref="/teklifler" />
 
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
         {loading && (
           <div className="flex flex-1 items-center justify-center gap-2 py-16 text-sm text-[color:var(--brand-primary)]/50">
             <Loader2 className="size-5 animate-spin" />
@@ -147,108 +173,62 @@ function OfferDetailPage() {
               </div>
             )}
 
-            <section className="rounded-2xl border border-black/5 bg-white px-4 py-4 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)]">
-                  <FileText className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[color:var(--brand-primary)]">
-                    {offer.title?.trim() || t("listUntitled")}
-                  </p>
-                  {offer.offerNumber && (
-                    <p className="mt-0.5 text-xs font-semibold text-[color:var(--brand-primary)]/45">
-                      #{offer.offerNumber}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-[color:var(--brand-primary)]/55">
-                    {t("detailCustomer")}:{" "}
-                    {customerLabel(offer, t("listCustomerUnknown"))}
-                  </p>
-                  <p className="mt-1 text-xs text-[color:var(--brand-primary)]/55">
+            <section className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-[color:var(--brand-primary)]">
+                  {offer.title?.trim() || t("listUntitled")}
+                </p>
+                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[color:var(--brand-primary)]/55">
+                  {offer.offerNumber ? <span>#{offer.offerNumber}</span> : null}
+                  <span>
+                    {t("detailCustomer")}: {customerLabel(offer, t("listCustomerUnknown"))}
+                  </span>
+                  <span>
                     {t("status")}: {offer.status || "PENDING"}
-                  </p>
-                  <p className="mt-2 text-sm font-bold text-[color:var(--brand-primary)]">
-                    {t("total")}:{" "}
-                    {formatMoney(offer.totalPrice, offer.currency, bcp47)}
-                  </p>
-                </div>
+                  </span>
+                </p>
               </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
                   disabled={pdfBusy}
                   onClick={() => void openPdf()}
-                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-2 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-40"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-3 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-40"
                 >
                   {pdfBusy ? (
                     <Loader2 className="size-3.5 animate-spin" />
                   ) : (
                     <FileText className="size-3.5 shrink-0" />
                   )}
-                  <span className="truncate">{t("detailPdf")}</span>
+                  {t("detailPdf")}
                 </button>
                 <Link
                   href={`/oda?offerId=${encodeURIComponent(offer.id)}`}
-                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--brand-primary)] px-2 text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)]"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--brand-primary)] px-3 text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)]"
                 >
                   <Sofa className="size-3.5 shrink-0" />
-                  <span className="truncate">{t("listGoToDesign")}</span>
+                  {t("listGoToDesign")}
                 </Link>
               </div>
             </section>
 
-            {images.length > 0 && (
-              <section className="rounded-2xl border border-black/5 bg-white px-4 py-4 shadow-sm">
-                <h2 className="mb-3 text-xs font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/50">
-                  {t("detailImages")}
-                </h2>
-                <ul className="grid grid-cols-2 gap-2">
-                  {images.map((image, index) => (
-                    <li
-                      key={`${image.imageUrl}-${index}`}
-                      className="overflow-hidden rounded-xl border border-black/5 bg-[color:var(--brand-primary)]/5"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={image.imageUrl}
-                        alt={image.altText || image.caption || t("detailImages")}
-                        className="h-36 w-full object-cover"
-                      />
-                      {image.caption ? (
-                        <p className="px-2 py-1.5 text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
-                          {image.caption}
-                        </p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            {sections.map((section, sectionIndex) => (
+              <ProposalSectionMini
+                key={section.id || `${section.name}-${sectionIndex}`}
+                offerId={offer.id}
+                section={section}
+                sectionIndex={sectionIndex}
+                currency={offer.currency}
+                locale={bcp47}
+                onSaved={setOffer}
+                onError={setError}
+              />
+            ))}
 
-            <section className="space-y-2">
-              <h2 className="text-xs font-extrabold tracking-[0.14em] text-[color:var(--brand-primary)]/50">
-                {t("linesSection")}
-              </h2>
-              {products.length === 0 ? (
-                <p className="rounded-2xl border border-black/5 bg-white px-4 py-6 text-sm text-[color:var(--brand-primary)]/50">
-                  {t("linesEmpty")}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {products.map((product, index) => (
-                    <OfferLineEditor
-                      key={product.id || `${product.productId}-${index}`}
-                      offerId={offer.id}
-                      product={product}
-                      locale={bcp47}
-                      onSaved={setOffer}
-                      onError={setError}
-                    />
-                  ))}
-                </ul>
-              )}
+            <section className="flex items-center justify-end rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm">
+              <p className="text-sm font-bold text-[color:var(--brand-primary)]">
+                {t("total")}: {formatMoney(offer.totalPrice, offer.currency, bcp47)}
+              </p>
             </section>
           </div>
         )}
@@ -257,15 +237,123 @@ function OfferDetailPage() {
   );
 }
 
-function OfferLineEditor({
+function ProposalSectionMini({
+  offerId,
+  section,
+  sectionIndex,
+  currency,
+  locale,
+  onSaved,
+  onError,
+}: {
+  offerId: string;
+  section: OfferSectionResponse;
+  sectionIndex: number;
+  currency?: string;
+  locale: string;
+  onSaved: (offer: OfferResponse) => void;
+  onError: (message: string | null) => void;
+}) {
+  const t = useTranslations("offers");
+  const images = sectionImages(section);
+  const products = section.products ?? [];
+  const sectionTotal = products.reduce((sum, product) => {
+    const line =
+      product.totalPrice ?? (product.price ?? 0) * (product.quantity ?? 0);
+    return sum + (Number.isFinite(line) ? line : 0);
+  }, 0);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
+      <div className="border-b border-black/5 px-4 py-3">
+        <h2 className="text-sm font-bold uppercase tracking-[0.08em] text-[color:var(--brand-primary)]">
+          {section.name?.trim() || `SECTION ${sectionIndex + 1}`}
+        </h2>
+      </div>
+
+      {images.length > 0 && (
+        <ul className="grid grid-cols-2 gap-2 border-b border-black/5 p-3 sm:grid-cols-3">
+          {images.map((image, index) => (
+            <li
+              key={`${image.imageUrl}-${index}`}
+              className="overflow-hidden rounded-xl border border-black/5 bg-[color:var(--brand-primary)]/5"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image.imageUrl}
+                alt={image.altText || image.caption || t("detailImages")}
+                className="h-28 w-full object-cover"
+              />
+              {image.caption ? (
+                <p className="px-2 py-1 text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
+                  {image.caption}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {products.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-[color:var(--brand-primary)]/50">
+          {t("linesEmpty")}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[40rem] text-sm">
+            <thead>
+              <tr className="border-b border-black/8 text-left text-[11px] font-bold text-[color:var(--brand-primary)]/50">
+                <th className="w-12 px-3 py-2.5">#</th>
+                <th className="px-3 py-2.5">{t("detailProduct")}</th>
+                <th className="w-[4.5rem] px-3 py-2.5 text-center">{t("detailQuantity")}</th>
+                <th className="w-32 px-3 py-2.5 text-right">{t("detailUnitPrice")}</th>
+                <th className="w-32 px-3 py-2.5 text-right">{t("detailLineTotal")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product, index) => (
+                <OfferLineRow
+                  key={product.id || `${product.productId}-${index}`}
+                  offerId={offerId}
+                  product={product}
+                  index={index}
+                  locale={locale}
+                  onSaved={onSaved}
+                  onError={onError}
+                />
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-black/10 bg-[color:var(--brand-primary)]/[0.03]">
+                <td
+                  colSpan={4}
+                  className="px-3 py-2.5 text-right text-[11px] font-bold text-[color:var(--brand-primary)]/50"
+                >
+                  {t("detailLineTotal")}
+                </td>
+                <td className="px-3 py-2.5 text-right text-sm font-bold tabular-nums text-[color:var(--brand-primary)]">
+                  {formatMoney(sectionTotal, currency, locale)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function OfferLineRow({
   offerId,
   product,
+  index,
   locale,
   onSaved,
   onError,
 }: {
   offerId: string;
   product: OfferProductResponse;
+  index: number;
   locale: string;
   onSaved: (offer: OfferResponse) => void;
   onError: (message: string | null) => void;
@@ -273,21 +361,31 @@ function OfferLineEditor({
   const t = useTranslations("offers");
   const router = useRouter();
   const [quantity, setQuantity] = useState(String(product.quantity ?? 1));
-  const [note, setNote] = useState(product.note ?? "");
+  const [price, setPrice] = useState(String(product.price ?? 0));
   const [saving, setSaving] = useState(false);
+  const config = humanProductNote(product);
+  const thumb = product.imageUrl?.trim() || null;
 
   useEffect(() => {
     setQuantity(String(product.quantity ?? 1));
-    setNote(product.note ?? "");
-  }, [product.id, product.quantity, product.note]);
+    setPrice(String(product.price ?? 0));
+  }, [product.id, product.quantity, product.price]);
 
   const parsedQuantity = Number(quantity);
+  const parsedPrice = Number(price);
   const dirty =
     parsedQuantity !== Number(product.quantity ?? 1) ||
-    note.trim() !== (product.note ?? "").trim();
+    parsedPrice !== Number(product.price ?? 0);
 
   const save = async () => {
-    if (!product.id || !Number.isFinite(parsedQuantity) || parsedQuantity < 0) {
+    if (
+      !product.id ||
+      !dirty ||
+      !Number.isFinite(parsedQuantity) ||
+      parsedQuantity < 0 ||
+      !Number.isFinite(parsedPrice) ||
+      parsedPrice < 0
+    ) {
       return;
     }
     setSaving(true);
@@ -298,7 +396,7 @@ function OfferLineEditor({
         product.id,
         toOfferProductUpdateRequest(product, {
           quantity: parsedQuantity,
-          note: note.trim() || null,
+          price: parsedPrice,
         }),
         router,
       );
@@ -312,51 +410,75 @@ function OfferLineEditor({
   };
 
   return (
-    <li className="rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm">
-      <p className="text-sm font-semibold text-[color:var(--brand-primary)]">
-        {product.name || product.sku || product.productId}
-      </p>
-      <p className="mt-0.5 text-xs text-[color:var(--brand-primary)]/50">
-        {formatMoney(product.price, product.currency, locale)}
-        {product.totalPrice != null
-          ? ` · ${formatMoney(product.totalPrice, product.currency, locale)}`
-          : null}
-      </p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-[7rem_1fr]">
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-bold text-[color:var(--brand-primary)]/45">
-            {t("detailQuantity")}
-          </span>
-          <input
-            type="number"
-            min={0}
-            step="1"
-            value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
-            className="h-11 w-full rounded-xl border border-black/10 px-3 text-sm text-[color:var(--brand-primary)] outline-none ring-[color:var(--brand-accent)]/40 focus:ring-2"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-bold text-[color:var(--brand-primary)]/45">
-            {t("detailNote")}
-          </span>
-          <input
-            type="text"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            className="h-11 w-full rounded-xl border border-black/10 px-3 text-sm text-[color:var(--brand-primary)] outline-none ring-[color:var(--brand-accent)]/40 focus:ring-2"
-          />
-        </label>
-      </div>
-      <button
-        type="button"
-        disabled={!product.id || !dirty || saving}
-        onClick={() => void save()}
-        className="mt-3 inline-flex h-11 items-center justify-center rounded-xl bg-[color:var(--brand-primary)] px-4 text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)] disabled:opacity-40"
-      >
-        {saving ? <Loader2 className="size-3.5 animate-spin" /> : t("detailSaveLine")}
-      </button>
-    </li>
+    <tr className="border-b border-black/5 last:border-b-0">
+      <td className="px-3 py-2.5 align-middle text-xs font-semibold tabular-nums text-[color:var(--brand-primary)]/40">
+        {String((product.productOrder ?? index + 1)).padStart(2, "0")}
+      </td>
+      <td className="px-3 py-2.5 align-middle">
+        <div className="flex min-w-0 items-center gap-3">
+          {thumb ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={thumb}
+              alt=""
+              className="size-10 shrink-0 rounded-lg border border-black/5 object-cover"
+            />
+          ) : (
+            <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-[color:var(--brand-primary)]/5 text-[11px] font-bold text-[color:var(--brand-primary)]/40">
+              {(product.name || "?").charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-[color:var(--brand-primary)]">
+              {product.name || product.sku || product.productId}
+            </p>
+            {product.sku ? (
+              <p className="truncate text-[11px] text-[color:var(--brand-primary)]/40">
+                {product.sku}
+              </p>
+            ) : null}
+            {config ? (
+              <p className="truncate text-xs text-[color:var(--brand-primary)]/50">{config}</p>
+            ) : null}
+          </div>
+        </div>
+      </td>
+      <td className="px-3 py-2.5 align-middle text-center">
+        <input
+          type="number"
+          min={0}
+          step="1"
+          aria-label={t("detailQuantity")}
+          value={quantity}
+          disabled={saving}
+          onChange={(event) => setQuantity(event.target.value)}
+          onBlur={() => void save()}
+          className="mx-auto h-8 w-14 rounded-md border border-black/10 bg-white px-1 text-center text-sm text-[color:var(--brand-primary)] outline-none ring-[color:var(--brand-accent)]/40 focus:ring-2 disabled:opacity-50"
+        />
+      </td>
+      <td className="px-3 py-2.5 align-middle text-right">
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          aria-label={t("detailUnitPrice")}
+          value={price}
+          disabled={saving}
+          onChange={(event) => setPrice(event.target.value)}
+          onBlur={() => void save()}
+          className="ml-auto h-8 w-24 rounded-md border border-black/10 bg-white px-2 text-right text-sm tabular-nums text-[color:var(--brand-primary)] outline-none ring-[color:var(--brand-accent)]/40 focus:ring-2 disabled:opacity-50"
+        />
+      </td>
+      <td className="px-3 py-2.5 align-middle text-right tabular-nums font-semibold text-[color:var(--brand-primary)]">
+        {formatMoney(
+          Number.isFinite(parsedPrice) && Number.isFinite(parsedQuantity)
+            ? parsedPrice * parsedQuantity
+            : product.totalPrice,
+          product.currency,
+          locale,
+        )}
+      </td>
+    </tr>
   );
 }
 

@@ -109,7 +109,7 @@ export async function getOfferById(
 
 export function toOfferProductUpdateRequest(
   product: OfferProductResponse,
-  patch: { quantity?: number; note?: string | null },
+  patch: { quantity?: number; price?: number; note?: string | null },
 ): OfferProductRequest {
   const productId = product.productId || product.id || "";
   return {
@@ -119,7 +119,7 @@ export function toOfferProductUpdateRequest(
     note: patch.note !== undefined ? patch.note : product.note ?? null,
     variantSelections: product.variantSelections,
     catalogVariantSelections: [],
-    price: product.price ?? 0,
+    price: patch.price ?? product.price ?? 0,
     currency: product.currency || "TRY",
     discount: product.discount ?? 0,
     discountType: product.discountType || "PERCENTAGE",

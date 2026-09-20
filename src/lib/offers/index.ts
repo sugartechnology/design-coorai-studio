@@ -7,6 +7,7 @@ export type {
   OfferImageResponse,
   OfferProductResponse,
   OfferResponse,
+  OfferSectionResponse,
   OfferSearchCriteria,
   OfferSearchPage,
   OfferSearchResponse,
