@@ -122,7 +122,7 @@ export function buildOfferPdfHtml(
     .note { color: #667; font-size: 11px; margin-top: 2px; }
     .images { display: flex; gap: 8px; margin-bottom: 10px; }
     .images figure { margin: 0; width: 32%; }
-    .images img { width: 100%; height: 120px; object-fit: cover; }
+    .images img { width: 100%; height: 280px; object-fit: contain; background: #fff; }
     figcaption { font-size: 10px; color: #667; margin-top: 4px; }
     .total { text-align: right; font-weight: 700; margin-top: 16px; }
   </style>

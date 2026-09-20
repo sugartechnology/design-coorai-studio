@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, Loader2, Sofa } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { FileText, Loader2, Plus, Sofa } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { AppHeader } from "@/components/AppHeader";
@@ -23,6 +23,7 @@ import {
   type OfferResponse,
   type OfferSectionResponse,
 } from "@/lib/offers";
+import { uploadPortalFile } from "@/lib/files/upload";
 import { PortalCrmError } from "@/lib/portal-crm";
 import { defaultLocale, isAppLocale, toBcp47 } from "@/i18n/config";
 
@@ -262,7 +263,8 @@ function OfferDetailPage() {
             {sections.map((section, sectionIndex) => (
               <ProposalSectionMini
                 key={section.id || `${section.name}-${sectionIndex}`}
-                offerId={offer.id}
+                offer={offer}
+                customerId={customer?.id ?? null}
                 section={section}
                 sectionIndex={sectionIndex}
                 currency={offer.currency}
@@ -293,7 +295,8 @@ function OfferDetailPage() {
 }
 
 function ProposalSectionMini({
-  offerId,
+  offer,
+  customerId,
   section,
   sectionIndex,
   currency,
@@ -301,7 +304,8 @@ function ProposalSectionMini({
   onSaved,
   onError,
 }: {
-  offerId: string;
+  offer: OfferResponse;
+  customerId: string | null;
   section: OfferSectionResponse;
   sectionIndex: number;
   currency?: string;
@@ -310,6 +314,9 @@ function ProposalSectionMini({
   onError: (message: string | null) => void;
 }) {
   const t = useTranslations("offers");
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
   const images = sectionImages(section);
   const products = section.products ?? [];
   const sectionTotal = products.reduce((sum, product) => {
@@ -317,6 +324,42 @@ function ProposalSectionMini({
       product.totalPrice ?? (product.price ?? 0) * (product.quantity ?? 0);
     return sum + (Number.isFinite(line) ? line : 0);
   }, 0);
+
+  const addImages = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    onError(null);
+    try {
+      const uploaded: OfferImageResponse[] = [];
+      for (const file of Array.from(files)) {
+        const url = await uploadPortalFile(file, router);
+        uploaded.push({
+          imageUrl: url,
+          thumbnailUrl: url,
+          imageOrder: images.length + uploaded.length,
+        });
+      }
+      const nextSections = (offer.sections ?? []).map((item, index) => {
+        const same =
+          (section.id && item.id === section.id) ||
+          (!section.id && index === sectionIndex);
+        if (!same) return item;
+        return { ...item, images: [...(item.images ?? []), ...uploaded] };
+      });
+      const saved = await updateOffer(
+        offer.id,
+        toOfferUpdateRequest({ ...offer, sections: nextSections }, customerId),
+        router,
+      );
+      onSaved(saved);
+    } catch (err) {
+      if (err instanceof PortalCrmError && err.status === 401) return;
+      onError(err instanceof Error ? err.message : t("detailAddImageError"));
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   return (
     <section className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
@@ -326,8 +369,8 @@ function ProposalSectionMini({
         </h2>
       </div>
 
-      {images.length > 0 && (
-        <ul className="grid grid-cols-2 gap-2 border-b border-black/5 p-3 sm:grid-cols-3">
+      <div className="border-b border-black/5 p-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {images.map((image, index) => (
             <li
               key={`${image.imageUrl}-${index}`}
@@ -337,17 +380,40 @@ function ProposalSectionMini({
               <img
                 src={image.imageUrl}
                 alt={image.altText || image.caption || t("detailImages")}
-                className="h-28 w-full object-cover"
+                className="h-80 w-full object-contain bg-white"
               />
               {image.caption ? (
-                <p className="px-2 py-1 text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
+                <p className="px-2 py-1.5 text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
                   {image.caption}
                 </p>
               ) : null}
             </li>
           ))}
+          <li>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={(event) => void addImages(event.target.files)}
+            />
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => fileRef.current?.click()}
+              className="flex h-80 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--brand-primary)]/25 bg-[color:var(--brand-primary)]/[0.03] text-sm font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-40"
+            >
+              {uploading ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <Plus className="size-5" />
+              )}
+              {t("detailAddImage")}
+            </button>
+          </li>
         </ul>
-      )}
+      </div>
 
       {products.length === 0 ? (
         <p className="px-4 py-6 text-sm text-[color:var(--brand-primary)]/50">
@@ -369,7 +435,7 @@ function ProposalSectionMini({
               {products.map((product, index) => (
                 <OfferLineRow
                   key={product.id || `${product.productId}-${index}`}
-                  offerId={offerId}
+                  offerId={offer.id}
                   product={product}
                   index={index}
                   locale={locale}

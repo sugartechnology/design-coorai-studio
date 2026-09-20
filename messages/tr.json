@@ -660,6 +660,8 @@
     "listSubtitle": "Teklifleri görüntüleyin, düzenleyin veya oda tasarımına gidin.",
     "detailLoadError": "Teklif yüklenemedi.",
     "detailImages": "Görseller",
+    "detailAddImage": "Görsel ekle",
+    "detailAddImageError": "Görsel eklenemedi.",
     "detailCustomer": "Müşteri",
     "detailProduct": "Ürün ismi, Model, Marka",
     "detailQuantity": "Miktar",

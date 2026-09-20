@@ -660,6 +660,8 @@
     "listSubtitle": "View and edit quotes, or open the room design.",
     "detailLoadError": "Could not load quote.",
     "detailImages": "Images",
+    "detailAddImage": "Add image",
+    "detailAddImageError": "Could not add image.",
     "detailCustomer": "Customer",
     "detailProduct": "Product, model, brand",
     "detailQuantity": "Qty",
