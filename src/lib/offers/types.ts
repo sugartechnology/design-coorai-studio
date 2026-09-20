@@ -288,6 +288,13 @@ export type CustomerQuickCreateInput = {
   lastName?: string;
   fullName?: string;
   customerCompanyName?: string;
+  sourceId?: string;
+};
+
+export type CustomerSourceResponse = {
+  id: string;
+  title?: string;
+  type?: string | null;
 };
 
 export type CustomerResponse = {

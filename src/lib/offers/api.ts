@@ -3,6 +3,7 @@ import type {
   CustomerQuickCreateInput,
   CustomerResponse,
   CustomerSearchHit,
+  CustomerSourceResponse,
   OfferCreateRequest,
   OfferProductRequest,
   OfferSectionRequest,
@@ -17,6 +18,25 @@ import type {
 } from "./types";
 
 type RouterLike = { replace: (href: string) => void };
+
+const CUSTOMER_SOURCE_TITLE = "Design Studio Plus";
+
+async function resolveCustomerSourceId(router?: RouterLike): Promise<string> {
+  const sources = await portalCrmFetch<CustomerSourceResponse[]>("sources", { router });
+  const existing = (sources ?? []).find(
+    (source) => source.title?.trim().toLowerCase() === CUSTOMER_SOURCE_TITLE.toLowerCase(),
+  );
+  if (existing?.id) return existing.id;
+  const created = await portalCrmFetch<CustomerSourceResponse>("sources", {
+    method: "POST",
+    body: { title: CUSTOMER_SOURCE_TITLE },
+    router,
+  });
+  if (!created?.id) {
+    throw new Error("Customer source is required");
+  }
+  return created.id;
+}
 
 export async function searchCustomersCompletion(
   query: string,
@@ -35,9 +55,13 @@ export async function quickCreateCustomer(
   input: CustomerQuickCreateInput,
   router?: RouterLike,
 ): Promise<CustomerResponse> {
+  const sourceId = input.sourceId?.trim() || (await resolveCustomerSourceId(router));
   return portalCrmFetch<CustomerResponse>("customers/quick-create", {
     method: "POST",
-    body: input,
+    body: {
+      ...input,
+      sourceId,
+    },
     router,
   });
 }
