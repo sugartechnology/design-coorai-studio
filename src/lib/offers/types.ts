@@ -154,6 +154,21 @@ export type OfferCreateRequest = {
   showExtraDiscount?: boolean;
 };
 
+export type OfferUpdateRequest = {
+  title?: string;
+  notes?: string;
+  currency: string;
+  language: string;
+  status?: string;
+  customerId?: string | null;
+  sections: OfferSectionRequest[];
+  vatIncludedInPrice?: boolean;
+  showUnitPrice?: boolean;
+  showUnitPriceWithVat?: boolean;
+  showTax?: boolean;
+  showExtraDiscount?: boolean;
+};
+
 export type OfferCustomerResponse = {
   id?: string;
   customerId?: string;

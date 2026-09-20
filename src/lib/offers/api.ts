@@ -5,6 +5,8 @@ import type {
   CustomerSearchHit,
   OfferCreateRequest,
   OfferProductRequest,
+  OfferSectionRequest,
+  OfferUpdateRequest,
   OfferProductResponse,
   OfferResponse,
   OfferSearchCriteria,
@@ -126,6 +128,66 @@ export function toOfferProductUpdateRequest(
     quantity: patch.quantity ?? product.quantity ?? 1,
     productOrder: product.productOrder,
   };
+}
+
+export function toOfferUpdateRequest(
+  offer: OfferResponse,
+  customerId?: string | null,
+): OfferUpdateRequest {
+  const sections: OfferSectionRequest[] = (offer.sections ?? []).map((section, index) => ({
+    name: section.name || `SECTION ${index + 1}`,
+    sectionOrder: section.sectionOrder ?? index,
+    roomType: section.roomType ?? undefined,
+    promptNotes: section.promptNotes ?? undefined,
+    sceneLayout: section.sceneLayout ?? undefined,
+    images: (section.images ?? [])
+      .filter((image) => image.imageUrl?.trim())
+      .map((image, imageIndex) => ({
+        imageUrl: image.imageUrl || "",
+        thumbnailUrl: image.thumbnailUrl,
+        caption: image.caption,
+        altText: image.altText,
+        imageOrder: image.imageOrder ?? imageIndex,
+      })),
+    products: (section.products ?? []).map((product, productIndex) => ({
+      ...toOfferProductUpdateRequest(product, {
+        quantity: product.quantity,
+        price: product.price,
+      }),
+      productOrder: product.productOrder ?? productIndex + 1,
+    })),
+  }));
+
+  return {
+    title: offer.title,
+    notes: offer.notes,
+    currency: offer.currency || "TRY",
+    language: offer.language || "tr",
+    status: offer.status || "PENDING",
+    customerId: customerId || null,
+    sections,
+    vatIncludedInPrice: false,
+    showUnitPrice: true,
+    showUnitPriceWithVat: false,
+    showTax: true,
+    showExtraDiscount: false,
+  };
+}
+
+export async function updateOffer(
+  offerId: string,
+  request: OfferUpdateRequest,
+  router?: RouterLike,
+): Promise<OfferResponse> {
+  return portalCrmFetch<OfferResponse>(
+    `offers/${encodeURIComponent(offerId)}/update`,
+    {
+      method: "POST",
+      body: request,
+      searchParams: { response: "full" },
+      router,
+    },
+  );
 }
 
 export async function updateOfferProduct(

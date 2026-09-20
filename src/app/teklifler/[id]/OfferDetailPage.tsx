@@ -8,10 +8,15 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { AppHeader } from "@/components/AppHeader";
 import {
-  buildOfferShareUrl,
-  createShareLink,
+  OfferCustomerPicker,
+  type OfferCustomerChoice,
+} from "@/components/offers/OfferCustomerPicker";
+import {
+  downloadOfferPdf,
   getOfferById,
   toOfferProductUpdateRequest,
+  toOfferUpdateRequest,
+  updateOffer,
   updateOfferProduct,
   type OfferImageResponse,
   type OfferProductResponse,
@@ -47,6 +52,15 @@ function customerLabel(offer: OfferResponse, fallback: string): string {
   if (name && company) return `${name} · ${company}`;
   if (name && phone) return `${name} · ${phone}`;
   return name || company || phone || customer.email?.trim() || fallback;
+}
+
+function customerChoiceFromOffer(
+  offer: OfferResponse,
+  fallback: string,
+): OfferCustomerChoice | null {
+  const id = offer.customer?.customerId || offer.customer?.id;
+  if (!id) return null;
+  return { id, label: customerLabel(offer, fallback) };
 }
 
 function humanProductNote(product: OfferProductResponse): string | null {
@@ -91,9 +105,11 @@ function OfferDetailPage() {
   const bcp47 = toBcp47(isAppLocale(locale) ? locale : defaultLocale);
 
   const [offer, setOffer] = useState<OfferResponse | null>(null);
+  const [customer, setCustomer] = useState<OfferCustomerChoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!offerId) {
@@ -107,7 +123,10 @@ function OfferDetailPage() {
       setError(null);
       try {
         const next = await getOfferById(offerId, router);
-        if (!cancelled) setOffer(next);
+        if (!cancelled) {
+          setOffer(next);
+          setCustomer(customerChoiceFromOffer(next, t("listCustomerUnknown")));
+        }
       } catch (err) {
         if (err instanceof PortalCrmError && err.status === 401) return;
         if (!cancelled) {
@@ -129,18 +148,41 @@ function OfferDetailPage() {
   }, [offer]);
 
   const openPdf = async () => {
-    if (!offerId) return;
+    if (!offer) return;
     setPdfBusy(true);
     setError(null);
     try {
-      const share = await createShareLink(offerId, router);
-      const url = buildOfferShareUrl(share.token);
-      window.open(url, "_blank", "noopener,noreferrer");
+      await downloadOfferPdf(offer, {
+        untitled: t("listUntitled"),
+        noCustomer: t("listCustomerUnknown"),
+        customer: customer?.label,
+        error: t("detailPdfError"),
+      });
     } catch (err) {
-      if (err instanceof PortalCrmError && err.status === 401) return;
       setError(err instanceof Error ? err.message : t("detailPdfError"));
     } finally {
       setPdfBusy(false);
+    }
+  };
+
+  const saveOffer = async () => {
+    if (!offer) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const saved = await updateOffer(
+        offer.id,
+        toOfferUpdateRequest(offer, customer?.id ?? null),
+        router,
+      );
+      const next = saved.id ? saved : await getOfferById(offer.id, router);
+      setOffer(next);
+      setCustomer(customerChoiceFromOffer(next, t("listCustomerUnknown")));
+    } catch (err) {
+      if (err instanceof PortalCrmError && err.status === 401) return;
+      setError(err instanceof Error ? err.message : t("detailSaveError"));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -181,9 +223,6 @@ function OfferDetailPage() {
                 <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[color:var(--brand-primary)]/55">
                   {offer.offerNumber ? <span>#{offer.offerNumber}</span> : null}
                   <span>
-                    {t("detailCustomer")}: {customerLabel(offer, t("listCustomerUnknown"))}
-                  </span>
-                  <span>
                     {t("status")}: {offer.status || "PENDING"}
                   </span>
                 </p>
@@ -212,6 +251,14 @@ function OfferDetailPage() {
               </div>
             </section>
 
+            <section className="rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm">
+              <OfferCustomerPicker
+                value={customer}
+                onChange={setCustomer}
+                onError={setError}
+              />
+            </section>
+
             {sections.map((section, sectionIndex) => (
               <ProposalSectionMini
                 key={section.id || `${section.name}-${sectionIndex}`}
@@ -225,10 +272,18 @@ function OfferDetailPage() {
               />
             ))}
 
-            <section className="flex items-center justify-end rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm">
+            <section className="flex flex-col gap-3 rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-bold text-[color:var(--brand-primary)]">
                 {t("total")}: {formatMoney(offer.totalPrice, offer.currency, bcp47)}
               </p>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => void saveOffer()}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-[color:var(--brand-primary)] px-5 text-sm font-bold text-white hover:bg-[color:var(--brand-primary-strong)] disabled:opacity-40"
+              >
+                {saving ? <Loader2 className="size-4 animate-spin" /> : t("detailSaveOffer")}
+              </button>
             </section>
           </div>
         )}
