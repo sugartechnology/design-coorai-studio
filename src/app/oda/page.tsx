@@ -15,6 +15,7 @@ import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
 import { useCart } from "@/lib/cart";
 import { type CatalogProduct } from "@/lib/catalog";
 import {
+  attachQuoteViewImages,
   formatConfigNote,
   getOfferById,
   resolveOfferSceneLayout,
@@ -277,12 +278,19 @@ function OdaPage() {
     try {
       const draft = await buildQuoteFromScene();
       if (!draft) return;
-      setQuoteDraft(draft);
+      const withImages = await attachQuoteViewImages(draft, designerRef.current, {
+        router,
+        captions: {
+          top: t("quoteViewTop"),
+          perspective: t("quoteViewPerspective"),
+        },
+      });
+      setQuoteDraft(withImages);
       setQuoteOpen(true);
     } finally {
       setQuoteBusy(false);
     }
-  }, [buildQuoteFromScene]);
+  }, [buildQuoteFromScene, router, t]);
 
   useEffect(() => {
     const el = designerEl;

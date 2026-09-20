@@ -256,7 +256,9 @@
     "noModelIdTitle": "{name} (no model id for room placement)",
     "offerSceneMissing": "This quote has no saved room plan.",
     "offerLoadError": "Could not load quote.",
-    "offerSceneImportError": "Could not import the room plan."
+    "offerSceneImportError": "Could not import the room plan.",
+    "quoteViewTop": "Top view",
+    "quoteViewPerspective": "Perspective"
   },
   "aiStudio": {
     "headerTitle": "AI STUDIO",

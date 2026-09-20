@@ -256,7 +256,9 @@
     "noModelIdTitle": "{name} (oda yerleşimi için model id yok)",
     "offerSceneMissing": "Bu teklifte kayıtlı oda planı yok.",
     "offerLoadError": "Teklif yüklenemedi.",
-    "offerSceneImportError": "Oda planı içe aktarılamadı."
+    "offerSceneImportError": "Oda planı içe aktarılamadı.",
+    "quoteViewTop": "Üst görünüm",
+    "quoteViewPerspective": "Perspektif"
   },
   "aiStudio": {
     "headerTitle": "AI STUDIO",

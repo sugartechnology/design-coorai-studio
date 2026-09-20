@@ -42,4 +42,5 @@ export {
 } from "./build-request";
 export { createOfferWithPreview, buildOfferEditUrl } from "./create-with-preview";
 export { lineFromCatalogProduct, resolveCatalogUnitPrice } from "./pricing";
+export { attachQuoteViewImages, type QuoteCaptureViews } from "./quote-view-images";
 export { formatConfigNote, zoneSelectionsToConfig } from "./zone-config";

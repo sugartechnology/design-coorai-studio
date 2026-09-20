@@ -19,6 +19,7 @@ export const ROOM_QUOTE_REQUEST_EVENT = "room-quote-request";
 export type SugarRoomDesignerElement = HTMLElement & {
   ui?: "builtin" | "none";
   api?: {
+    /** Includes `quote.captureViews` (top + perspective data URLs). */
     execute: (name: string, request: unknown) => unknown;
     store: (name: string) => {
       snapshot: unknown;
