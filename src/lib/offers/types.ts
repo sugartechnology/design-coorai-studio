@@ -240,6 +240,9 @@ export type OfferSearchResponse = {
   currency?: string;
   status?: string;
   createdAt?: string;
+  updatedAt?: string;
+  createdByName?: string;
+  updatedBy?: string;
 };
 
 export type OfferSearchCriteria = {

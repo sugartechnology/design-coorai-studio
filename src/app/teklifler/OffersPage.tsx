@@ -28,15 +28,33 @@ function formatMoney(
   }
 }
 
-function formatDate(iso: string | undefined, locale: string): string {
+function formatDateTime(iso: string | undefined, locale: string): string {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(d);
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Istanbul",
+  }).format(date);
 }
+
+const STATUS_MESSAGE_KEYS: Record<string, string> = {
+  QUOTE_REQUESTED: "statusQuoteRequested",
+  PENDING: "statusPending",
+  REOPENED: "statusReopened",
+  ACCEPTED: "statusAccepted",
+  ON_PRODUCTION: "statusOnProduction",
+  ON_DELIVERY: "statusOnDelivery",
+  DELIVERED: "statusDelivered",
+  COMPLETED: "statusCompleted",
+  ORDERED: "statusOrdered",
+  REJECTED: "statusRejected",
+  CANCELLED: "statusCancelled",
+};
 
 function OffersPage() {
   const router = useRouter();
@@ -90,7 +108,7 @@ function OffersPage() {
     <div className="flex min-h-dvh flex-col bg-[color:var(--brand-bg)]">
       <AppHeader title={t("listTitle").toUpperCase()} backHref="/" />
 
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
         <p className="mb-4 text-sm text-[color:var(--brand-primary)]/60">
           {t("listSubtitle")}
         </p>
@@ -128,56 +146,87 @@ function OffersPage() {
         )}
 
         {!loading && !error && offers.length > 0 && (
-          <ul className="space-y-2">
-            {offers.map((offer) => (
-                <li
-                  key={offer.id}
-                  className="rounded-2xl border border-black/5 bg-white px-4 py-3 shadow-sm"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[color:var(--brand-primary)]/5 text-[color:var(--brand-primary)]">
-                      <FileText className="size-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <p className="truncate text-sm font-bold text-[color:var(--brand-primary)]">
+          <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[72rem] text-sm">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-black/8 bg-white text-left text-[11px] font-extrabold tracking-[0.08em] text-[color:var(--brand-primary)]/45">
+                    <th className="px-4 py-3">{t("listColumnNo")}</th>
+                    <th className="px-4 py-3">{t("listColumnTitle")}</th>
+                    <th className="px-4 py-3">{t("listColumnCustomer")}</th>
+                    <th className="px-4 py-3">{t("listColumnStatus")}</th>
+                    <th className="px-4 py-3 text-right">{t("listColumnTotal")}</th>
+                    <th className="px-4 py-3">{t("listColumnCreated")}</th>
+                    <th className="px-4 py-3">{t("listColumnUpdated")}</th>
+                    <th className="px-4 py-3">{t("listColumnCreatedBy")}</th>
+                    <th className="px-4 py-3 text-right">{t("listColumnActions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {offers.map((offer, index) => {
+                    const statusKey =
+                      (offer.status && STATUS_MESSAGE_KEYS[offer.status]) ||
+                      "statusPending";
+                    return (
+                    <tr
+                      key={offer.id}
+                      className={`border-b border-black/5 last:border-b-0 hover:bg-[color:var(--brand-primary)]/[0.04] ${
+                        index % 2 === 1 ? "bg-[color:var(--brand-primary)]/[0.02]" : "bg-white"
+                      }`}
+                    >
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold tabular-nums text-[color:var(--brand-primary)]">
+                        {offer.offerNumber ? `#${offer.offerNumber}` : "—"}
+                      </td>
+                      <td className="max-w-[16rem] px-4 py-3">
+                        <p className="truncate font-semibold text-[color:var(--brand-primary)]">
                           {offer.title?.trim() || t("listUntitled")}
                         </p>
-                        {offer.offerNumber && (
-                          <span className="shrink-0 text-[11px] font-semibold text-[color:var(--brand-primary)]/45">
-                            #{offer.offerNumber}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-[color:var(--brand-primary)]/55">
+                      </td>
+                      <td className="max-w-[11rem] truncate px-4 py-3 text-[color:var(--brand-primary)]/70">
                         {offer.customerName?.trim() || t("listCustomerUnknown")}
-                        {" · "}
-                        {formatDate(offer.createdAt, bcp47)}
-                      </p>
-                      <p className="mt-1 text-sm font-bold text-[color:var(--brand-primary)]">
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="inline-flex rounded-full bg-[color:var(--brand-primary)]/8 px-2 py-0.5 text-[11px] font-bold text-[color:var(--brand-primary)]">
+                          {t(statusKey)}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums font-semibold text-[color:var(--brand-primary)]">
                         {formatMoney(offer.totalPrice, offer.currency, bcp47)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <Link
-                      href={`/teklifler/${encodeURIComponent(offer.id)}`}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-2 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
-                    >
-                      <FileText className="size-3.5 shrink-0" />
-                      <span className="truncate">{t("listViewOffer")}</span>
-                    </Link>
-                    <Link
-                      href={`/oda?offerId=${encodeURIComponent(offer.id)}`}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[color:var(--brand-primary)] px-2 text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)]"
-                    >
-                      <Sofa className="size-3.5 shrink-0" />
-                      <span className="truncate">{t("listGoToDesign")}</span>
-                    </Link>
-                  </div>
-                </li>
-            ))}
-          </ul>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[color:var(--brand-primary)]/70">
+                        {formatDateTime(offer.createdAt, bcp47)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[color:var(--brand-primary)]/70">
+                        {formatDateTime(offer.updatedAt, bcp47)}
+                      </td>
+                      <td className="max-w-[10rem] truncate px-4 py-3 text-[color:var(--brand-primary)]/70">
+                        {offer.createdByName?.trim() || "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <Link
+                            href={`/teklifler/${encodeURIComponent(offer.id)}`}
+                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-[color:var(--brand-primary)]/15 px-2.5 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
+                          >
+                            <FileText className="size-3.5" />
+                            {t("listViewOffer")}
+                          </Link>
+                          <Link
+                            href={`/oda?offerId=${encodeURIComponent(offer.id)}`}
+                            className="inline-flex h-8 items-center gap-1 rounded-lg bg-[color:var(--brand-primary)] px-2.5 text-xs font-bold text-white hover:bg-[color:var(--brand-primary-strong)]"
+                          >
+                            <Sofa className="size-3.5" />
+                            {t("listGoToDesign")}
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </main>
     </div>
