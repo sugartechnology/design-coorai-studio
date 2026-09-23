@@ -662,6 +662,8 @@
     "detailImages": "Görseller",
     "detailAddImage": "Görsel ekle",
     "detailAddImageError": "Görsel eklenemedi.",
+    "detailRemoveImage": "Görseli sil",
+    "detailRemoveImageError": "Görsel silinemedi.",
     "detailCustomer": "Müşteri",
     "detailProduct": "Ürün ismi, Model, Marka",
     "detailQuantity": "Miktar",

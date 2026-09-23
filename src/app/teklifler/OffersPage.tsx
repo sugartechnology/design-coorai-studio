@@ -108,7 +108,7 @@ function OffersPage() {
     <div className="flex min-h-dvh flex-col bg-[color:var(--brand-bg)]">
       <AppHeader title={t("listTitle").toUpperCase()} backHref="/" />
 
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-[90rem] flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
         <p className="mb-4 text-sm text-[color:var(--brand-primary)]/60">
           {t("listSubtitle")}
         </p>
@@ -147,19 +147,18 @@ function OffersPage() {
 
         {!loading && !error && offers.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[72rem] text-sm">
+              <table className="w-full table-fixed text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr className="border-b border-black/8 bg-white text-left text-[11px] font-extrabold tracking-[0.08em] text-[color:var(--brand-primary)]/45">
-                    <th className="px-4 py-3">{t("listColumnNo")}</th>
-                    <th className="px-4 py-3">{t("listColumnTitle")}</th>
-                    <th className="px-4 py-3">{t("listColumnCustomer")}</th>
-                    <th className="px-4 py-3">{t("listColumnStatus")}</th>
-                    <th className="px-4 py-3 text-right">{t("listColumnTotal")}</th>
-                    <th className="px-4 py-3">{t("listColumnCreated")}</th>
-                    <th className="px-4 py-3">{t("listColumnUpdated")}</th>
-                    <th className="px-4 py-3">{t("listColumnCreatedBy")}</th>
-                    <th className="px-4 py-3 text-right">{t("listColumnActions")}</th>
+                  <tr className="border-b border-black/8 bg-white text-left text-[11px] font-extrabold tracking-[0.06em] text-[color:var(--brand-primary)]/45">
+                    <th className="w-[8%] px-2.5 py-3">{t("listColumnNo")}</th>
+                    <th className="w-[18%] px-2.5 py-3">{t("listColumnTitle")}</th>
+                    <th className="w-[12%] px-2.5 py-3">{t("listColumnCustomer")}</th>
+                    <th className="w-[8%] px-2.5 py-3">{t("listColumnStatus")}</th>
+                    <th className="w-[7%] px-2.5 py-3 text-right">{t("listColumnTotal")}</th>
+                    <th className="w-[12%] px-2.5 py-3">{t("listColumnCreated")}</th>
+                    <th className="w-[12%] px-2.5 py-3">{t("listColumnUpdated")}</th>
+                    <th className="w-[10%] px-2.5 py-3">{t("listColumnCreatedBy")}</th>
+                    <th className="w-[13%] px-2.5 py-3 text-right">{t("listColumnActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -174,36 +173,36 @@ function OffersPage() {
                         index % 2 === 1 ? "bg-[color:var(--brand-primary)]/[0.02]" : "bg-white"
                       }`}
                     >
-                      <td className="whitespace-nowrap px-4 py-3 font-semibold tabular-nums text-[color:var(--brand-primary)]">
+                      <td className="whitespace-nowrap px-2.5 py-3 font-semibold tabular-nums text-[color:var(--brand-primary)]">
                         {offer.offerNumber ? `#${offer.offerNumber}` : "—"}
                       </td>
-                      <td className="max-w-[16rem] px-4 py-3">
+                      <td className="px-2.5 py-3">
                         <p className="truncate font-semibold text-[color:var(--brand-primary)]">
                           {offer.title?.trim() || t("listUntitled")}
                         </p>
                       </td>
-                      <td className="max-w-[11rem] truncate px-4 py-3 text-[color:var(--brand-primary)]/70">
+                      <td className="truncate px-2.5 py-3 text-[color:var(--brand-primary)]/70">
                         {offer.customerName?.trim() || t("listCustomerUnknown")}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span className="inline-flex rounded-full bg-[color:var(--brand-primary)]/8 px-2 py-0.5 text-[11px] font-bold text-[color:var(--brand-primary)]">
+                      <td className="px-2.5 py-3">
+                        <span className="inline-flex max-w-full truncate rounded-full bg-[color:var(--brand-primary)]/8 px-2 py-0.5 text-[11px] font-bold text-[color:var(--brand-primary)]">
                           {t(statusKey)}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums font-semibold text-[color:var(--brand-primary)]">
+                      <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums font-semibold text-[color:var(--brand-primary)]">
                         {formatMoney(offer.totalPrice, offer.currency, bcp47)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[color:var(--brand-primary)]/70">
+                      <td className="px-2.5 py-3 text-xs tabular-nums leading-snug text-[color:var(--brand-primary)]/70">
                         {formatDateTime(offer.createdAt, bcp47)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[color:var(--brand-primary)]/70">
+                      <td className="px-2.5 py-3 text-xs tabular-nums leading-snug text-[color:var(--brand-primary)]/70">
                         {formatDateTime(offer.updatedAt, bcp47)}
                       </td>
-                      <td className="max-w-[10rem] truncate px-4 py-3 text-[color:var(--brand-primary)]/70">
+                      <td className="truncate px-2.5 py-3 text-[color:var(--brand-primary)]/70">
                         {offer.createdByName?.trim() || "—"}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
+                      <td className="px-2.5 py-3">
+                        <div className="flex justify-end gap-1.5">
                           <Link
                             href={`/teklifler/${encodeURIComponent(offer.id)}`}
                             className="inline-flex h-8 items-center gap-1 rounded-lg border border-[color:var(--brand-primary)]/15 px-2.5 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
@@ -225,7 +224,6 @@ function OffersPage() {
                   })}
                 </tbody>
               </table>
-            </div>
           </div>
         )}
       </main>

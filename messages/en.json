@@ -662,6 +662,8 @@
     "detailImages": "Images",
     "detailAddImage": "Add image",
     "detailAddImageError": "Could not add image.",
+    "detailRemoveImage": "Remove image",
+    "detailRemoveImageError": "Could not remove image.",
     "detailCustomer": "Customer",
     "detailProduct": "Product, model, brand",
     "detailQuantity": "Qty",

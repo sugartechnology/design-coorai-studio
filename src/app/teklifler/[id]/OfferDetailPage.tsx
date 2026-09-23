@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, Loader2, Plus, Sofa } from "lucide-react";
+import { FileText, Loader2, Plus, Sofa, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -325,6 +325,7 @@ function ProposalSectionMini({
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
   const images = sectionImages(section);
   const products = section.products ?? [];
   const sectionTotal = products.reduce((sum, product) => {
@@ -369,6 +370,33 @@ function ProposalSectionMini({
     }
   };
 
+  const removeImage = async (imageIndex: number) => {
+    setRemovingIndex(imageIndex);
+    onError(null);
+    try {
+      const nextSections = (offer.sections ?? []).map((item, index) => {
+        const same =
+          (section.id && item.id === section.id) ||
+          (!section.id && index === sectionIndex);
+        if (!same) return item;
+        return { ...item, images: images.filter((_, i) => i !== imageIndex) };
+      });
+      const saved = await updateOffer(
+        offer.id,
+        toOfferUpdateRequest({ ...offer, sections: nextSections }, customerId),
+        router,
+      );
+      onSaved(saved);
+    } catch (err) {
+      if (err instanceof PortalCrmError && err.status === 401) return;
+      onError(err instanceof Error ? err.message : t("detailRemoveImageError"));
+    } finally {
+      setRemovingIndex(null);
+    }
+  };
+
+  const busy = uploading || removingIndex !== null;
+
   return (
     <section className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
       <div className="border-b border-black/5 px-4 py-3">
@@ -382,8 +410,21 @@ function ProposalSectionMini({
           {images.map((image, index) => (
             <li
               key={`${image.imageUrl}-${index}`}
-              className="overflow-hidden rounded-xl border border-black/5 bg-[color:var(--brand-primary)]/5"
+              className="relative overflow-hidden rounded-xl border border-black/5 bg-[color:var(--brand-primary)]/5"
             >
+              <button
+                type="button"
+                disabled={busy}
+                aria-label={t("detailRemoveImage")}
+                onClick={() => void removeImage(index)}
+                className="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-lg bg-white/95 text-[color:var(--brand-primary)] shadow-sm hover:bg-white disabled:opacity-40"
+              >
+                {removingIndex === index ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+              </button>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image.imageUrl}
@@ -408,7 +449,7 @@ function ProposalSectionMini({
             />
             <button
               type="button"
-              disabled={uploading}
+              disabled={busy}
               onClick={() => fileRef.current?.click()}
               className="flex h-80 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--brand-primary)]/25 bg-[color:var(--brand-primary)]/[0.03] text-sm font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-40"
             >
