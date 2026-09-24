@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FileText, Loader2, Plus, Sofa, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { AppHeader } from "@/components/AppHeader";
@@ -11,6 +11,7 @@ import {
   OfferCustomerPicker,
   type OfferCustomerChoice,
 } from "@/components/offers/OfferCustomerPicker";
+import { OfferImagePicker } from "@/components/offers/OfferImagePicker";
 import {
   downloadOfferPdf,
   getOfferById,
@@ -95,6 +96,15 @@ function sectionImages(section: OfferSectionResponse): OfferImageResponse[] {
   return (section.images ?? [])
     .filter((image) => image.imageUrl?.trim())
     .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0));
+}
+
+async function dataUrlToFile(dataUrl: string): Promise<File> {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  if (!blob.size) throw new Error("empty");
+  const mime = blob.type || "image/png";
+  const ext = mime.includes("jpeg") ? "jpg" : mime.includes("webp") ? "webp" : "png";
+  return new File([blob], `room-render.${ext}`, { type: mime });
 }
 
 function OfferDetailPage() {
@@ -323,7 +333,7 @@ function ProposalSectionMini({
 }) {
   const t = useTranslations("offers");
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [removingIndex, setRemovingIndex] = useState<number | null>(null);
   const images = sectionImages(section);
@@ -334,26 +344,26 @@ function ProposalSectionMini({
     return sum + (Number.isFinite(line) ? line : 0);
   }, 0);
 
-  const addImages = async (files: FileList | null) => {
-    if (!files?.length) return;
+  const addImageSrc = async (src: string) => {
+    const trimmed = src.trim();
+    if (!trimmed) return;
     setUploading(true);
     onError(null);
     try {
-      const uploaded: OfferImageResponse[] = [];
-      for (const file of Array.from(files)) {
-        const url = await uploadPortalFile(file, router);
-        uploaded.push({
-          imageUrl: url,
-          thumbnailUrl: url,
-          imageOrder: images.length + uploaded.length,
-        });
-      }
+      const imageUrl = trimmed.startsWith("data:")
+        ? await uploadPortalFile(await dataUrlToFile(trimmed), router)
+        : trimmed;
+      const uploaded: OfferImageResponse = {
+        imageUrl,
+        thumbnailUrl: imageUrl,
+        imageOrder: images.length,
+      };
       const nextSections = (offer.sections ?? []).map((item, index) => {
         const same =
           (section.id && item.id === section.id) ||
           (!section.id && index === sectionIndex);
         if (!same) return item;
-        return { ...item, images: [...(item.images ?? []), ...uploaded] };
+        return { ...item, images: [...(item.images ?? []), uploaded] };
       });
       const saved = await updateOffer(
         offer.id,
@@ -366,7 +376,6 @@ function ProposalSectionMini({
       onError(err instanceof Error ? err.message : t("detailAddImageError"));
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -405,63 +414,61 @@ function ProposalSectionMini({
         </h2>
       </div>
 
-      <div className="border-b border-black/5 p-3">
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {images.map((image, index) => (
-            <li
-              key={`${image.imageUrl}-${index}`}
-              className="relative overflow-hidden rounded-xl border border-black/5 bg-[color:var(--brand-primary)]/5"
-            >
-              <button
-                type="button"
-                disabled={busy}
-                aria-label={t("detailRemoveImage")}
-                onClick={() => void removeImage(index)}
-                className="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-lg bg-white/95 text-[color:var(--brand-primary)] shadow-sm hover:bg-white disabled:opacity-40"
+      <div className="border-b border-black/5 px-4 py-3">
+        {images.length > 0 ? (
+          <ul className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {images.map((image, index) => (
+              <li
+                key={`${image.imageUrl}-${index}`}
+                className="relative overflow-hidden rounded-xl border border-black/5 bg-[color:var(--brand-primary)]/5"
               >
-                {removingIndex === index ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Trash2 className="size-4" />
-                )}
-              </button>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={image.imageUrl}
-                alt={image.altText || image.caption || t("detailImages")}
-                className="h-80 w-full object-contain bg-white"
-              />
-              {image.caption ? (
-                <p className="px-2 py-1.5 text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
-                  {image.caption}
-                </p>
-              ) : null}
-            </li>
-          ))}
-          <li>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="sr-only"
-              onChange={(event) => void addImages(event.target.files)}
-            />
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => fileRef.current?.click()}
-              className="flex h-80 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[color:var(--brand-primary)]/25 bg-[color:var(--brand-primary)]/[0.03] text-sm font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-40"
-            >
-              {uploading ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                <Plus className="size-5" />
-              )}
-              {t("detailAddImage")}
-            </button>
-          </li>
-        </ul>
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-label={t("detailRemoveImage")}
+                  onClick={() => void removeImage(index)}
+                  className="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-lg bg-white/95 text-[color:var(--brand-primary)] shadow-sm hover:bg-white disabled:opacity-40"
+                >
+                  {removingIndex === index ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                </button>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image.imageUrl}
+                  alt={image.altText || image.caption || t("detailImages")}
+                  className="h-80 w-full object-contain bg-white"
+                />
+                {image.caption ? (
+                  <p className="px-2 py-1.5 text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
+                    {image.caption}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setPickerOpen(true)}
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[color:var(--brand-primary)]/15 bg-white px-3 text-xs font-bold text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 disabled:opacity-40"
+        >
+          {uploading ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Plus className="size-3.5 shrink-0" />
+          )}
+          {t("detailAddImage")}
+        </button>
+        <OfferImagePicker
+          open={pickerOpen}
+          busy={busy}
+          onOpenChange={setPickerOpen}
+          onPick={(src) => void addImageSrc(src)}
+        />
       </div>
 
       {products.length === 0 ? (
