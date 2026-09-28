@@ -149,6 +149,17 @@ function formatGalleryTimestamp(item: AiGalleryItem, fallback: string) {
   }
 }
 
+function galleryImageLink(url: string, id?: string) {
+  if (!url || !id || url.startsWith("data:")) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("v", id);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 function AiStudioPage() {
   const t = useTranslations("aiStudio");
   const tOffers = useTranslations("offers");
@@ -243,7 +254,12 @@ function AiStudioPage() {
       const status = (item.status ?? "").toUpperCase();
       return status === "COMPLETED" && Boolean(item.imageUrl || item.thumbnailUrl);
     });
-    return latest ? resolveGenerationImageUrl(latest) || latest.thumbnailUrl || null : null;
+    return latest
+      ? galleryImageLink(
+          resolveGenerationImageUrl(latest) || latest.thumbnailUrl || "",
+          latest.id,
+        ) || null
+      : null;
   }, [historyPanelItems]);
   const {
     categories,
@@ -808,7 +824,10 @@ function AiStudioPage() {
       if (!isGenerationSuccessful(done.status)) {
         throw new Error(t("errorRenderFailed"));
       }
-      const url = resolveGenerationImageUrl(done);
+      const url = galleryImageLink(
+        resolveGenerationImageUrl(done) || "",
+        generation.id || normalized.id,
+      );
       if (!url) throw new Error(t("errorRenderImageMissing"));
       setGalleryPreview({ url, caption: promptNotes || undefined });
       setStatusMessage(t("statusRenderDone"));
@@ -1558,8 +1577,10 @@ function AiStudioPage() {
                     </div>
                   ) : (
                     historyPanelItems.map((item, index) => {
-                      const previewUrl =
-                        resolveGenerationImageUrl(item) || item.thumbnailUrl || "";
+                      const previewUrl = galleryImageLink(
+                        resolveGenerationImageUrl(item) || item.thumbnailUrl || "",
+                        item.id,
+                      );
                       const status = (item.status ?? "").toUpperCase();
                       const isDone = status === "COMPLETED" && Boolean(previewUrl);
                       const isProcessing =
