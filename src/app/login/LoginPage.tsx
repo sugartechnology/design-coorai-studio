@@ -200,6 +200,7 @@ function LoginPage() {
         body: JSON.stringify({
           selectionToken,
           companyId: company.companyId,
+          companyName: company.name || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -306,7 +307,11 @@ function LoginPage() {
       const res = await fetch("/api/dealer-auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, code: pin }),
+        body: JSON.stringify({
+          sessionId,
+          code: pin,
+          dealerName: lookup?.dealerName || undefined,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {

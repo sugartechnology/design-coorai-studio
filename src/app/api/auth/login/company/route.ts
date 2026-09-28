@@ -11,6 +11,7 @@ import {
 type CompanySelectBody = {
   selectionToken?: string;
   companyId?: string;
+  companyName?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
 
   const selectionToken = body.selectionToken?.trim();
   const companyId = body.companyId?.trim();
+  const companyNameHint = body.companyName?.trim() || null;
   if (!selectionToken || !companyId) {
     return NextResponse.json(
       { error: "Şirket seçimi için gerekli bilgiler eksik." },
@@ -69,6 +71,9 @@ export async function POST(request: NextRequest) {
         { error: "Kimlik doğrulama yanıtı eksik." },
         { status: 502 },
       );
+    }
+    if (!session.companyName && companyNameHint) {
+      session.companyName = companyNameHint;
     }
     return portalSessionSuccessResponse(session);
   } catch (error) {

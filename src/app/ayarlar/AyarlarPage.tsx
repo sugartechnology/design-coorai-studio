@@ -17,12 +17,15 @@ import {
   MapPin,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { AppHeader } from "@/components/AppHeader";
 import { useSetLocale } from "@/i18n/locale-client";
 import { isAppLocale } from "@/i18n/config";
+import { getPortalSessionView } from "@/lib/portal-crm";
+import { usePortalTemplate } from "@/lib/templates/context";
+import { getTemplateByCompanySlug } from "@/lib/templates/catalog";
 
 type SectionId =
   | "magaza"
@@ -319,10 +322,46 @@ function GhostBtn({ children, onClick }: { children: React.ReactNode; onClick?: 
 function MagazaPanel() {
   const t = useTranslations("ayarlar");
   const tCommon = useTranslations("common");
-  const [name, setName] = useState("İstikbal Kadıköy");
-  const [email, setEmail] = useState("kadikoy@istikbal.com.tr");
-  const [phone, setPhone] = useState("+90 216 555 12 34");
-  const [addr, setAddr] = useState("Caferağa Mah. Moda Cad. No:12 Kadıköy / İstanbul");
+  const hostTemplate = usePortalTemplate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [addr, setAddr] = useState("");
+  const [logoUrl, setLogoUrl] = useState(hostTemplate.assets.logoUrl);
+  const [logoAlt, setLogoAlt] = useState(hostTemplate.displayName);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const session = await getPortalSessionView();
+        if (cancelled) return;
+        const brand =
+          getTemplateByCompanySlug(session?.companySlug) ?? hostTemplate;
+        const storeName =
+          session?.companyName?.trim() ||
+          brand.displayName ||
+          session?.companySlug ||
+          hostTemplate.displayName ||
+          "";
+        setName(storeName);
+        setEmail(session?.user.email?.trim() || "");
+        setPhone("");
+        setAddr("");
+        setLogoUrl(brand.assets.logoUrl);
+        setLogoAlt(brand.displayName);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hostTemplate]);
+
+  const logoInitial =
+    (name || logoAlt || "?").trim().charAt(0).toUpperCase() || "?";
 
   return (
     <PanelCard
@@ -331,8 +370,17 @@ function MagazaPanel() {
       action={<PrimaryBtn><Check className="size-4" /> {tCommon("save")}</PrimaryBtn>}
     >
       <div className="flex items-center gap-5 pb-6 mb-6 border-b border-black/5">
-        <div className="size-20 rounded-2xl bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary)]/70 grid place-items-center text-white text-2xl font-black italic">
-          i
+        <div className="size-20 rounded-2xl bg-gradient-to-br from-[color:var(--brand-primary)] to-[color:var(--brand-primary)]/70 grid place-items-center text-white text-2xl font-black italic overflow-hidden">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={logoAlt}
+              className="size-full object-contain p-2 bg-white"
+            />
+          ) : (
+            logoInitial
+          )}
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-[color:var(--brand-primary)]">{t("storeLogo")}</p>
@@ -348,7 +396,7 @@ function MagazaPanel() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${loading ? "opacity-60 pointer-events-none" : ""}`}>
         <Field label={t("storeName")} icon={<Building2 className="size-4" />} value={name} onChange={setName} />
         <Field label={t("storeEmail")} icon={<Mail className="size-4" />} value={email} onChange={setEmail} type="email" />
         <Field label={t("storePhone")} icon={<Phone className="size-4" />} value={phone} onChange={setPhone} />

@@ -25,7 +25,7 @@ type VerifyResponse = {
 };
 
 export async function POST(request: NextRequest) {
-  let body: { sessionId?: string; code?: string };
+  let body: { sessionId?: string; code?: string; dealerName?: string };
   try {
     body = await request.json();
   } catch {
@@ -73,11 +73,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const companyName = body.dealerName?.trim() || null;
+
     const session: PortalSession = {
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
       companySlug: data.companySlug,
       companyId: data.companyId,
+      companyName,
       user: {
         id: data.user.id,
         username: data.user.username,
@@ -96,6 +99,7 @@ export async function POST(request: NextRequest) {
         displayName: `${session.user.firstName} ${session.user.lastName}`.trim(),
       },
       companySlug: session.companySlug,
+      companyName: session.companyName,
     });
     response.cookies.set(
       PORTAL_SESSION_COOKIE,

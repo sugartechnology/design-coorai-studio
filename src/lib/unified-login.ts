@@ -142,19 +142,25 @@ export function buildPortalSessionFromUnified(
   );
   if (!tokens) return null;
 
-  const rrFromMatch = data.companies?.find(
+  const matchedCompany = data.companies?.find(
     (company) => company.companyId === data.user?.companyId,
-  )?.rapidRenderCompanyId;
+  );
+  const rrFromMatch = matchedCompany?.rapidRenderCompanyId;
   const rrFallback = data.companies?.find(
     (company) => company.rapidRenderCompanyId != null,
   )?.rapidRenderCompanyId;
   const rrCompanyId = rrFromMatch ?? rrFallback ?? null;
+  const companyName =
+    matchedCompany?.name?.trim() ||
+    data.companies?.find((company) => company.name?.trim())?.name?.trim() ||
+    null;
 
   return {
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
     companySlug: tokens.companySlug,
     companyId: data.user.companyId,
+    companyName,
     rrCompanyId:
       typeof rrCompanyId === "number" && Number.isFinite(rrCompanyId)
         ? rrCompanyId
@@ -181,6 +187,7 @@ export function portalSessionSuccessResponse(session: PortalSession) {
     },
     companySlug: session.companySlug,
     companyId: session.companyId,
+    companyName: session.companyName ?? null,
   });
   response.cookies.set(
     PORTAL_SESSION_COOKIE,

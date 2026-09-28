@@ -19,6 +19,8 @@ export type PortalSession = {
   refreshToken: string;
   companySlug: string;
   companyId: string;
+  /** Display name of the selected company / dealer, when known. */
+  companyName?: string | null;
   /** RapidRender numeric company id (`rrCompanyId`). */
   rrCompanyId?: number | null;
   user: PortalSessionUser;
@@ -78,6 +80,7 @@ export function publicSessionView(session: PortalSession) {
     authenticated: true as const,
     companySlug: session.companySlug,
     companyId: session.companyId,
+    companyName: session.companyName?.trim() || null,
     rrCompanyId: session.rrCompanyId ?? null,
     user: {
       id: session.user.id,
