@@ -193,7 +193,7 @@ export async function pollGenerationUntilDone(options: {
       options.kind === "reference"
         ? await listReferenceGenerations(options.sessionId, undefined, options.router)
         : await listRoomGenerations(options.sessionId, undefined, options.router);
-    const found = list.find((g) => g.id === options.generationId) ?? list[0];
+    const found = list.find((g) => String(g.id) === String(options.generationId));
     if (found && isGenerationTerminal(found.status)) {
       return found;
     }

@@ -80,6 +80,7 @@ import {
   type PersonalizeOptionKey,
   type ScenePerson,
 } from "@/lib/ai-studio";
+import { appendDroppedInstance, excessPlacedCount } from "@/lib/ai-studio/placed-instances";
 import { renderScenePreviewBlob } from "@/lib/ai-studio/scene-preview";
 import { downloadImageFile, imageDownloadName } from "@/lib/download-image";
 import { uploadPortalFile } from "@/lib/files/upload";
@@ -98,16 +99,6 @@ type SelectedProduct = {
   quantity: number;
 };
 
-function nextPlacedOffset(existing: PlacedItem[]): { x: number; y: number; scale: number } {
-  const last = existing[existing.length - 1];
-  if (!last) return { x: 50, y: 50, scale: 1 };
-  return {
-    x: Math.min(92, last.x + 6),
-    y: Math.min(92, last.y + 6),
-    scale: last.scale,
-  };
-}
-
 function createPlacedItem(
   product: CatalogProduct,
   x: number,
@@ -121,21 +112,6 @@ function createPlacedItem(
     y,
     scale,
   };
-}
-
-function appendPlacedCopies(
-  prev: PlacedItem[],
-  product: CatalogProduct,
-  count: number,
-): PlacedItem[] {
-  if (count <= 0) return prev;
-  const next = [...prev];
-  for (let i = 0; i < count; i += 1) {
-    const ofProduct = next.filter((item) => item.product.id === product.id);
-    const pos = nextPlacedOffset(ofProduct);
-    next.push(createPlacedItem(product, pos.x, pos.y, pos.scale));
-  }
-  return next;
 }
 
 function removeLastPlacedOfProduct(
@@ -344,6 +320,8 @@ function AiStudioPage() {
   const roomInputRef = useRef<HTMLInputElement>(null);
   const qrUploadInputRef = useRef<HTMLInputElement>(null);
   const renderEpochRef = useRef(0);
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const selectedQuantity = useMemo(
     () => selected.reduce((sum, item) => sum + item.quantity, 0),
     [selected],
@@ -371,31 +349,20 @@ function AiStudioPage() {
 
   const addProductsToSidebar = useCallback((products: CatalogProduct[]) => {
     if (products.length === 0) return;
-    const incremented: CatalogProduct[] = [];
     setSelected((prev) => {
       const next = [...prev];
       for (const product of products) {
         const idx = next.findIndex((item) => item.product.id === product.id);
         if (idx >= 0) {
           next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
-          incremented.push(product);
         } else {
           next.push({ product, quantity: 1 });
         }
       }
       return next;
     });
-    if (mode === "manual" && incremented.length > 0) {
-      setPlaced((prev) => {
-        let next = prev;
-        for (const product of incremented) {
-          next = appendPlacedCopies(next, product, 1);
-        }
-        return next;
-      });
-    }
     setOpenSections((s) => ({ ...s, products: true }));
-  }, [mode]);
+  }, []);
 
   const removeSelected = useCallback((productId: string) => {
     setSelected((prev) => prev.filter((item) => item.product.id !== productId));
@@ -420,17 +387,10 @@ function AiStudioPage() {
         row.product.id === productId ? { ...row, quantity: nextQty } : row,
       );
     });
-    if (!product) return;
-    if (mode !== "manual") return;
-    if (delta > 0) {
-      setPlaced((prev) => appendPlacedCopies(prev, product!, delta));
-      return;
-    }
-    const removeCount = nextQty <= 0 ? Number.POSITIVE_INFINITY : -delta;
+    if (!product || mode !== "manual" || delta > 0) return;
     setPlaced((prev) => {
-      const count = Number.isFinite(removeCount)
-        ? removeCount
-        : prev.filter((item) => item.product.id === productId).length;
+      const placedCount = prev.filter((item) => item.product.id === productId).length;
+      const count = excessPlacedCount(placedCount, nextQty);
       const { next, removedUids } = removeLastPlacedOfProduct(prev, productId, count);
       setSelectedUid((cur) => (cur && removedUids.includes(cur) ? null : cur));
       return next;
@@ -543,11 +503,14 @@ function AiStudioPage() {
 
   const placeProductOnCanvas = useCallback(
     (product: CatalogProduct, x: number, y: number, uid?: string) => {
-      setSelected((prev) =>
-        prev.some((item) => item.product.id === product.id)
-          ? prev
-          : [...prev, { product, quantity: 1 }],
-      );
+      const alreadySelected = selectedRef.current.some((item) => item.product.id === product.id);
+      if (!alreadySelected) {
+        setSelected((prev) =>
+          prev.some((item) => item.product.id === product.id)
+            ? prev
+            : [...prev, { product, quantity: 1 }],
+        );
+      }
       setPlaced((prev) => {
         if (uid) {
           const existing = prev.find((item) => item.uid === uid);
@@ -556,13 +519,14 @@ function AiStudioPage() {
           }
           return [...prev, { uid, product, x, y, scale: 1 }];
         }
-        const existing = prev.find((item) => item.product.id === product.id);
-        if (existing) {
-          return prev.map((item) =>
-            item.uid === existing.uid ? { ...item, x, y } : item,
-          );
-        }
-        return [...prev, createPlacedItem(product, x, y)];
+        const quantity =
+          selectedRef.current.find((item) => item.product.id === product.id)?.quantity ?? 1;
+        return appendDroppedInstance(
+          prev,
+          (item) => item.product.id === product.id,
+          quantity,
+          () => createPlacedItem(product, x, y),
+        );
       });
     },
     [],
@@ -849,7 +813,15 @@ function AiStudioPage() {
       setGalleryPreview({ url, caption: promptNotes || undefined });
       setStatusMessage(t("statusRenderDone"));
       setPendingHistoryItem(null);
-      mergeGalleryItems([{ ...normalized, ...done, status: done.status }]);
+      mergeGalleryItems([
+        {
+          ...normalized,
+          status: done.status || "COMPLETED",
+          imageUrl: done.imageUrl || normalized.imageUrl,
+          thumbnailUrl: done.thumbnailUrl || normalized.thumbnailUrl,
+          id: generation.id || normalized.id,
+        },
+      ]);
       void refreshCredits();
       void refreshGallery();
     } catch (err) {
@@ -1572,7 +1544,7 @@ function AiStudioPage() {
 
                 <div
                   ref={setGalleryScrollEl}
-                  className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 pb-4"
+                  className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-4"
                 >
                   {galleryLoading && historyPanelItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--brand-primary)]/50">
@@ -1596,7 +1568,7 @@ function AiStudioPage() {
                       return (
                         <div
                           key={item.id || `${previewUrl}-${index}`}
-                          className={`group relative isolate shrink-0 overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-all ${
+                          className={`group relative overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-all ${
                             isDone ? "cursor-pointer hover:border-[color:var(--brand-primary)]/30" : ""
                           }`}
                           onClick={() => {
@@ -1604,19 +1576,20 @@ function AiStudioPage() {
                           }}
                         >
                           {isDone ? (
-                            <div className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--brand-soft)]">
+                            <>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
+                                key={previewUrl}
                                 src={previewUrl}
                                 alt={item.caption || t("galleryTitle")}
-                                className="absolute inset-0 h-full w-full object-cover"
+                                className="aspect-[4/3] w-full object-cover"
                               />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
+                              <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-[4/3] items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
                                 <div className="rounded-full bg-white/95 p-2 shadow-lg">
                                   <Eye className="size-4 text-[color:var(--brand-primary)]" />
                                 </div>
                               </div>
-                            </div>
+                            </>
                           ) : (
                             <div className="relative flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-[color:var(--brand-soft)] px-4 text-center">
                               <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-[color:var(--brand-primary)]/10 via-transparent to-transparent" />
