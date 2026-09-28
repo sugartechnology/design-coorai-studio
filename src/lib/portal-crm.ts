@@ -2,13 +2,13 @@
 
 import { localizeCrmError, type CrmErrorBody, type CrmErrorLocale } from "@/lib/crm-errors";
 import { redirectToLoginOnUnauthorized } from "@/lib/auth-redirect";
-import { LOCALE_COOKIE, isAppLocale } from "@/i18n/config";
+import { LOCALE_COOKIE, toCrmErrorLocale } from "@/i18n/config";
 
 function resolveCrmLocale(): CrmErrorLocale {
   if (typeof document === "undefined") return "tr";
   const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
   const value = match?.[1] ? decodeURIComponent(match[1]) : undefined;
-  return isAppLocale(value) ? value : "tr";
+  return toCrmErrorLocale(value);
 }
 
 export type PortalSessionView = {

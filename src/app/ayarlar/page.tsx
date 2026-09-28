@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import AyarlarPage from "./AyarlarPage";
 
 export const metadata: Metadata = {
@@ -7,5 +8,13 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <AyarlarPage />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[color:var(--brand-bg)]" />
+      }
+    >
+      <AyarlarPage />
+    </Suspense>
+  );
 }

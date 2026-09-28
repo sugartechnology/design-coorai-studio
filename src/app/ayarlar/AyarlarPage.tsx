@@ -18,6 +18,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { AppHeader } from "@/components/AppHeader";
 import { useSetLocale } from "@/i18n/locale-client";
@@ -65,9 +66,31 @@ const SECTIONS: {
   { id: "veri", titleKey: "navDataTitle", descKey: "navDataDesc", icon: Database },
 ];
 
+function isSectionId(value: string | null): value is SectionId {
+  return (
+    value === "magaza" ||
+    value === "bildirim" ||
+    value === "gorunum" ||
+    value === "dil" ||
+    value === "guvenlik" ||
+    value === "odeme" ||
+    value === "entegrasyon" ||
+    value === "veri"
+  );
+}
+
+function resolveInitialSection(raw: string | null): SectionId {
+  if (isSectionId(raw)) return raw;
+  if (raw === "locale" || raw === "language") return "dil";
+  return "magaza";
+}
+
 function AyarlarPage() {
   const t = useTranslations("ayarlar");
-  const [active, setActive] = useState<SectionId>("magaza");
+  const searchParams = useSearchParams();
+  const [active, setActive] = useState<SectionId>(() =>
+    resolveInitialSection(searchParams.get("section")),
+  );
 
   return (
     <div className="min-h-screen bg-[color:var(--brand-bg)]">
@@ -460,8 +483,8 @@ function DilPanel() {
           options={[
             { v: "tr", l: `🇹🇷  ${t("langTr")}` },
             { v: "en", l: `🇬🇧  ${t("langEn")}` },
-            { v: "de", l: `🇩🇪  ${t("langDe")}`, disabled: true },
-            { v: "ar", l: `🇸🇦  ${t("langAr")}`, disabled: true },
+            { v: "de", l: `🇩🇪  ${t("langDe")}` },
+            { v: "ar", l: `🇸🇦  ${t("langAr")}` },
           ]}
         />
         <Select

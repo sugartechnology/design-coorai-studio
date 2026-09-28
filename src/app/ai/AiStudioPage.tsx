@@ -81,6 +81,7 @@ import {
   type ScenePerson,
 } from "@/lib/ai-studio";
 import { renderScenePreviewBlob } from "@/lib/ai-studio/scene-preview";
+import { downloadImageFile, imageDownloadName } from "@/lib/download-image";
 import { uploadPortalFile } from "@/lib/files/upload";
 import { PortalCrmError } from "@/lib/portal-crm";
 
@@ -211,6 +212,7 @@ function AiStudioPage() {
     loading: galleryLoading || galleryLoadingMore,
     onLoadMore: galleryLoadMore,
     root: galleryScrollEl,
+    rootMargin: "0px 0px 160px 0px",
   });
 
   useEffect(() => {
@@ -888,6 +890,12 @@ function AiStudioPage() {
     setGalleryPreview(null);
   };
 
+  const downloadGalleryImage = (url: string) => {
+    void downloadImageFile(url, imageDownloadName(url)).catch(() => {
+      setError(t("galleryDownloadFailed"));
+    });
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[color:var(--brand-bg)]">
       <AppHeader title={t("headerTitle")} backHref="/" />
@@ -1540,7 +1548,7 @@ function AiStudioPage() {
             </main>
 
             {showRenderGallery ? (
-              <aside className="mt-2 mx-3 mb-3 flex max-h-[min(280px,40vh)] min-h-0 w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm sm:mx-5 lg:mx-0 lg:mb-0 lg:mt-0 lg:h-full lg:max-h-full lg:w-[280px] lg:rounded-none lg:border-0 lg:border-l lg:shadow-none">
+              <aside className="relative z-10 mx-3 mb-3 mt-2 flex max-h-[min(280px,40vh)] min-h-0 w-auto shrink-0 flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm sm:mx-5 lg:mx-0 lg:mb-0 lg:mt-0 lg:h-full lg:max-h-full lg:w-[280px] lg:self-stretch lg:rounded-none lg:border-0 lg:border-l lg:shadow-none">
                 <div className="flex items-center justify-between px-4 py-4">
                   <h2 className="text-xs font-extrabold uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
                     {t("galleryTitle")}
@@ -1564,7 +1572,7 @@ function AiStudioPage() {
 
                 <div
                   ref={setGalleryScrollEl}
-                  className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 pb-4"
+                  className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 pb-4"
                 >
                   {galleryLoading && historyPanelItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center text-[color:var(--brand-primary)]/50">
@@ -1588,7 +1596,7 @@ function AiStudioPage() {
                       return (
                         <div
                           key={item.id || `${previewUrl}-${index}`}
-                          className={`group relative overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-all ${
+                          className={`group relative isolate shrink-0 overflow-hidden rounded-xl border border-black/5 bg-white shadow-sm transition-all ${
                             isDone ? "cursor-pointer hover:border-[color:var(--brand-primary)]/30" : ""
                           }`}
                           onClick={() => {
@@ -1596,19 +1604,19 @@ function AiStudioPage() {
                           }}
                         >
                           {isDone ? (
-                            <>
+                            <div className="relative aspect-[4/3] w-full overflow-hidden bg-[color:var(--brand-soft)]">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={previewUrl}
                                 alt={item.caption || t("galleryTitle")}
-                                className="aspect-[4/3] w-full object-cover"
+                                className="absolute inset-0 h-full w-full object-cover"
                               />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
                                 <div className="rounded-full bg-white/95 p-2 shadow-lg">
                                   <Eye className="size-4 text-[color:var(--brand-primary)]" />
                                 </div>
                               </div>
-                            </>
+                            </div>
                           ) : (
                             <div className="relative flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-[color:var(--brand-soft)] px-4 text-center">
                               <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-[color:var(--brand-primary)]/10 via-transparent to-transparent" />
@@ -1659,15 +1667,17 @@ function AiStudioPage() {
                                 >
                                   <Eye className="size-4 text-[color:var(--brand-primary)]/50" />
                                 </button>
-                                <a
-                                  href={previewUrl}
-                                  download
+                                <button
+                                  type="button"
                                   title={t("galleryDownload")}
                                   className="rounded-lg p-2 transition-colors hover:bg-[color:var(--brand-soft)]"
-                                  onClick={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadGalleryImage(previewUrl);
+                                  }}
                                 >
                                   <Download className="size-4 text-[color:var(--brand-primary)]/50" />
-                                </a>
+                                </button>
                               </div>
                             ) : null}
                           </div>
@@ -1727,15 +1737,15 @@ function AiStudioPage() {
               >
                 {t("galleryOpen")}
               </button>
-              <a
-                href={galleryPreview.url}
-                download
+              <button
+                type="button"
                 title={t("galleryDownload")}
+                onClick={() => downloadGalleryImage(galleryPreview.url)}
                 className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[color:var(--brand-primary)] px-3 text-xs font-bold text-white hover:bg-[color:var(--brand-primary)]/90"
               >
                 <Download className="size-3.5" />
                 {t("galleryDownload")}
-              </a>
+              </button>
             </div>
           </div>
         </div>

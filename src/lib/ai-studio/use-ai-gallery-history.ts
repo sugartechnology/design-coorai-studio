@@ -6,6 +6,33 @@ import { PortalCrmError } from "@/lib/portal-crm";
 import { listAiGallery } from "./ai-studio-api";
 import type { AiGalleryItem } from "./types";
 
+function galleryTime(item: AiGalleryItem): number {
+  const time = item.createdAt ? new Date(item.createdAt).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+}
+
+function mergeGalleryById(
+  current: AiGalleryItem[],
+  incoming: AiGalleryItem[],
+): AiGalleryItem[] {
+  const map = new Map<string, AiGalleryItem>();
+  for (const item of current) {
+    if (item?.id) map.set(item.id, item);
+  }
+  for (const item of incoming) {
+    if (item?.id) map.set(item.id, item);
+  }
+  return Array.from(map.values());
+}
+
+function sortGalleryNewest(items: AiGalleryItem[]): AiGalleryItem[] {
+  return [...items].sort((a, b) => {
+    const delta = galleryTime(b) - galleryTime(a);
+    if (delta !== 0) return delta;
+    return String(b.id).localeCompare(String(a.id));
+  });
+}
+
 type UseAiGalleryHistoryOptions = {
   contextTypes?: string[];
   sources?: string[];
@@ -45,20 +72,7 @@ export function useAiGalleryHistory({
   itemsRef.current = items;
 
   const mergeItems = useCallback((incoming: AiGalleryItem[]) => {
-    setItems((prev) => {
-      const map = new Map<string, AiGalleryItem>();
-      for (const item of prev) {
-        if (item?.id) map.set(item.id, item);
-      }
-      for (const item of incoming) {
-        if (item?.id) map.set(item.id, item);
-      }
-      return Array.from(map.values()).sort((a, b) => {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
-    });
+    setItems((prev) => sortGalleryNewest(mergeGalleryById(prev, incoming)));
   }, []);
 
   const kickPoll = useCallback((ms = 180_000) => {
@@ -83,7 +97,7 @@ export function useAiGalleryHistory({
     setError(null);
     try {
       const data = await fetchPage(0);
-      setItems(data.items);
+      setItems(sortGalleryNewest(data.items));
       setPage(data.page);
       setTotalPages(data.totalPages);
     } catch (err) {
@@ -102,29 +116,7 @@ export function useAiGalleryHistory({
     refreshLockRef.current = true;
     try {
       const data = await fetchPage(0);
-      setItems((prev) => {
-        const map = new Map<string, AiGalleryItem>();
-        for (const item of prev) {
-          if (item.id) map.set(item.id, item);
-        }
-        for (const item of data.items) {
-          if (item.id) map.set(item.id, item);
-        }
-        // Prefer newest-first: keep API order for page 0, then older unique ids
-        const ordered: AiGalleryItem[] = [];
-        const seen = new Set<string>();
-        for (const item of data.items) {
-          if (!item.id || seen.has(item.id)) continue;
-          seen.add(item.id);
-          ordered.push(item);
-        }
-        for (const item of prev) {
-          if (!item.id || seen.has(item.id)) continue;
-          seen.add(item.id);
-          ordered.push(item);
-        }
-        return ordered;
-      });
+      setItems((prev) => sortGalleryNewest(mergeGalleryById(prev, data.items)));
       setPage((prev) => Math.max(prev, data.page));
       setTotalPages((prev) => Math.max(prev, data.totalPages));
     } catch (err) {
@@ -149,13 +141,7 @@ export function useAiGalleryHistory({
         setTotalPages(page + 1);
         return;
       }
-      setItems((prev) => {
-        const map = new Map(prev.map((item) => [item.id, item]));
-        for (const item of data.items) {
-          if (item.id) map.set(item.id, item);
-        }
-        return Array.from(map.values());
-      });
+      setItems((prev) => sortGalleryNewest(mergeGalleryById(prev, data.items)));
       setPage(data.page);
       setTotalPages(data.totalPages);
     } catch (err) {

@@ -5,6 +5,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { CartProvider } from "@/lib/cart";
 import { getPortalTemplate, templateCssVars } from "@/lib/branding";
 import { PortalTemplateProvider } from "@/lib/templates/context";
+import { isRtlLocale } from "@/i18n/config";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const template = await getPortalTemplate();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} dir={isRtlLocale(locale) ? "rtl" : "ltr"}>
       <body style={templateCssVars(template)}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <PortalTemplateProvider template={template}>

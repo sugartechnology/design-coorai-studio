@@ -54,7 +54,12 @@
     "minutesAgo": "{n} min ago",
     "hoursAgo": "{n} h ago",
     "daysAgo": "{n} days ago",
-    "studioTagline": "3D Design Studio"
+    "studioTagline": "3D Design Studio",
+    "language": "Language",
+    "langTrShort": "TR",
+    "langEnShort": "EN",
+    "langDeShort": "DE",
+    "langArShort": "AR"
   },
   "meta": {
     "title": "{brand} {tagline}",
@@ -340,6 +345,7 @@
     "galleryOpen": "Apply to scene",
     "galleryPreview": "Preview",
     "galleryDownload": "Download",
+    "galleryDownloadFailed": "Couldn't download the image",
     "galleryLoading": "Loading gallery…",
     "render": "RENDER",
     "statusRoomUploaded": "Room image uploaded.",

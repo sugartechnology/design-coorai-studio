@@ -54,7 +54,12 @@
     "minutesAgo": "{n} dk önce",
     "hoursAgo": "{n} sa önce",
     "daysAgo": "{n} gün önce",
-    "studioTagline": "3D Tasarım Stüdyosu"
+    "studioTagline": "3D Tasarım Stüdyosu",
+    "language": "Dil",
+    "langTrShort": "TR",
+    "langEnShort": "EN",
+    "langDeShort": "DE",
+    "langArShort": "AR"
   },
   "meta": {
     "title": "{brand} {tagline}",
@@ -340,6 +345,7 @@
     "galleryOpen": "Sahneye uygula",
     "galleryPreview": "Önizle",
     "galleryDownload": "İndir",
+    "galleryDownloadFailed": "Görsel indirilemedi",
     "galleryLoading": "Galeri yükleniyor…",
     "render": "RENDER",
     "statusRoomUploaded": "Oda görseli yüklendi.",

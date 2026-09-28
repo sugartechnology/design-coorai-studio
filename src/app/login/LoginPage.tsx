@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BrandLogo } from "@/components/BrandLogo";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { PlannerRecaptcha, type PlannerRecaptchaHandle } from "@/components/PlannerRecaptcha";
 import { obtainAndPersistPlannerTicket } from "@/lib/planner-auth-storage";
 import { isLightHex } from "@/lib/templates/schema";
@@ -348,8 +349,9 @@ function LoginPage() {
           backgroundImage: `linear-gradient(to bottom right, ${template.colors.loginAsideFrom}, ${template.colors.loginAsideTo})`,
         }}
       >
-        <div className="relative z-10">
+        <div className="relative z-10 flex items-center justify-between gap-3">
           <BrandLogo tone="onAside" className="h-9 sm:h-10" />
+          <LocaleSwitcher />
         </div>
 
         <div
@@ -385,8 +387,9 @@ function LoginPage() {
 
       <section className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md">
-          <div className="lg:hidden mb-8">
+          <div className="lg:hidden mb-8 flex items-center justify-between gap-3">
             <BrandLogo className="h-8" />
+            <LocaleSwitcher />
           </div>
 
           <div className="mb-6">

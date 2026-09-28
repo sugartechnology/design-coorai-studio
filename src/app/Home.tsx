@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BrandLogo } from "@/components/BrandLogo";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { logoutPlannerAuth } from "@/lib/planner-auth-storage";
 import { usePortalTemplate } from "@/lib/templates/context";
 import { isLightHex } from "@/lib/templates/schema";
@@ -302,6 +303,7 @@ function Home() {
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <LocaleSwitcher />
           {session?.authenticated ? (
             <button
               type="button"

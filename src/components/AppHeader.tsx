@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { useCart } from "@/lib/cart";
 import { QuoteOfferSheet } from "@/components/offers/QuoteOfferSheet";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import type { QuoteDraft } from "@/lib/offers";
 import { defaultLocale, isAppLocale } from "@/i18n/config";
 
@@ -298,6 +299,7 @@ export function AppHeader({
         <div className="flex items-center gap-2 shrink-0">{actions}</div>
       ) : null}
       <div className="flex items-center gap-1.5 shrink-0">
+        <LocaleSwitcher />
         <HeaderCartBox />
         <HeaderNotificationsBox />
       </div>

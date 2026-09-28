@@ -202,7 +202,7 @@ function KullanicilarPage() {
   const [error, setError] = useState<string | null>(null);
 
   const emDash = tCommon("emDash");
-  const crmLocale = (locale === "en" ? "en" : "tr") as CrmErrorLocale;
+  const crmLocale = (locale === "tr" ? "tr" : "en") as CrmErrorLocale;
 
   const loadUsers = useCallback(async () => {
     setLoading(true);

@@ -439,7 +439,7 @@ function ProposalSectionMini({
                 <img
                   src={image.imageUrl}
                   alt={image.altText || image.caption || t("detailImages")}
-                  className="h-80 w-full object-contain bg-white"
+                  className="aspect-square w-full bg-white object-contain"
                 />
                 {image.caption ? (
                   <p className="px-2 py-1.5 text-[11px] font-semibold text-[color:var(--brand-primary)]/70">
