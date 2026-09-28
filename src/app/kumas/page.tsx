@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import CollectionsPage from "./CollectionsPage";
 
 export const metadata: Metadata = {
-  title: "Kategoriler · İstikbal",
-  description: "İstikbal ürün kategorileri.",
+  title: "Kategoriler",
+  description: "Ürün kategorileri.",
 };
 
 export default function Page() {

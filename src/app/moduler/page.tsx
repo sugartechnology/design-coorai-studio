@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ModulerPage from "./ModulerPage";
 
 export const metadata: Metadata = {
-  title: "Modüler Ürün · İstikbal",
+  title: "Modüler Ürün",
   description: "Modüler kanepe yapılandırıcısı.",
 };
 

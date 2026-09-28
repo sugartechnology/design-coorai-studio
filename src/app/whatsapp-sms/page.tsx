@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import WhatsappPage from "./WhatsappPage";
 
 export const metadata: Metadata = {
-  title: "WhatsApp & SMS · İstikbal",
+  title: "WhatsApp & SMS",
   description: "Müşterilere toplu WhatsApp ve SMS kampanyası gönder.",
 };
 

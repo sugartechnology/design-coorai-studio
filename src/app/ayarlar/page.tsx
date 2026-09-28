@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import AyarlarPage from "./AyarlarPage";
 
 export const metadata: Metadata = {
-  title: "Ayarlar · İstikbal",
+  title: "Ayarlar",
   description: "Mağaza tercihleri, bildirim, görünüm ve entegrasyon ayarları.",
 };
 

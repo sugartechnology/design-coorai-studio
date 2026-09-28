@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import MobileUploadPage from "./MobileUploadPage";
 
 export const metadata: Metadata = {
-  title: "Oda Görseli Yükle · İstikbal",
+  title: "Oda Görseli Yükle",
   description: "Telefonunuzdan oda görseli yükleyin.",
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import SosyalPage from "./SosyalPage";
 
 export const metadata: Metadata = {
-  title: "Sosyal Medya · İstikbal",
+  title: "Sosyal Medya",
   description: "Renderlarını sosyal medyada paylaş.",
 };
 

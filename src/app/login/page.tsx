@@ -6,10 +6,8 @@ import LoginPage from "./LoginPage";
 export async function generateMetadata(): Promise<Metadata> {
   const template = await getPortalTemplate();
   const t = await getTranslations("login");
-  const tCommon = await getTranslations("common");
-  const tagline = tCommon("studioTagline");
   return {
-    title: `${t("title")} · ${template.displayName} ${tagline}`,
+    title: t("title"),
     description: t("metaDescription", { brand: template.displayName }),
   };
 }

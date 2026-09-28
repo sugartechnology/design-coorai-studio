@@ -4,6 +4,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 // import { TutorialButton } from "@/components/TutorialButton";
 import { CartProvider } from "@/lib/cart";
 import { getPortalTemplate, templateCssVars } from "@/lib/branding";
+import { readRequestHost } from "@/lib/templates/provider";
 import { PortalTemplateProvider } from "@/lib/templates/context";
 import { isRtlLocale } from "@/i18n/config";
 import "./globals.css";
@@ -12,23 +13,46 @@ export async function generateMetadata(): Promise<Metadata> {
   const template = await getPortalTemplate();
   const t = await getTranslations("meta");
   const tCommon = await getTranslations("common");
+  const brand = template.displayName;
   const title = t("title", {
-    brand: template.displayName,
+    brand,
     tagline: tCommon("studioTagline"),
   });
+  const description = t("description");
+  const ogDescription = t("ogDescription");
+  const favicon = template.assets.faviconUrl;
+  const logo = template.assets.logoUrl;
+
+  const host = await readRequestHost();
+  const proto =
+    process.env.NODE_ENV === "production" ? "https" : "http";
+  const metadataBase = host ? new URL(`${proto}://${host}`) : undefined;
+
   return {
-    title,
-    description: t("description"),
+    metadataBase,
+    title: {
+      default: title,
+      template: `%s · ${brand}`,
+    },
+    description,
+    applicationName: brand,
     icons: {
-      icon: template.assets.faviconUrl,
+      icon: [{ url: favicon, type: "image/svg+xml" }],
+      shortcut: favicon,
+      apple: favicon,
     },
     openGraph: {
       title,
-      description: t("ogDescription"),
+      description: ogDescription,
       type: "website",
+      siteName: brand,
+      images: [{ url: logo, alt: brand }],
     },
     twitter: {
       card: "summary",
+      title,
+      description: ogDescription,
+      images: [logo],
     },
   };
 }

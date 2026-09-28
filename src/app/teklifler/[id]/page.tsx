@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import OfferDetailPage from "./OfferDetailPage";
 
 export const metadata: Metadata = {
-  title: "Teklif · İstikbal",
+  title: "Teklif",
   description: "Teklifi görüntüle ve düzenle.",
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import OffersPage from "./OffersPage";
 
 export const metadata: Metadata = {
-  title: "Teklifler · İstikbal",
+  title: "Teklifler",
   description: "Teklifleri görüntüle ve oda planını aç.",
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import KullanicilarPage from "./KullanicilarPage";
 
 export const metadata: Metadata = {
-  title: "Kullanıcılar · İstikbal",
+  title: "Kullanıcılar",
   description: "Ekip üyeleri, roller ve yetkiler.",
 };
 
