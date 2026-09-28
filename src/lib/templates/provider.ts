@@ -14,11 +14,11 @@ export interface TemplateProvider {
   getById(id: string): Promise<PortalTemplate | null>;
 }
 
-const FALLBACK_ID = "istikbal";
+const FALLBACK_ID = "bellona";
 
 const staticTemplates: PortalTemplate[] = [
-  parsePortalTemplate(istikbalJson),
   parsePortalTemplate(bellonaJson),
+  parsePortalTemplate(istikbalJson),
 ];
 
 const templatesById = new Map(
