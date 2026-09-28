@@ -7,9 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { loadVendorCustomElement } from "@/lib/load-vendor-element";
 import { clearRoomDesignerLastScene } from "@/lib/offers";
+import { defaultLocale, isAppLocale, toPlannerLocale } from "@/i18n/config";
 
 const SCRIPT_SRC = "https://s3.eu-central-1.amazonaws.com/cdn.sugartech/mottobucket/CDN/sugar-planner/sugar-room-designer.js";
 const TAG_NAME = "sugar-room-designer";
@@ -103,6 +104,10 @@ export const RoomDesignerHost = forwardRef<
   ref,
 ) {
   const t = useTranslations("hosts");
+  const locale = useLocale();
+  const plannerLanguage = toPlannerLocale(
+    isAppLocale(locale) ? locale : defaultLocale,
+  );
   const [bundleReady, setBundleReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [hostEl, setHostEl] = useState<SugarRoomDesignerElement | null>(null);
@@ -203,6 +208,7 @@ export const RoomDesignerHost = forwardRef<
           ref={(node: SugarRoomDesignerElement | null) => {
             elRef.current = node;
           }}
+          language={plannerLanguage}
           welcome-menu={welcomeMenu ? "true" : "false"}
           quote-ui={quoteUi}
           {...(authorizedProductMenu

@@ -9,6 +9,7 @@ declare module "react" {
           "welcome-menu"?: string;
           "authorized-product-menu"?: string;
           "quote-ui"?: "panel" | "host" | string;
+          language?: string;
           state?: string;
           ui?: "builtin" | "none" | string;
         },

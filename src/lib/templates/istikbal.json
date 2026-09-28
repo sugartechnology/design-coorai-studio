@@ -6,9 +6,7 @@
   "rrCompanyId": 42,
   "hosts": [
     "i-render.app",
-    "www.i-render.app",
-    "localhost",
-    "127.0.0.1"
+    "www.i-render.app"
   ],
   "colors": {
     "primary": "#1f5fa8",
