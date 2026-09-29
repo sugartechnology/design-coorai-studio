@@ -156,6 +156,14 @@ async function proxy(request: NextRequest, context: RouteContext) {
       responseHeaders.set("Content-Type", upstreamContentType);
     }
 
+    // 204/205/304 must not carry a body; NextResponse throws otherwise.
+    if (upstream.status === 204 || upstream.status === 205 || upstream.status === 304) {
+      return new NextResponse(null, {
+        status: upstream.status,
+        headers: responseHeaders,
+      });
+    }
+
     return new NextResponse(upstreamBody, {
       status: upstream.status,
       headers: responseHeaders,
