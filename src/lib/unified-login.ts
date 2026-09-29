@@ -23,6 +23,7 @@ export type UnifiedUser = {
   firstName?: string;
   lastName?: string;
   roles?: string[];
+  forcePasswordChange?: boolean;
 };
 
 export type UnifiedLoginResponse = {
@@ -165,6 +166,7 @@ export function buildPortalSessionFromUnified(
       typeof rrCompanyId === "number" && Number.isFinite(rrCompanyId)
         ? rrCompanyId
         : null,
+    forcePasswordChange: data.user.forcePasswordChange === true,
     user: {
       id: data.user.id,
       username: data.user.username ?? identifierFallback,
@@ -188,6 +190,7 @@ export function portalSessionSuccessResponse(session: PortalSession) {
     companySlug: session.companySlug,
     companyId: session.companyId,
     companyName: session.companyName ?? null,
+    forcePasswordChange: session.forcePasswordChange === true,
   });
   response.cookies.set(
     PORTAL_SESSION_COOKIE,

@@ -23,6 +23,8 @@ export type PortalSession = {
   companyName?: string | null;
   /** RapidRender numeric company id (`rrCompanyId`). */
   rrCompanyId?: number | null;
+  /** Temporary-password login must set a new password before the app opens. */
+  forcePasswordChange?: boolean;
   user: PortalSessionUser;
 };
 
@@ -82,6 +84,7 @@ export function publicSessionView(session: PortalSession) {
     companyId: session.companyId,
     companyName: session.companyName?.trim() || null,
     rrCompanyId: session.rrCompanyId ?? null,
+    forcePasswordChange: session.forcePasswordChange === true,
     user: {
       id: session.user.id,
       username: session.user.username,

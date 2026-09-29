@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import {
   Store,
@@ -25,7 +25,32 @@ import { usePortalTemplate } from "@/lib/templates/context";
 
 type AuthTab = "credentials" | "dealer";
 type Step = "code" | "phone" | "pin";
-type CredentialsStep = "form" | "companies";
+type CredentialsStep = "form" | "companies" | "forgot";
+
+type RecoveryChannel = "EMAIL" | "SMS";
+
+type RecoveryChannelOption = {
+  channel: RecoveryChannel;
+  maskedDestination: string;
+};
+
+type RecoveryLookup = {
+  matched?: boolean;
+  supportRequired?: boolean;
+  supportMessage?: string | null;
+  supportUrl?: string | null;
+  availableChannels?: RecoveryChannelOption[];
+  retryAfterSeconds?: number | null;
+};
+
+type RecoverySend = {
+  sent?: boolean;
+  supportRequired?: boolean;
+  message?: string | null;
+  supportUrl?: string | null;
+  maskedDestination?: string | null;
+  retryAfterSeconds?: number | null;
+};
 
 type PhoneOption = {
   phoneId: string;
@@ -71,7 +96,7 @@ function LoginPage() {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [forgotOpen, setForgotOpen] = useState(false);
+  const passwordChanged = useSearchParams().get("passwordChanged") === "1";
   const recaptchaRef = useRef<PlannerRecaptchaHandle>(null);
   const recaptchaTokenRef = useRef<string>("");
   const [recaptchaStatus, setRecaptchaStatus] = useState<
@@ -98,8 +123,8 @@ function LoginPage() {
     }
   };
 
-  const finishAuthenticated = () => {
-    router.push("/");
+  const finishAuthenticated = (forcePasswordChange?: boolean) => {
+    router.push(forcePasswordChange ? "/sifre" : "/");
     router.refresh();
   };
 
@@ -177,7 +202,7 @@ function LoginPage() {
       await persistPlannerAfterCrm(
         typeof data.companyId === "string" ? data.companyId : null,
       );
-      finishAuthenticated();
+      finishAuthenticated(data.forcePasswordChange === true);
     } catch {
       setError(t("errorLoginUnreachable"));
     } finally {
@@ -216,7 +241,7 @@ function LoginPage() {
         return;
       }
       await persistPlannerAfterCrm(company.companyId);
-      finishAuthenticated();
+      finishAuthenticated(data.forcePasswordChange === true);
     } catch {
       setError(t("errorLoginUnreachable"));
     } finally {
@@ -335,7 +360,9 @@ function LoginPage() {
     tab === "credentials"
       ? credentialsStep === "companies"
         ? t("companySelectHint")
-        : t("credentialsHint")
+        : credentialsStep === "forgot"
+          ? t("forgotHint")
+          : t("credentialsHint")
       : step === "code"
         ? t("stepCodeHint")
         : step === "phone" && lookup?.status === "NEEDS_PROVISION"
@@ -398,7 +425,11 @@ function LoginPage() {
           </div>
 
           <div className="mb-6">
-            <h2 className="text-3xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">{t("title")}</h2>
+            <h2 className="text-3xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">
+              {tab === "credentials" && credentialsStep === "forgot"
+                ? t("forgotTitle")
+                : t("title")}
+            </h2>
             <p className="mt-2 text-[color:var(--brand-primary)]/60">{hint}</p>
           </div>
 
@@ -452,6 +483,12 @@ function LoginPage() {
               })}
             </div>
           )}
+
+          {passwordChanged && tab === "credentials" && credentialsStep === "form" ? (
+            <div className="mb-4 p-3.5 rounded-2xl bg-[color:var(--brand-accent)]/25 border border-[color:var(--brand-accent)]/40 text-sm text-[color:var(--brand-primary)]">
+              {t("passwordChangedNotice")}
+            </div>
+          ) : null}
 
           {error && (
             <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-100 text-sm text-red-700">
@@ -531,12 +568,25 @@ function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => setForgotOpen(true)}
+                onClick={() => {
+                  setError(null);
+                  setCredentialsStep("forgot");
+                }}
                 className="w-full text-sm font-semibold text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:underline"
               >
                 {t("forgotPassword")}
               </button>
             </form>
+          )}
+
+          {tab === "credentials" && credentialsStep === "forgot" && (
+            <ForgotPasswordPanel
+              initialIdentifier={username.trim()}
+              onBack={() => {
+                setError(null);
+                setCredentialsStep("form");
+              }}
+            />
           )}
 
           {tab === "credentials" && credentialsStep === "companies" && (
@@ -634,14 +684,6 @@ function LoginPage() {
                 className="group w-full h-13 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] active:scale-[0.99] shadow-lg shadow-[color:var(--brand-primary)]/25 transition-all disabled:opacity-60"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : <>{t("continue")} <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" /></>}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setForgotOpen(true)}
-                className="w-full text-sm font-semibold text-[color:var(--brand-primary)]/70 hover:text-[color:var(--brand-primary)] hover:underline"
-              >
-                {t("forgotPassword")}
               </button>
             </form>
           )}
@@ -755,34 +797,290 @@ function LoginPage() {
         </div>
       </section>
 
-      {forgotOpen && <ForgotPasswordModal onClose={() => setForgotOpen(false)} />}
     </div>
   );
 }
 
-function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
+function retryLabel(
+  seconds: number | null | undefined,
+  format: (minutes: number) => string,
+) {
+  if (!seconds || seconds <= 0) return null;
+  return format(Math.ceil(seconds / 60));
+}
+
+function ForgotPasswordPanel({
+  initialIdentifier,
+  onBack,
+}: {
+  initialIdentifier: string;
+  onBack: () => void;
+}) {
   const t = useTranslations("login");
-  const tCommon = useTranslations("common");
+  const recaptchaRef = useRef<PlannerRecaptchaHandle>(null);
+  const [identifier, setIdentifier] = useState(initialIdentifier);
+  const [lookup, setLookup] = useState<RecoveryLookup | null>(null);
+  const [sendResult, setSendResult] = useState<RecoverySend | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"lookup" | RecoveryChannel | null>(null);
+  const [recaptchaStatus, setRecaptchaStatus] = useState<
+    "loading" | "ready" | "unavailable"
+  >("loading");
+  const [recaptchaSolved, setRecaptchaSolved] = useState(false);
+
+  const ensureRecaptcha = () => {
+    if (recaptchaStatus === "unavailable") {
+      setError(t("errorRecaptchaUnavailable"));
+      return false;
+    }
+    if (recaptchaStatus !== "ready" || !recaptchaRef.current?.getToken()) {
+      setError(t("errorRecaptchaRequired"));
+      return false;
+    }
+    return true;
+  };
+
+  const cooldownSeconds =
+    sendResult?.retryAfterSeconds ?? lookup?.retryAfterSeconds ?? null;
+  const cooldownText = retryLabel(cooldownSeconds, (minutes) =>
+    t("forgotRetryMinutes", { count: minutes }),
+  );
+
+  const lookupOptions = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const normalized = identifier.trim();
+    if (!normalized || busy) return;
+    if (!ensureRecaptcha()) return;
+    setBusy("lookup");
+    setError(null);
+    setSendResult(null);
+    try {
+      const res = await fetch("/api/auth/password-recovery/options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: normalized }),
+      });
+      const data = (await res.json().catch(() => ({}))) as RecoveryLookup & {
+        error?: string;
+      };
+      if (!res.ok) {
+        setLookup(null);
+        setError(typeof data.error === "string" ? data.error : t("forgotLookupFailed"));
+        return;
+      }
+      setLookup(data);
+      if (!data.matched && !data.supportRequired) {
+        setError(t("forgotNotMatched"));
+      }
+    } catch {
+      setLookup(null);
+      setError(t("forgotLookupFailed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const sendTemporaryPassword = async (channel: RecoveryChannel) => {
+    const normalized = identifier.trim();
+    if (!normalized || busy) return;
+    if (!ensureRecaptcha()) return;
+    setBusy(channel);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/password-recovery/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: normalized, channel }),
+      });
+      const data = (await res.json().catch(() => ({}))) as RecoverySend & {
+        error?: string;
+      };
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : t("forgotSendFailed"));
+        return;
+      }
+      setSendResult(data);
+      if (!data.sent && !data.supportRequired) {
+        const wait = retryLabel(data.retryAfterSeconds, (minutes) =>
+          t("forgotRetryMinutes", { count: minutes }),
+        );
+        setError(
+          wait
+            ? t("forgotCooldown", { time: wait })
+            : typeof data.message === "string" && data.message
+              ? data.message
+              : t("forgotSendFailed"),
+        );
+      }
+    } catch {
+      setError(t("forgotSendFailed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const channels = lookup?.availableChannels ?? [];
+  const supportRequired = Boolean(
+    lookup?.supportRequired || sendResult?.supportRequired,
+  );
+  const supportUrl = sendResult?.supportUrl || lookup?.supportUrl;
+  const supportMessage =
+    sendResult?.message ||
+    lookup?.supportMessage ||
+    t("forgotSupportMessage");
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button onClick={onClose} className="absolute left-4 top-4 flex items-center gap-1 text-sm text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]">
-          <ChevronLeft className="size-4" /> {tCommon("close")}
-        </button>
-        <div className="mt-6 mb-5">
-          <h3 className="text-2xl font-extrabold text-[color:var(--brand-primary)] tracking-tight">{t("forgotTitle")}</h3>
-          <p className="mt-2 text-sm text-[color:var(--brand-primary)]/60 leading-relaxed">
-            {t("forgotBody")}
+    <div className="space-y-4">
+      {sendResult?.sent ? (
+        <div className="p-4 rounded-2xl bg-[color:var(--brand-accent)]/25 border border-[color:var(--brand-accent)]/40 flex gap-2.5">
+          <CheckCircle2 className="size-4.5 shrink-0 text-[color:var(--brand-primary)] mt-0.5" />
+          <p className="text-sm leading-relaxed text-[color:var(--brand-primary)]">
+            {t("forgotSent", {
+              destination: sendResult.maskedDestination || "",
+            })}
           </p>
         </div>
-        <button onClick={onClose} className="w-full h-12 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold hover:bg-[color:var(--brand-primary-strong)] transition-colors">
-          {tCommon("done")}
+      ) : (
+        <form onSubmit={lookupOptions} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-[color:var(--brand-primary)] mb-1.5">
+              {t("forgotIdentifierLabel")}
+            </label>
+            <div className="relative">
+              <UserRound className="absolute left-4 top-1/2 -translate-y-1/2 size-4.5 text-[color:var(--brand-primary)]/40" />
+              <input
+                autoFocus
+                type="text"
+                autoComplete="username"
+                value={identifier}
+                onChange={(event) => {
+                  setIdentifier(event.target.value);
+                  setLookup(null);
+                  setSendResult(null);
+                  setError(null);
+                }}
+                placeholder={t("forgotIdentifierPlaceholder")}
+                className="w-full pl-11 pr-4 h-13 rounded-2xl bg-[color:var(--brand-primary)]/5 border border-transparent focus:bg-white focus:border-[color:var(--brand-primary)]/20 focus:ring-4 focus:ring-[color:var(--brand-accent)]/30 outline-none text-[color:var(--brand-primary)] placeholder:text-[color:var(--brand-primary)]/35 transition-all font-semibold"
+              />
+            </div>
+          </div>
+          <PlannerRecaptcha
+            ref={recaptchaRef}
+            onStatusChange={(next) => {
+              setRecaptchaStatus(next);
+              if (next !== "ready") setRecaptchaSolved(false);
+            }}
+            onSolvedChange={setRecaptchaSolved}
+          />
+          {recaptchaStatus === "unavailable" ? (
+            <p className="text-sm text-red-700">{t("errorRecaptchaUnavailable")}</p>
+          ) : null}
+          {channels.length === 0 ? (
+            <button
+              type="submit"
+              disabled={
+                busy !== null ||
+                !identifier.trim() ||
+                recaptchaStatus !== "ready" ||
+                !recaptchaSolved
+              }
+              className="group w-full h-13 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] active:scale-[0.99] shadow-lg shadow-[color:var(--brand-primary)]/25 transition-all disabled:opacity-60"
+            >
+              {busy === "lookup" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <>
+                  {t("forgotContinue")}{" "}
+                  <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+                </>
+              )}
+            </button>
+          ) : null}
+        </form>
+      )}
+
+      {error ? (
+        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-100 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
+      {supportRequired ? (
+        <div className="p-4 rounded-2xl bg-[color:var(--brand-primary)]/5 text-sm text-[color:var(--brand-primary)]">
+          <p className="font-semibold">{t("forgotSupportTitle")}</p>
+          <p className="mt-1 leading-relaxed text-[color:var(--brand-primary)]/80">
+            {supportMessage}
+          </p>
+          {supportUrl ? (
+            <a
+              href={supportUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block font-semibold underline"
+            >
+              {t("forgotContactSupport")}
+            </a>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!sendResult?.sent && channels.length > 0 ? (
+        <div className="space-y-2">
+          {cooldownText ? (
+            <p className="text-xs font-semibold text-[color:var(--brand-primary)]/60">
+              {t("forgotRetryIn", { time: cooldownText })}
+            </p>
+          ) : null}
+          {channels.map((option) => (
+            <button
+              key={`${option.channel}-${option.maskedDestination}`}
+              type="button"
+              disabled={
+                busy !== null ||
+                Boolean(cooldownSeconds && cooldownSeconds > 0) ||
+                recaptchaStatus !== "ready" ||
+                !recaptchaSolved
+              }
+              onClick={() => sendTemporaryPassword(option.channel)}
+              className="w-full text-left p-4 rounded-2xl border-2 border-[color:var(--brand-primary)]/10 hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 transition-all disabled:opacity-50"
+            >
+              <span className="block text-xs font-semibold uppercase tracking-wider text-[color:var(--brand-primary)]/60">
+                {option.channel === "EMAIL" ? t("forgotEmailChannel") : t("forgotSmsChannel")}
+              </span>
+              <span className="mt-0.5 flex items-center justify-between gap-3">
+                <span className="font-semibold text-[color:var(--brand-primary)] text-sm truncate">
+                  {option.maskedDestination}
+                </span>
+                <span className="text-xs font-bold text-[color:var(--brand-primary)] shrink-0">
+                  {busy === option.channel ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    t("forgotSendChannel")
+                  )}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {channels.length > 0 || sendResult?.sent ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full h-13 rounded-2xl bg-[color:var(--brand-primary)] text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-[color:var(--brand-primary-strong)] active:scale-[0.99] shadow-lg shadow-[color:var(--brand-primary)]/25 transition-all"
+        >
+          <ChevronLeft className="size-4" /> {t("forgotBack")}
         </button>
-      </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm font-semibold text-[color:var(--brand-primary)]/60 hover:text-[color:var(--brand-primary)]"
+        >
+          <ChevronLeft className="size-4" /> {t("forgotBack")}
+        </button>
+      )}
     </div>
   );
 }

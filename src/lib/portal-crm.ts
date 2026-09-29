@@ -17,6 +17,7 @@ export type PortalSessionView = {
   companyId: string;
   companyName?: string | null;
   rrCompanyId?: number | null;
+  forcePasswordChange?: boolean;
   user: {
     id: string;
     username: string;
