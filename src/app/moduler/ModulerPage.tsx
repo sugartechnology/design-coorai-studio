@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { usePortalTemplate } from "@/lib/templates/context";
 
 type ConfiguratorListItem = {
   configuratorId: number | string;
@@ -31,6 +32,7 @@ function ModulerPage() {
   const t = useTranslations("moduler");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const template = usePortalTemplate();
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [overrideInput, setOverrideInput] = useState("");
   const [activeCompanyId, setActiveCompanyId] = useState<number | null>(null);
@@ -48,10 +50,11 @@ function ModulerPage() {
           rrCompanyId?: number | null;
         };
         if (cancelled) return;
+        // Prefer session RapidRender id; fall back to brand template (same as /kumas).
         const rr =
           typeof data.rrCompanyId === "number" && Number.isFinite(data.rrCompanyId)
             ? data.rrCompanyId
-            : null;
+            : template.rrCompanyId;
         const fromQuery = parseCompanyId(searchParams.get("companyId"));
         const initial =
           IS_DEV && fromQuery != null ? fromQuery : rr;
@@ -63,7 +66,7 @@ function ModulerPage() {
         }
       } catch {
         if (!cancelled) {
-          setActiveCompanyId(null);
+          setActiveCompanyId(template.rrCompanyId);
         }
       } finally {
         if (!cancelled) setSessionLoaded(true);
@@ -74,7 +77,7 @@ function ModulerPage() {
     };
     // Only resolve session once on mount; query override applied then.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [template.rrCompanyId]);
 
   const loadCompany = useCallback(async (companyId: number) => {
     setLoadState({ status: "loading" });

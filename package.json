@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "sync:room-designer": "node scripts/sync-room-designer.mjs",
-    "sync:model-viewer": "node scripts/sync-model-viewer.mjs"
+    "sync:model-viewer": "node scripts/sync-model-viewer.mjs",
+    "sync:configurator": "node scripts/sync-configurator.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
